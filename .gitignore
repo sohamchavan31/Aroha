@@ -1,0 +1,35 @@
+ # ─── Node / React Native ───────────────────────────
+node_modules/
+.expo/
+dist/
+build/
+*.lock
+.env
+.env.local
+
+# ─── Java / Spring Boot ────────────────────────────
+nira-backend/target/
+*.class
+*.jar
+*.war
+nira-backend/.env
+
+# ─── Python / Flask ────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+nira-ai/venv/
+nira-ai/.env
+*.egg-info/
+
+# ─── OS & Editor ───────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+.idea/
+
+# ─── Secrets (never commit these) ──────────────────
+*.pem
+*.key
+secrets.yml
+application-secret.properties
