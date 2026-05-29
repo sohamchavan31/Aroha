@@ -7,8 +7,8 @@
 ---
 
 ## Current Status
-> Phase 3 complete — Spring Boot backend + JWT auth done. Mobile auth screens are next.
-> Feature scope expanded — full roadmap updated below.
+> Phase 5 complete — Nutrition system live. 52 Indian foods, macro tracker, daily log working end-to-end.
+> Next: Workout Logger (Phase 6).
 
 ---
 
@@ -30,6 +30,19 @@
 | Health endpoint | `GET /api/health` — public, no auth required |
 | JWT security | `JwtUtil`, `JwtFilter`, `SecurityConfig` — stateless, Bearer token on every protected request |
 | Backend CI | `backend-ci.yml` — mvn verify on push/PR, H2 in-memory DB so no PostgreSQL needed in CI |
+| PostgreSQL | `nira_db` database live on local PostgreSQL 16, `nira_user` configured |
+| Auth screens | `LoginScreen.js` + `RegisterScreen.js` — Solo Leveling dark UI, gold buttons, form validation |
+| API client | `src/api/client.js` — Axios with auto JWT header interceptor, points to `10.0.2.2:8080` |
+| AuthContext | `src/context/AuthContext.js` — token + user state, persisted via AsyncStorage across sessions |
+| Route protection | `App.js` — gold spinner on launch, Login/Register if no token, tabs if logged in |
+| AuthNavigator | `src/navigation/AuthNavigator.js` — stack navigator for Login ↔ Register |
+| End-to-end auth | Register → Spring Boot → PostgreSQL → JWT → Home screen. Full flow tested and working. |
+| Meal entity | `Meal.java` → meals table — name, category, region, macros per 100g, serving unit + size |
+| Indian food DB | 52 foods seeded via `data.sql` — dals, rice, roti, sabzi, snacks, dairy, fruits, Konkan specials |
+| Meal endpoints | `GET /api/meals/search?q=`, `/category/{cat}`, `/all` |
+| DailyLog entity | `DailyLog.java` → daily_logs table — pre-calculated macros per entry for instant totals |
+| Daily log endpoints | `POST /api/logs`, `GET /api/logs/today`, `DELETE /api/logs/{id}` |
+| MacrosScreen | Full UI — search bar, meal results with macro preview, daily log list, calorie ring + macro progress bars |
 
 ---
 
@@ -37,7 +50,7 @@
 
 ### Phase 3 — Spring Boot Backend ✅
 - [x] Initialize Spring Boot project
-- [ ] Connect to PostgreSQL (pending — using H2 for now)
+- [x] Connect to PostgreSQL — `nira_db` running on PostgreSQL 16
 - [x] User entity + repository
 - [x] Health check endpoint
 - [x] JWT register + login endpoints
@@ -45,28 +58,26 @@
 
 ---
 
-### Phase 4 — Auth Flow (Mobile) ⏳ NEXT
-- [ ] Build Register screen UI
-- [ ] Build Login screen UI
-- [ ] Install Axios for HTTP calls
-- [ ] Store JWT token in AsyncStorage
-- [ ] Create AuthContext to share login state across screens
-- [ ] Protect tabs — redirect to login if not authenticated
+### Phase 4 — Auth Flow (Mobile) ✅
+- [x] Build Register screen UI
+- [x] Build Login screen UI
+- [x] Install Axios for HTTP calls
+- [x] Store JWT token in AsyncStorage
+- [x] Create AuthContext to share login state across screens
+- [x] Protect tabs — redirect to login if not authenticated
 
 ---
 
-### Phase 5 — Nutrition System
-> Calorie, macro calculators + Indian food database + custom recipes
-
-- [ ] Macro calculator UI (calories, protein, carbs, fat)
-- [ ] Carbs / protein / fat intake calculator (goal-based)
-- [ ] Create Meal entity in Spring Boot
-- [ ] Seed 50+ Indian foods into PostgreSQL (dal, chawal, roti, sabji, regional items)
-- [ ] `GET /api/meals/search?q=` endpoint
-- [ ] MacrosScreen — search + add meals + daily total display
-- [ ] Daily macro summary ring/chart
-- [ ] Custom recipe builder — create your own meal, save macros
-- [ ] Indian food database expansion (500+ items, Konkan cuisine priority)
+### Phase 5 — Nutrition System ✅
+- [x] Create Meal entity in Spring Boot
+- [x] Seed 52 Indian foods into PostgreSQL
+- [x] `GET /api/meals/search?q=` endpoint
+- [x] MacrosScreen — search + add meals + daily total display
+- [x] Daily macro summary with calorie ring + macro bars
+- [ ] Serving size modal on meal add — adjust grams/pieces before logging (like workout sets/reps modal)
+- [ ] Custom dish builder — user creates their own meal with custom macros
+- [ ] Indian food database expansion to 500+ items (Konkan cuisine priority)
+- [ ] Support non-standard quantities — "1 bowl", "half plate", user-defined units
 
 ---
 
@@ -74,12 +85,16 @@
 > Exercise library + logging + progress tracking
 
 - [ ] Create Workout + WorkoutLog entities in Spring Boot
-- [ ] Seed home exercises (push-ups, squats, surya namaskar, planks, etc.)
-- [ ] WorkoutScreen — log today's exercises + sets/reps/weight
-- [ ] Exercise library with description + video links (YouTube embed)
-- [ ] AI fitness advisor chatbot (exercise form, suggestions)
-- [ ] Workout record handler — full session log (what you did, reps, rest time)
+- [x] Exercise library — 34 exercises (strength, cardio, yoga, flexibility)
+- [x] WorkoutScreen — category tabs, log sets/reps/weight, today's session summary
+- [ ] Gym machine exercises — bench press, lat pulldown, leg press, cable rows, etc.
+- [ ] Muscle pressure visualization — AI-generated model showing which muscles activate per exercise
+- [ ] Exercise guide videos — animated/AI model demonstrating correct form
+- [ ] AI workout schedule generator — user inputs goal + days/week + gym/home → gets daily/weekly/monthly plan
+- [ ] Muscle variation selector — user picks 4/5/N exercises per muscle group per session
+- [ ] Rest timer between sets
 - [ ] Weekly workout summary + progress graph
+- [ ] Personal records tracker — track best weight/reps per exercise over time
 
 ---
 
@@ -184,9 +199,9 @@
 | 3 | Home screen — Solo Leveling UI with daily quests | ✅ Done |
 | 4 | Bottom tab navigation (Home, Macros, Workout, Profile) | ✅ Done |
 | 5 | Spring Boot backend scaffold + JWT auth | ✅ Done |
-| 6 | Auth flow — mobile login/register screens | ⏳ Next |
-| 7 | Nutrition system — macro calculator + Indian food DB | Pending |
-| 8 | Workout logger + exercise library | Pending |
+| 6 | Auth flow — mobile login/register screens | ✅ Done |
+| 7 | Nutrition system — macro calculator + Indian food DB | ✅ Done |
+| 8 | Workout logger + exercise library | ⏳ Next |
 | 9 | Habit tracker — monthly calendar grid | Pending |
 | 10 | Planner + to-do + scheduler | Pending |
 | 11 | Reminders — water, supplements, regional voice | Pending |

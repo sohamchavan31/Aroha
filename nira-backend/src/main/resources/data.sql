@@ -55,3 +55,47 @@ SELECT * FROM (VALUES
 ('Bombil Fry',     'konkan','konkan',        95, 18.0,  0.0,  2.5, 0.0, 'piece',        80)
 ) AS v(name, category, region, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, serving_unit, typical_serving)
 WHERE NOT EXISTS (SELECT 1 FROM meals LIMIT 1);
+
+INSERT INTO exercises (name, category, equipment, muscle_group, description, default_sets, default_reps)
+SELECT * FROM (VALUES
+-- Strength
+('Push-ups',          'strength',    'none',           'chest',      'Classic bodyweight push-up', 3, 15),
+('Diamond Push-ups',  'strength',    'none',           'chest',      'Hands close together, targets triceps', 3, 10),
+('Pull-ups',          'strength',    'pullup_bar',      'back',       'Hang from bar, pull chest to bar', 3, 8),
+('Chin-ups',          'strength',    'pullup_bar',      'back',       'Underhand grip pull-up', 3, 8),
+('Squats',            'strength',    'none',           'legs',       'Bodyweight squat, knees track toes', 3, 20),
+('Jump Squats',       'strength',    'none',           'legs',       'Explosive squat with jump', 3, 12),
+('Lunges',            'strength',    'none',           'legs',       'Alternating forward lunges', 3, 12),
+('Glute Bridge',      'strength',    'mat',            'legs',       'Lie on back, push hips up', 3, 15),
+('Plank',             'strength',    'mat',            'core',       'Hold straight body position', 3, 30),
+('Side Plank',        'strength',    'mat',            'core',       'Hold on one forearm', 3, 20),
+('Crunches',          'strength',    'mat',            'core',       'Basic abdominal crunch', 3, 20),
+('Leg Raises',        'strength',    'mat',            'core',       'Lie flat, raise legs to 90 degrees', 3, 15),
+('Mountain Climbers', 'strength',    'none',           'core',       'Alternate driving knees to chest in plank', 3, 20),
+('Dips',              'strength',    'none',           'arms',       'Use chair or parallel bars', 3, 12),
+('Pike Push-ups',     'strength',    'none',           'shoulders',  'Inverted V position, lower head to floor', 3, 10),
+('Superman',          'strength',    'mat',            'back',       'Lie face down, lift arms and legs', 3, 12),
+-- Cardio
+('Jumping Jacks',     'cardio',      'none',           'cardio',     'Arms and legs out simultaneously', 3, 30),
+('Burpees',           'cardio',      'none',           'full_body',  'Squat, jump back to plank, push-up, jump up', 3, 10),
+('High Knees',        'cardio',      'none',           'cardio',     'Run in place bringing knees to chest', 3, 30),
+('Skipping',          'cardio',      'none',           'cardio',     'Jump rope or simulate the motion', 1, 100),
+('Stair Climbing',    'cardio',      'none',           'legs',       'Walk or run up stairs', 3, 20),
+('Box Steps',         'cardio',      'none',           'cardio',     'Step up and down on a stable surface', 3, 20),
+-- Yoga
+('Surya Namaskar',    'yoga',        'mat',            'full_body',  '12-pose sun salutation sequence', 1, 5),
+('Warrior I',         'yoga',        'mat',            'legs',       'Lunge with arms raised overhead', 1, 5),
+('Warrior II',        'yoga',        'mat',            'legs',       'Wide stance with arms parallel to floor', 1, 5),
+('Downward Dog',      'yoga',        'mat',            'full_body',  'Inverted V stretch', 1, 5),
+('Child''s Pose',     'yoga',        'mat',            'back',       'Kneel and stretch arms forward', 1, 5),
+('Tree Pose',         'yoga',        'mat',            'core',       'Balance on one leg with arms overhead', 1, 5),
+('Cobra Pose',        'yoga',        'mat',            'back',       'Lie face down, push chest up', 1, 5),
+('Cat-Cow Stretch',   'yoga',        'mat',            'back',       'Alternate spine arch and round on all fours', 1, 10),
+-- Flexibility
+('Hip Flexor Stretch','flexibility', 'mat',            'legs',       'Kneel on one knee, push hips forward', 1, 30),
+('Hamstring Stretch', 'flexibility', 'mat',            'legs',       'Seated forward fold', 1, 30),
+('Shoulder Stretch',  'flexibility', 'none',           'shoulders',  'Pull one arm across chest', 1, 30),
+('Neck Rolls',        'flexibility', 'none',           'shoulders',  'Slow circles with head', 1, 10),
+('Seated Twist',      'flexibility', 'mat',            'back',       'Seated spinal rotation stretch', 1, 30)
+) AS v(name, category, equipment, muscle_group, description, default_sets, default_reps)
+WHERE NOT EXISTS (SELECT 1 FROM exercises LIMIT 1);
