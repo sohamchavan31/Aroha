@@ -1,4 +1,4 @@
-l# 🌿 Nira — Complete Build Journal
+# 🌿 Nira — Complete Build Journal
 ### How I built an Indian Health & Fitness App from scratch — solo, step by step.
 > Written like a tutorial. Every step, every command, every mistake and fix.
 > If you're reading this later, you can follow this exactly and rebuild the whole thing.
@@ -1634,6 +1634,7 @@ Share the APK with test users via a direct download link.
 
 ---
 
-*📅 Last updated: Part 3 complete — React Native mobile app live on Nira_Dev emulator*
-*✅ Environment, mobile scaffold, Solo Leveling Home Screen, navigation — all done*
-*⏳ Next: Spring Boot backend scaffold → health endpoint → auth*
+*📅 Last updated: 2026-05-28 — Phase 3 complete (Spring Boot backend + JWT auth)*
+*✅ Environment, mobile scaffold, Solo Leveling Home Screen, navigation — done*
+*✅ Spring Boot backend — User entity, register/login endpoints, JWT filter, health check — done*
+*⏳ Next: Auth flow on mobile — Login screen, Register screen, AuthContext, route protection*
