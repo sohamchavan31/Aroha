@@ -7,8 +7,8 @@
 ---
 
 ## Current Status
-> Phase 5 complete — Nutrition system live. 52 Indian foods, macro tracker, daily log working end-to-end.
-> Next: Workout Logger (Phase 6).
+> Phase 9 complete — Water tracker, sleep log, Hindi/Marathi voice reminders live.
+> Next: Phase 10 — Python Flask AI Layer (meal planner, chatbot, habit insights).
 
 ---
 
@@ -43,6 +43,21 @@
 | DailyLog entity | `DailyLog.java` → daily_logs table — pre-calculated macros per entry for instant totals |
 | Daily log endpoints | `POST /api/logs`, `GET /api/logs/today`, `DELETE /api/logs/{id}` |
 | MacrosScreen | Full UI — search bar, meal results with macro preview, daily log list, calorie ring + macro progress bars |
+| Exercise library | 34 exercises seeded — strength, cardio, yoga, flexibility (Surya Namaskar included) |
+| WorkoutScreen | Category tabs, exercise list, log modal (sets/reps/weight), today's session summary |
+| Habit entity | `Habit.java` + `HabitLog.java` — userId, name, hex color, icon, daily completion log |
+| Habit endpoints | `POST/GET/DELETE /api/habits`, `POST /{id}/toggle?date=`, `GET /monthly` |
+| HabitScreen | Weekly grid (Sa-Fr), week navigation, checkbox cells, metrics table, progress chart (Day/Week/Month) |
+| Task entity | `Task.java` — title, date, optional time slot, completed, carriedForward, linkedHabitId |
+| Task endpoints | `POST/GET /api/tasks`, `PATCH /{id}/toggle`, `DELETE /{id}`, `POST /carry-forward` |
+| PlannerScreen | Date nav, stats bar, time-blocked schedule, to-do list, carry forward, FAB, time chip picker |
+| Navigation | 5 tabs icons-only — Home, Macros, Workout, Habits, Planner |
+| WaterLog entity | Daily water tracking — glasses count + goal per user per day |
+| SleepLog entity | Sleep time, wake time, quality rating (1-5), duration calculation |
+| Wellness endpoints | `GET/POST /api/wellness/water/today`, `/water/add`, `/water/remove`, `/sleep` |
+| Water widget | Home screen — large counter, +/- buttons, progress bar, mic button |
+| Hindi/Marathi voice | expo-speech — "Bhai, paani pi le!" + 4 more reminders in Hindi/Marathi |
+| WellnessModal | Sleep tab (time pickers, emoji quality), Voice tab (5 regional reminders) |
 
 ---
 
@@ -81,10 +96,8 @@
 
 ---
 
-### Phase 6 — Workout System
-> Exercise library + logging + progress tracking
-
-- [ ] Create Workout + WorkoutLog entities in Spring Boot
+### Phase 6 — Workout System ✅
+- [x] Exercise + WorkoutLog entities in Spring Boot
 - [x] Exercise library — 34 exercises (strength, cardio, yoga, flexibility)
 - [x] WorkoutScreen — category tabs, log sets/reps/weight, today's session summary
 - [ ] Gym machine exercises — bench press, lat pulldown, leg press, cable rows, etc.
@@ -98,43 +111,34 @@
 
 ---
 
-### Phase 7 — Habit & Routine System (Key Feature)
-> Monthly calendar-style habit tracker like the image shared
-
-- [ ] HabitTracker screen — monthly grid view
-  - Month name at top (e.g. "May 2026")
-  - User-defined habits (Wake up at 5, Gym, Reading, Budget, Water, etc.)
-  - Columns for each day (1–31) with tap-to-check checkboxes
-  - Color fill on completed days
-  - Progress row at bottom (Done %, Not Done %)
-- [ ] Habit entity in Spring Boot — name, userId, color, icon
-- [ ] HabitLog entity — habitId, date, completed (boolean)
-- [ ] Streak calculation per habit
-- [ ] Insights screen — which habits you're consistent on, which are failing
-- [ ] Link habits to reminders + daily planner
+### Phase 7 — Habit & Routine System ✅
+- [x] Habit + HabitLog entities in Spring Boot
+- [x] HabitScreen — weekly grid (Sa-Fr), week navigation, checkbox cells
+- [x] Metrics table — Progress % / Done / Not Done for Day and Week
+- [x] Progress chart — Day/Week/Month tabs with bar chart
+- [x] Add habit modal — name, color picker, icon picker
+- [ ] Streak calculation per habit (future)
+- [ ] Insights screen — consistency analysis (future)
+- [ ] Link habits to planner auto-check (future)
 
 ---
 
-### Phase 8 — Planner & Productivity
-> Daily planner + to-do list + scheduler
-
-- [ ] Daily planner screen — time-blocked schedule for the day
-- [ ] To-do list — add tasks, mark done, carry forward incomplete
-- [ ] Weekly scheduler view
-- [ ] Link planner tasks to habit tracker (e.g. "7:00 AM — Gym" auto-checks gym habit)
+### Phase 8 — Planner & Productivity ✅
+- [x] Task entity — title, date, time slot, completed, carriedForward
+- [x] Daily planner screen — date navigation, time-blocked schedule, to-do list
+- [x] Add task modal — title + optional time slot picker
+- [x] Carry forward yesterday's incomplete tasks
+- [ ] Weekly scheduler view (future)
+- [ ] Auto-check linked habit when task completed (future — needs branch merge)
 
 ---
 
-### Phase 9 — Reminders & Recovery
-> Smart reminders + water + supplements + sleep
-
-- [ ] Water intake reminder — set daily goal, tap to log each glass
-- [ ] Supplement reminder — add supplement name + time, get notified
-- [ ] Sleep & recovery tracking — log sleep time, wake time, quality rating
-- [ ] Personalized regional-language reminders
-  - Hindi voice reminder: "Bhai, paani pi le!" 
-  - Marathi voice reminder: "Chala, workout chya veli zali!"
-  - Uses Expo Notifications + Text-to-Speech
+### Phase 9 — Reminders & Recovery ✅
+- [x] Water tracker widget on Home screen — counter, +/-, progress bar
+- [x] Sleep log — sleep time, wake time, quality rating (1-5 emoji), duration
+- [x] Hindi/Marathi voice reminders — expo-speech, 5 phrases
+- [ ] Supplement reminder with scheduled notifications (needs dev build, not Expo Go)
+- [ ] Water goal set from Profile (Phase 12 — onboarding will ask this)
 
 ---
 
@@ -201,11 +205,11 @@
 | 5 | Spring Boot backend scaffold + JWT auth | ✅ Done |
 | 6 | Auth flow — mobile login/register screens | ✅ Done |
 | 7 | Nutrition system — macro calculator + Indian food DB | ✅ Done |
-| 8 | Workout logger + exercise library | ⏳ Next |
-| 9 | Habit tracker — monthly calendar grid | Pending |
-| 10 | Planner + to-do + scheduler | Pending |
-| 11 | Reminders — water, supplements, regional voice | Pending |
-| 12 | Flask AI layer — meal planner + chatbot | Pending |
+| 8 | Workout logger + exercise library | ✅ Done |
+| 9 | Habit tracker — weekly grid, metrics, chart | ✅ Done |
+| 10 | Planner + to-do + carry forward | ✅ Done |
+| 11 | Reminders — water tracker, sleep log, regional voice | ✅ Done |
+| 12 | Flask AI layer — meal planner + chatbot | ⏳ Next |
 | 13 | Dynamic quest engine (live from backend) | Pending |
 | 14 | Full deployment (EC2 + APK) | Pending |
 

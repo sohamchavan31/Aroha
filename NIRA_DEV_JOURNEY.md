@@ -1,20 +1,20 @@
-# Ã°Å¸Å’Â¿ Nira Ã¢â‚¬â€ Complete Build Journal
-### How I built an Indian Health & Fitness App from scratch Ã¢â‚¬â€ solo, step by step.
+# ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã¢â‚¬â„¢Ãƒâ€šÃ‚Â¿ Nira ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Complete Build Journal
+### How I built an Indian Health & Fitness App from scratch ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â solo, step by step.
 > Written like a tutorial. Every step, every command, every mistake and fix.
 > If you're reading this later, you can follow this exactly and rebuild the whole thing.
 
 ---
 
-## Ã°Å¸Å½Â¯ What is Nira?
+## ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â½Ãƒâ€šÃ‚Â¯ What is Nira?
 Nira is a culturally rooted Indian health and fitness app. Think macros for dal-chawal,
 workouts designed for home, Hindi/Marathi voice support, and a Solo Leveling inspired
 daily quest system that pushes you to put the phone down and actually move.
 
-**Solo dev. 2Ã¢â‚¬â€œ4 hours a day. Grinding daily.**
+**Solo dev. 2ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4 hours a day. Grinding daily.**
 
 ---
 
-## Ã°Å¸Â§Â± Tech Stack (What we're building with)
+## ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚Â§Ãƒâ€šÃ‚Â± Tech Stack (What we're building with)
 
 | Layer      | Technology                                |
 |------------|-------------------------------------------|
@@ -23,13 +23,13 @@ daily quest system that pushes you to put the phone down and actually move.
 | AI Layer   | Python + Flask + Ollama + TFLite          |
 | Database   | PostgreSQL + MongoDB                      |
 | Auth       | Spring Security + JWT                     |
-| Deployment | EC2 + Vercel Ã¢â€ â€™ Docker on Proxmox (later)  |
+| Deployment | EC2 + Vercel ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Docker on Proxmox (later)  |
 
 ---
 
-# Ã°Å¸â€œÂ¦ PART 1 Ã¢â‚¬â€ Setting Up the Project
+# ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€šÃ‚Â¦ PART 1 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Setting Up the Project
 
-## Step 1 Ã¢â‚¬â€ Create the GitHub Repository
+## Step 1 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Create the GitHub Repository
 
 1. Go to [github.com](https://github.com) and create a new repository
 2. Name it `Nira`
@@ -38,7 +38,7 @@ daily quest system that pushes you to put the phone down and actually move.
 
 ---
 
-## Step 2 Ã¢â‚¬â€ Clone the Repo to Your Machine
+## Step 2 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Clone the Repo to Your Machine
 
 Open terminal in the folder where you want the project (we used `D:\Nira`):
 
@@ -49,12 +49,12 @@ cd Nira
 
 ---
 
-## Step 3 Ã¢â‚¬â€ Set Up Branch Strategy
+## Step 3 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Set Up Branch Strategy
 
 We follow **GitHub Flow**. The rules are simple:
-- `main` Ã¢â‚¬â€ always working, never push here directly
-- `dev` Ã¢â‚¬â€ where all work gets integrated
-- `feature/*` Ã¢â‚¬â€ one branch per feature, merged into dev via PR
+- `main` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â always working, never push here directly
+- `dev` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â where all work gets integrated
+- `feature/*` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â one branch per feature, merged into dev via PR
 
 Create and push the `dev` branch:
 
@@ -66,24 +66,24 @@ git checkout main
 
 ---
 
-## Step 4 Ã¢â‚¬â€ Protect the Main Branch
+## Step 4 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Protect the Main Branch
 
 This stops you from accidentally pushing broken code to main.
 
-1. Go to your GitHub repo Ã¢â€ â€™ **Settings** Ã¢â€ â€™ **Branches**
+1. Go to your GitHub repo ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ **Settings** ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ **Branches**
 2. Click **Add branch protection rule**
 3. Branch name pattern: `main`
 4. Enable these:
-   - Ã¢Å“â€¦ Require a pull request before merging
-   - Ã¢Å“â€¦ Require at least 1 approval
-   - Ã¢Å“â€¦ Do not allow bypassing the above rules
+   - ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Require a pull request before merging
+   - ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Require at least 1 approval
+   - ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Do not allow bypassing the above rules
 5. Click **Save changes**
 
-> Ã°Å¸â€™Â¡ Even as a solo dev, this forces you to review your own code before merging. Good habit.
+> ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¡ Even as a solo dev, this forces you to review your own code before merging. Good habit.
 
 ---
 
-## Step 5 Ã¢â‚¬â€ Create the Project Folder Structure
+## Step 5 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Create the Project Folder Structure
 
 Inside `D:\Nira\Nira\`, run these commands:
 
@@ -99,28 +99,28 @@ echo. > nira-ai\.gitkeep
 echo. > docs\.gitkeep
 ```
 
-> Ã°Å¸â€™Â¡ `.gitkeep` is an empty file that tricks Git into tracking empty folders.
-> Git ignores empty folders by default Ã¢â‚¬â€ this fixes that.
+> ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¡ `.gitkeep` is an empty file that tricks Git into tracking empty folders.
+> Git ignores empty folders by default ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â this fixes that.
 
 Your structure now looks like:
 ```
 Nira/
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ nira-mobile/       # React Native app will live here
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ nira-backend/      # Spring Boot API will live here
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ nira-ai/           # Python Flask AI service will live here
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ docs/              # Notes, diagrams, decisions
-Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ README.md
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ nira-mobile/       # React Native app will live here
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ nira-backend/      # Spring Boot API will live here
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ nira-ai/           # Python Flask AI service will live here
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ docs/              # Notes, diagrams, decisions
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ README.md
 ```
 
 ---
 
-## Step 6 Ã¢â‚¬â€ Create the .gitignore File
+## Step 6 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Create the .gitignore File
 
 Create a file called `.gitignore` at the root of your project.
 This tells Git which files to never commit (secrets, build files, dependencies).
 
 ```gitignore
-# Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Node / React Native Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+# ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ Node / React Native ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬
 node_modules/
 .expo/
 dist/
@@ -129,14 +129,14 @@ build/
 .env
 .env.local
 
-# Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Java / Spring Boot Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+# ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ Java / Spring Boot ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬
 nira-backend/target/
 *.class
 *.jar
 *.war
 nira-backend/.env
 
-# Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Python / Flask Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+# ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ Python / Flask ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬
 __pycache__/
 *.pyc
 *.pyo
@@ -144,13 +144,13 @@ nira-ai/venv/
 nira-ai/.env
 *.egg-info/
 
-# Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ OS & Editor Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+# ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ OS & Editor ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬
 .DS_Store
 Thumbs.db
 .vscode/settings.json
 .idea/
 
-# Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Secrets (NEVER commit these) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+# ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ Secrets (NEVER commit these) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬
 *.pem
 *.key
 secrets.yml
@@ -159,23 +159,23 @@ application-secret.properties
 
 ---
 
-## Step 7 Ã¢â‚¬â€ First Commit to Dev
+## Step 7 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â First Commit to Dev
 
 ```bash
 git checkout dev
 git add .
-git commit -m "chore: initial project scaffold Ã¢â‚¬â€ folder structure, gitignore, README"
+git commit -m "chore: initial project scaffold ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â folder structure, gitignore, README"
 git push origin dev
 ```
 
-> Ã°Å¸â€™Â¡ We commit to `dev` directly here because we're just creating folders Ã¢â‚¬â€ no logic yet.
+> ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¡ We commit to `dev` directly here because we're just creating folders ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â no logic yet.
 > Logic always goes in a `feature/*` branch.
 
 ---
 
-# Ã°Å¸â€ºÂ Ã¯Â¸Â PART 2 Ã¢â‚¬â€ Setting Up the Development Environment
+# ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂºÃƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â PART 2 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Setting Up the Development Environment
 
-## Step 8 Ã¢â‚¬â€ Install Java 17
+## Step 8 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Install Java 17
 
 React Native requires Java 17. It does NOT work with Java 21 or 25 yet.
 
@@ -193,9 +193,9 @@ React Native requires Java 17. It does NOT work with Java 21 or 25 yet.
    C:\Users\SOHAM\AppData\Local\Programs\Eclipse Adoptium\jdk-17.0.19.10-hotspot
    ```
 5. During Custom Setup screen:
-   - Click the Ã¢ÂÅ’ next to **"Set or override JAVA_HOME variable"**
+   - Click the ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒâ€¦Ã¢â‚¬â„¢ next to **"Set or override JAVA_HOME variable"**
    - Select **"Will be installed on local hard drive"**
-6. If you see a registry write error Ã¢â€ â€™ click **Ignore** (safe, we'll set it manually)
+6. If you see a registry write error ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ click **Ignore** (safe, we'll set it manually)
 
 ### Set JAVA_HOME Manually
 Open PowerShell as Administrator and run:
@@ -221,12 +221,12 @@ Get-Command java | Select-Object -ExpandProperty Source
 # Showed: C:\Program Files\Java\jdk-25.0.2\bin\java.exe
 ```
 
-**Fix Ã¢â‚¬â€ rename Java 25 bin folder so it can't be found:**
+**Fix ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â rename Java 25 bin folder so it can't be found:**
 ```powershell
 Rename-Item "C:\Program Files\Java\jdk-25.0.2\bin" "C:\Program Files\Java\jdk-25.0.2\bin_disabled"
 ```
 
-> Ã°Å¸â€™Â¡ We rename instead of uninstall Ã¢â‚¬â€ keeps Java 25 safe if ever needed,
+> ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¡ We rename instead of uninstall ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â keeps Java 25 safe if ever needed,
 > just stops it from interfering.
 
 ### Verify Java 17 is Working
@@ -242,11 +242,11 @@ openjdk version "17.0.19" 2026-04-21
 OpenJDK Runtime Environment Temurin-17.0.19+10
 OpenJDK 64-Bit Server VM Temurin-17.0.19+10
 ```
-Ã¢Å“â€¦ Done!
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Done!
 
 ---
 
-## Step 9 Ã¢â‚¬â€ Install Android Studio
+## Step 9 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Install Android Studio
 
 We need Android Studio to run the Android emulator and build the app.
 
@@ -254,9 +254,9 @@ We need Android Studio to run the Android emulator and build the app.
 1. Go to [developer.android.com/studio](https://developer.android.com/studio)
 2. Download and run the installer
 3. During setup make sure these are installed:
-   - Ã¢Å“â€¦ Android SDK
-   - Ã¢Å“â€¦ SDK Platform 34
-   - Ã¢Å“â€¦ Android Virtual Device
+   - ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Android SDK
+   - ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ SDK Platform 34
+   - ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Android Virtual Device
 
 ### Set ANDROID_HOME Environment Variable
 Open PowerShell as Administrator:
@@ -275,39 +275,39 @@ Open a fresh PowerShell:
 where.exe adb
 # Should show: C:\Users\SOHAM\AppData\Local\Android\Sdk\platform-tools\adb.exe
 ```
-Ã¢Å“â€¦ Done!
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Done!
 
 ---
 
-## Step 10 Ã¢â‚¬â€ Create the Android Emulator
+## Step 10 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Create the Android Emulator
 
 This is the virtual phone we'll run Nira on during development.
 
 1. Open Android Studio
-2. Click **More Actions** Ã¢â€ â€™ **Virtual Device Manager**
+2. Click **More Actions** ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ **Virtual Device Manager**
 3. Click **Create Device**
-4. Select hardware: **Pixel 7** Ã¢â€ â€™ Next
+4. Select hardware: **Pixel 7** ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Next
 5. Select system image:
    - API Level: **34**
    - ABI: **x86_64**
    - Name your AVD: `Nira_Dev`
 6. Click **Finish**
-7. Hit the Ã¢â€“Â¶Ã¯Â¸Â **Play button** next to `Nira_Dev` to boot it
+7. Hit the ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¶ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â **Play button** next to `Nira_Dev` to boot it
 
 ### What you should see:
 A Pixel 7 phone screen boots up showing Android 14 home screen.
 
-> Ã°Å¸â€Â¥ This is the Hunter's phone. Nira will live here during development.
+> ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â¥ This is the Hunter's phone. Nira will live here during development.
 
-Ã¢Å“â€¦ Emulator running Ã¢â‚¬â€ `Nira_Dev | Android 14 | API 34 | x86_64`
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Emulator running ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â `Nira_Dev | Android 14 | API 34 | x86_64`
 
 ---
 
-# Ã°Å¸â€œÂ± PART 3 Ã¢â‚¬â€ React Native Mobile App
+# ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€šÃ‚Â± PART 3 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â React Native Mobile App
 
-## Step 11 Ã¢â‚¬â€ Verify Node.js
+## Step 11 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Verify Node.js
 
-Node.js is the JavaScript runtime that powers all your dev tools Ã¢â‚¬â€ Metro bundler, Expo CLI, npm. It does NOT run inside your app. It's a build tool.
+Node.js is the JavaScript runtime that powers all your dev tools ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Metro bundler, Expo CLI, npm. It does NOT run inside your app. It's a build tool.
 
 Open a fresh PowerShell and run:
 
@@ -318,11 +318,11 @@ npm -v
 
 Expected output: `v20.x.x` and `10.x.x`. If Node isn't installed: go to **nodejs.org** and download the **LTS** version.
 
-Ã¢Å“â€¦ Node verified.
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Node verified.
 
 ---
 
-## Step 12 Ã¢â‚¬â€ Initialize the React Native App with Expo
+## Step 12 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Initialize the React Native App with Expo
 
 **Why Expo?** Without Expo you'd manually set up Android build files, Gradle configs, signing keystores, and more. Expo handles all of that. You just write screens.
 
@@ -333,29 +333,29 @@ cd nira-mobile
 npx create-expo-app@latest . --template blank
 ```
 
-When asked "Skip initializing a new git repository?" Ã¢â€ â€™ press Enter (Yes). We already have a git repo.
+When asked "Skip initializing a new git repository?" ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ press Enter (Yes). We already have a git repo.
 
 What Expo creates:
 ```
 nira-mobile/
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ App.js       Ã¢â€ Â root component Ã¢â‚¬â€ what the phone shows first
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ app.json     Ã¢â€ Â app config: name, icon, colors, orientation
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ package.json Ã¢â€ Â dependency list
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ index.js     Ã¢â€ Â entry point
-Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ assets/      Ã¢â€ Â icon and splash screen images
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ App.js       ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â root component ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â what the phone shows first
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ app.json     ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â app config: name, icon, colors, orientation
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ package.json ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â dependency list
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ index.js     ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â entry point
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ assets/      ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â icon and splash screen images
 ```
 
-Ã¢Å“â€¦ Expo app initialized.
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Expo app initialized.
 
 ---
 
-## Step 13 Ã¢â‚¬â€ Install Navigation Dependencies
+## Step 13 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Install Navigation Dependencies
 
-React Navigation handles moving between screens. We use the **bottom tabs** pattern Ã¢â‚¬â€ four tabs at the bottom: Home, Macros, Workout, Profile.
+React Navigation handles moving between screens. We use the **bottom tabs** pattern ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â four tabs at the bottom: Home, Macros, Workout, Profile.
 
 We use `npx expo install` instead of plain `npm install`:
 
-> Ã°Å¸â€™Â¡ `npx expo install` is Expo-aware. It checks your Expo SDK version and installs the exact compatible version of each package. Using plain `npm install` can grab incompatible versions and cause hard-to-debug crashes.
+> ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¡ `npx expo install` is Expo-aware. It checks your Expo SDK version and installs the exact compatible version of each package. Using plain `npm install` can grab incompatible versions and cause hard-to-debug crashes.
 
 ```bash
 npx expo install @react-navigation/native @react-navigation/bottom-tabs react-native-screens react-native-safe-area-context
@@ -363,16 +363,16 @@ npx expo install @react-navigation/native @react-navigation/bottom-tabs react-na
 
 | Package | What it does |
 |---------|-------------|
-| `@react-navigation/native` | Core navigation engine Ã¢â‚¬â€ manages screen transitions |
+| `@react-navigation/native` | Core navigation engine ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â manages screen transitions |
 | `@react-navigation/bottom-tabs` | Creates the bottom tab bar |
 | `react-native-screens` | Uses your phone's native screen layer for better performance |
 | `react-native-safe-area-context` | Keeps content away from notches, status bars, and home indicators |
 
-Ã¢Å“â€¦ Navigation dependencies installed.
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Navigation dependencies installed.
 
 ---
 
-## Step 14 Ã¢â‚¬â€ Create the Folder Structure
+## Step 14 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Create the Folder Structure
 
 Expo's blank template dumps everything in the root. We organize code into `src/` from day one so the project doesn't become a mess as it grows.
 
@@ -385,33 +385,33 @@ mkdir src\screens
 Final structure inside `nira-mobile/`:
 ```
 nira-mobile/
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ src/
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ constants/
-Ã¢â€â€š   Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ colors.js        Ã¢â€ Â every color in the app defined here
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ navigation/
-Ã¢â€â€š   Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ AppNavigator.js  Ã¢â€ Â tab bar setup, connects screens to tabs
-Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ screens/
-Ã¢â€â€š       Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ HomeScreen.js    Ã¢â€ Â rank badge, quests, streak, XP
-Ã¢â€â€š       Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ MacrosScreen.js  Ã¢â€ Â Indian food macro tracker
-Ã¢â€â€š       Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ WorkoutScreen.js Ã¢â€ Â workout logger
-Ã¢â€â€š       Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ ProfileScreen.js Ã¢â€ Â user profile + health stats
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ App.js                   Ã¢â€ Â entry point: loads the navigator
-Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ app.json                 Ã¢â€ Â Expo config: name, dark mode, colors
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ src/
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ constants/
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ colors.js        ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â every color in the app defined here
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ navigation/
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ AppNavigator.js  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â tab bar setup, connects screens to tabs
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ screens/
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡       ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ HomeScreen.js    ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â rank badge, quests, streak, XP
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡       ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ MacrosScreen.js  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â Indian food macro tracker
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡       ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ WorkoutScreen.js ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â workout logger
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡       ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ ProfileScreen.js ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â user profile + health stats
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ App.js                   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â entry point: loads the navigator
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ app.json                 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â Expo config: name, dark mode, colors
 ```
 
-> Ã°Å¸â€™Â¡ Having a `constants/` folder means you never write `'#E2B714'` in 20 different files. You write it once as `Colors.accentGold` and use the name everywhere. One color change = one line changed.
+> ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¡ Having a `constants/` folder means you never write `'#E2B714'` in 20 different files. You write it once as `Colors.accentGold` and use the name everywhere. One color change = one line changed.
 
-Ã¢Å“â€¦ Folder structure created.
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Folder structure created.
 
 ---
 
-## Step 15 Ã¢â‚¬â€ Create the Theme (colors.js)
+## Step 15 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Create the Theme (colors.js)
 
 Create `src/constants/colors.js`:
 
 ```javascript
 const Colors = {
-  background: '#0A0A0A',       // deep black Ã¢â‚¬â€ the hunter's world
+  background: '#0A0A0A',       // deep black ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the hunter's world
   card: '#1A1A2E',             // dark navy card backgrounds
   cardBorder: '#2A2A4A',       // subtle card borders
   accentGold: '#E2B714',       // Solo Leveling power aura gold
@@ -423,7 +423,7 @@ const Colors = {
   success: '#2ECC71',          // quest completed green
   tabBar: '#111120',
   tabBarBorder: '#2A2A4A',
-  // Rank colors Ã¢â‚¬â€ each rank has its own identity color
+  // Rank colors ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â each rank has its own identity color
   rankE: '#7B2FBE',
   rankD: '#2E86AB',
   rankC: '#27AE60',
@@ -435,13 +435,13 @@ const Colors = {
 export default Colors;
 ```
 
-**Why dark theme?** The app's "less screen = good health" philosophy means the UI should feel calm, not stimulating. Dark theme reduces eye strain Ã¢â‚¬â€ especially important in India where most phone use happens at night or indoors. The gold and purple are used only for important moments (quest completion, rank display, XP gains) so they retain their impact.
+**Why dark theme?** The app's "less screen = good health" philosophy means the UI should feel calm, not stimulating. Dark theme reduces eye strain ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â especially important in India where most phone use happens at night or indoors. The gold and purple are used only for important moments (quest completion, rank display, XP gains) so they retain their impact.
 
-Ã¢Å“â€¦ Theme created.
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Theme created.
 
 ---
 
-## Step 16 Ã¢â‚¬â€ Build the Navigator (AppNavigator.js)
+## Step 16 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Build the Navigator (AppNavigator.js)
 
 The navigator is the shell of the whole app. It creates the tab bar and connects each tab to a screen.
 
@@ -495,14 +495,14 @@ export default function AppNavigator() {
 }
 ```
 
-> Ã°Å¸â€™Â¡ `headerShown: false` removes the default white header bar at the top. We build custom headers inside each screen instead.
-> Ã°Å¸â€™Â¡ `Ionicons` comes bundled with Expo for free Ã¢â‚¬â€ no extra install needed.
+> ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¡ `headerShown: false` removes the default white header bar at the top. We build custom headers inside each screen instead.
+> ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¡ `Ionicons` comes bundled with Expo for free ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â no extra install needed.
 
-Ã¢Å“â€¦ Navigator built.
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Navigator built.
 
 ---
 
-## Step 17 Ã¢â‚¬â€ Build the Home Screen
+## Step 17 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Build the Home Screen
 
 This is the app's most important screen. Everything about Nira lives here first.
 
@@ -562,9 +562,9 @@ export default function HomeScreen() {
         {/* Stats Row */}
         <View style={styles.statsRow}>
           {[
-            { icon: 'Ã°Å¸â€Â¥', value: streak,         label: 'Day Streak' },
-            { icon: 'Ã¢Å¡Â¡', value: totalXP,        label: 'Total XP' },
-            { icon: 'Ã°Å¸Å½Â¯', value: `${completedCount}/${DAILY_QUESTS.length}`, label: 'Quests Done' },
+            { icon: 'ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â¥', value: streak,         label: 'Day Streak' },
+            { icon: 'ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â¡', value: totalXP,        label: 'Total XP' },
+            { icon: 'ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â½Ãƒâ€šÃ‚Â¯', value: `${completedCount}/${DAILY_QUESTS.length}`, label: 'Quests Done' },
           ].map(stat => (
             <View key={stat.label} style={styles.statCard}>
               <Text style={styles.statIcon}>{stat.icon}</Text>
@@ -687,17 +687,17 @@ const styles = StyleSheet.create({
 Key patterns used here:
 | Pattern | What it does |
 |---------|-------------|
-| `useState({})` | Tracks which quests are tapped Ã¢â‚¬â€ object with quest IDs as keys, true/false as values |
-| `TouchableOpacity` | Pressable element Ã¢â‚¬â€ dims to 70% opacity when tapped |
+| `useState({})` | Tracks which quests are tapped ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â object with quest IDs as keys, true/false as values |
+| `TouchableOpacity` | Pressable element ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â dims to 70% opacity when tapped |
 | `ScrollView` | Makes the screen scroll when content is taller than the phone |
 | `StyleSheet.create()` | Defines all layout and colors, like CSS but for React Native |
 | `SafeAreaView` | Keeps content below the status bar / phone notch |
 
-Ã¢Å“â€¦ Home Screen built. The Hunter has awakened.
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Home Screen built. The Hunter has awakened.
 
 ---
 
-## Step 18 Ã¢â‚¬â€ Create Placeholder Screens
+## Step 18 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Create Placeholder Screens
 
 Macros, Workout, and Profile are built in later milestones. For now each gets a styled screen so the tab bar works and the app feels complete, not broken.
 
@@ -720,7 +720,7 @@ export default function MacrosScreen() {
         <Text style={styles.title}>Macro Tracker</Text>
         <Text style={styles.subtitle}>Indian food database coming soon.</Text>
         <Text style={styles.hint}>
-          Dal-chawal macros, regional recipes, Konkan cuisine Ã¢â‚¬â€ all in the next build.
+          Dal-chawal macros, regional recipes, Konkan cuisine ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â all in the next build.
         </Text>
       </View>
     </SafeAreaView>
@@ -739,11 +739,11 @@ const styles = StyleSheet.create({
 
 Create the same structure for `WorkoutScreen.js` (use `barbell-outline` icon, purple accent) and `ProfileScreen.js` (use `person-outline` icon, add a rank badge).
 
-Ã¢Å“â€¦ Placeholder screens created.
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Placeholder screens created.
 
 ---
 
-## Step 19 Ã¢â‚¬â€ Update App.js (The Root)
+## Step 19 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Update App.js (The Root)
 
 Replace the generated `App.js` entirely:
 
@@ -765,11 +765,11 @@ export default function App() {
 ```
 
 The three wrapper layers explained:
-1. `SafeAreaProvider` Ã¢â‚¬â€ gives all screens access to notch/status bar measurements
-2. `NavigationContainer` Ã¢â‚¬â€ the navigation system's root. Must wrap all navigators
-3. `AppNavigator` Ã¢â‚¬â€ our bottom tab bar, which loads each screen
+1. `SafeAreaProvider` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â gives all screens access to notch/status bar measurements
+2. `NavigationContainer` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the navigation system's root. Must wrap all navigators
+3. `AppNavigator` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â our bottom tab bar, which loads each screen
 
-Also update `app.json` Ã¢â‚¬â€ change the app name and enable dark mode:
+Also update `app.json` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â change the app name and enable dark mode:
 ```json
 {
   "expo": {
@@ -781,13 +781,13 @@ Also update `app.json` Ã¢â‚¬â€ change the app name and enable dark mo
 }
 ```
 
-Ã¢Å“â€¦ App.js and app.json updated.
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ App.js and app.json updated.
 
 ---
 
-## Step 20 Ã¢â‚¬â€ Run on the Android Emulator
+## Step 20 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Run on the Android Emulator
 
-1. Open **Android Studio** Ã¢â€ â€™ **Virtual Device Manager** Ã¢â€ â€™ click Ã¢â€“Â¶Ã¯Â¸Â next to `Nira_Dev`
+1. Open **Android Studio** ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ **Virtual Device Manager** ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ click ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¶ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â next to `Nira_Dev`
 2. Wait for the emulator to boot fully (Android home screen must be visible)
 3. In a terminal inside `nira-mobile/`:
 
@@ -798,31 +798,31 @@ npm run android
 Metro Bundler starts and installs the app on the emulator automatically:
 ```
 Starting Metro Bundler
-Ã¢â‚¬Âº Opening exp://192.168.x.x:8081 on Nira_Dev
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Âº Opening exp://192.168.x.x:8081 on Nira_Dev
 ```
 
 ### What you should see:
 - Deep black background
 - "Ohayo, Hunter" with today's date
 - Purple **E RANK** badge top right
-- Three stat cards: Ã°Å¸â€Â¥ Day Streak | Ã¢Å¡Â¡ Total XP | Ã°Å¸Å½Â¯ Quests Done
-- Three quest cards you can tap Ã¢â‚¬â€ they turn green with a checkmark on completion
-- Rank progress bar (E Ã¢â€ â€™ D, 12% filled)
+- Three stat cards: ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â¥ Day Streak | ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â¡ Total XP | ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â½Ãƒâ€šÃ‚Â¯ Quests Done
+- Three quest cards you can tap ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â they turn green with a checkmark on completion
+- Rank progress bar (E ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ D, 12% filled)
 - Dark tab bar, gold icon on the active tab
 
-Ã°Å¸â€Â¥ **This is the Hunter awakening moment. Nira is alive.**
+ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â¥ **This is the Hunter awakening moment. Nira is alive.**
 
-Ã¢Å“â€¦ Part 3 complete.
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Part 3 complete.
 
 ---
 
-# Ã¢Å¡â„¢Ã¯Â¸Â PART 4 Ã¢â‚¬â€ Spring Boot Backend
+# ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â PART 4 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Spring Boot Backend
 
 > **Status: Up Next**
 
 The Spring Boot backend is the brain of Nira. The mobile app will call it for auth, meal data, workout logs, quest states, and user profiles. Right now the quests and XP on the Home Screen are hardcoded. Once the backend is live, that data comes from a real database.
 
-## Step 21 Ã¢â‚¬â€ Create the Spring Boot Project
+## Step 21 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Create the Spring Boot Project
 
 Go to **start.spring.io** and configure:
 
@@ -844,27 +844,27 @@ Go to **start.spring.io** and configure:
 - Lombok
 - Validation
 
-Click **Generate** Ã¢â€ â€™ download the zip Ã¢â€ â€™ extract into the `nira-backend/` folder.
+Click **Generate** ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ download the zip ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ extract into the `nira-backend/` folder.
 
 Your structure will look like:
 ```
 nira-backend/
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ src/main/java/com/nira/
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ NiraBackendApplication.java   Ã¢â€ Â main class, starts the server
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ controller/                   Ã¢â€ Â API endpoints live here
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ service/                      Ã¢â€ Â business logic
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ repository/                   Ã¢â€ Â database queries
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ model/                        Ã¢â€ Â Java classes that map to DB tables
-Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ dto/                          Ã¢â€ Â request/response data shapes
-Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ security/                     Ã¢â€ Â JWT + Spring Security config
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ src/main/resources/
-Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ application.properties        Ã¢â€ Â database URL, JWT secret, port
-Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ pom.xml                           Ã¢â€ Â dependency list (like package.json)
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ src/main/java/com/nira/
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ NiraBackendApplication.java   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â main class, starts the server
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ controller/                   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â API endpoints live here
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ service/                      ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â business logic
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ repository/                   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â database queries
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ model/                        ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â Java classes that map to DB tables
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ dto/                          ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â request/response data shapes
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ security/                     ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â JWT + Spring Security config
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ src/main/resources/
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ application.properties        ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â database URL, JWT secret, port
+ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ pom.xml                           ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â dependency list (like package.json)
 ```
 
 ---
 
-## Step 22 Ã¢â‚¬â€ Set Up PostgreSQL
+## Step 22 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Set Up PostgreSQL
 
 Install PostgreSQL if you haven't. Then create the database:
 
@@ -884,11 +884,11 @@ spring.jpa.show-sql=true
 server.port=8080
 ```
 
-> Ã°Å¸â€™Â¡ `ddl-auto=update` tells Spring to automatically create or update tables based on your Java classes. You don't write SQL for table creation Ã¢â‚¬â€ Spring does it from your code.
+> ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¡ `ddl-auto=update` tells Spring to automatically create or update tables based on your Java classes. You don't write SQL for table creation ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Spring does it from your code.
 
 ---
 
-## Step 23 Ã¢â‚¬â€ Create the User Model
+## Step 23 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Create the User Model
 
 `src/main/java/com/nira/model/User.java`:
 
@@ -907,7 +907,7 @@ public class User {
     private String email;
 
     @Column(nullable = false)
-    private String password;  // stored as bcrypt hash Ã¢â‚¬â€ never plain text
+    private String password;  // stored as bcrypt hash ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â never plain text
 
     private String name;
     private String rank = "E";
@@ -923,7 +923,7 @@ Spring Data JPA reads this class and automatically creates a `users` table in Po
 
 ---
 
-## Step 24 Ã¢â‚¬â€ Add a Health Check Endpoint
+## Step 24 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Add a Health Check Endpoint
 
 Before building auth, verify the server is running and can connect to the database.
 
@@ -936,7 +936,7 @@ public class HealthController {
 
     @GetMapping("/health")
     public ResponseEntity<String> health() {
-        return ResponseEntity.ok("Nira backend is running Ã°Å¸Å¸Â¢");
+        return ResponseEntity.ok("Nira backend is running ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚Â¢");
     }
 }
 ```
@@ -950,24 +950,24 @@ mvn spring-boot:run
 Test it:
 ```bash
 curl http://localhost:8080/api/health
-# Expected: Nira backend is running Ã°Å¸Å¸Â¢
+# Expected: Nira backend is running ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚Â¢
 ```
 
-Ã¢Å“â€¦ Backend running.
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Backend running.
 
 ---
 
-# Ã°Å¸â€Â PART 5 Ã¢â‚¬â€ Auth: Register & Login with JWT
+# ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â PART 5 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Auth: Register & Login with JWT
 
 > **Status: Upcoming**
 
 JWT (JSON Web Token) is how the mobile app proves who the user is on every request. The flow:
-1. User registers or logs in Ã¢â€ â€™ backend returns a JWT token
+1. User registers or logs in ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ backend returns a JWT token
 2. App stores the token on the phone
 3. Every future API call includes the token in the header
 4. Backend validates the token before responding
 
-## Step 25 Ã¢â‚¬â€ Add JWT Dependency
+## Step 25 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Add JWT Dependency
 
 Add to `pom.xml`:
 ```xml
@@ -992,7 +992,7 @@ jwt.expiration=86400000
 
 ---
 
-## Step 26 Ã¢â‚¬â€ JWT Utility Class
+## Step 26 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â JWT Utility Class
 
 `src/main/java/com/nira/security/JwtUtil.java`:
 
@@ -1037,7 +1037,7 @@ public class JwtUtil {
 
 ---
 
-## Step 27 Ã¢â‚¬â€ Register and Login Endpoints
+## Step 27 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Register and Login Endpoints
 
 `src/main/java/com/nira/controller/AuthController.java`:
 
@@ -1076,17 +1076,17 @@ curl -X POST http://localhost:8080/api/auth/login \
   -d '{"email":"soham@nira.com","password":"hunter123"}'
 ```
 
-Ã¢Å“â€¦ Auth endpoints live.
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Auth endpoints live.
 
 ---
 
-# Ã°Å¸â€œÂ² PART 6 Ã¢â‚¬â€ Connecting the Mobile App to the Backend
+# ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€šÃ‚Â² PART 6 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Connecting the Mobile App to the Backend
 
 > **Status: Upcoming**
 
 The mobile app needs to call the Spring Boot APIs. We use **Axios** for HTTP requests and **AsyncStorage** to save the JWT token on the phone between sessions.
 
-## Step 28 Ã¢â‚¬â€ Install Axios and AsyncStorage
+## Step 28 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Install Axios and AsyncStorage
 
 ```bash
 npx expo install axios @react-native-async-storage/async-storage
@@ -1094,7 +1094,7 @@ npx expo install axios @react-native-async-storage/async-storage
 
 ---
 
-## Step 29 Ã¢â‚¬â€ Create the API Client
+## Step 29 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Create the API Client
 
 Create `src/api/client.js`:
 
@@ -1116,11 +1116,11 @@ client.interceptors.request.use(async (config) => {
 export default client;
 ```
 
-> Ã°Å¸â€™Â¡ `10.0.2.2` is a special Android emulator address. When the emulator wants to reach your PC's localhost, it uses `10.0.2.2` instead of `127.0.0.1`.
+> ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¡ `10.0.2.2` is a special Android emulator address. When the emulator wants to reach your PC's localhost, it uses `10.0.2.2` instead of `127.0.0.1`.
 
 ---
 
-## Step 30 Ã¢â‚¬â€ Build the Login Screen
+## Step 30 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Build the Login Screen
 
 Create `src/screens/LoginScreen.js` with:
 - Email and password text inputs
@@ -1130,16 +1130,16 @@ Create `src/screens/LoginScreen.js` with:
 
 ---
 
-## Step 31 Ã¢â‚¬â€ Build the Register Screen
+## Step 31 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Build the Register Screen
 
 Create `src/screens/RegisterScreen.js` with:
 - Name, email, password inputs
-- Register button Ã¢â€ â€™ `POST /api/auth/register`
+- Register button ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ `POST /api/auth/register`
 - Auto-login after successful registration
 
 ---
 
-## Step 32 Ã¢â‚¬â€ Auth Context (Share Login State)
+## Step 32 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Auth Context (Share Login State)
 
 Create `src/context/AuthContext.js`:
 
@@ -1174,7 +1174,7 @@ Wrap `App.js` in `<AuthProvider>`. Now every screen can call `useContext(AuthCon
 
 ---
 
-## Step 33 Ã¢â‚¬â€ Protect the Tab Navigator
+## Step 33 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Protect the Tab Navigator
 
 If no token exists, show the Login screen. If logged in, show the main app (tab navigator).
 
@@ -1185,17 +1185,17 @@ const { token } = useContext(AuthContext);
 return token ? <AppNavigator /> : <AuthNavigator />;
 ```
 
-Ã¢Å“â€¦ Mobile app connected to backend.
+ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Mobile app connected to backend.
 
 ---
 
-# Ã°Å¸Ââ€º PART 7 Ã¢â‚¬â€ Macro Tracker (Indian Food Database)
+# ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚Âº PART 7 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Macro Tracker (Indian Food Database)
 
 > **Status: Upcoming**
 
 The macro tracker is where Nira's Indian-first identity shows up most clearly. No more Googling "how much protein in 1 cup dal". Nira knows.
 
-## Step 34 Ã¢â‚¬â€ Meal Model in Spring Boot
+## Step 34 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Meal Model in Spring Boot
 
 ```java
 @Entity
@@ -1204,7 +1204,7 @@ public class Meal {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;          // "Masoor Dal", "Jowar Bhakri"
-    private String nameHindi;     // "Ã Â¤Â®Ã Â¤Â¸Ã Â¥â€šÃ Â¤Â° Ã Â¤Â¦Ã Â¤Â¾Ã Â¤Â²"
+    private String nameHindi;     // "ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â®ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¥ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â° ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¾ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â²"
     private String category;      // "dal", "roti", "rice", "sabji", "snack"
     private String region;        // "konkan", "punjabi", "south_indian", "general"
     private double caloriesPer100g;
@@ -1219,18 +1219,18 @@ public class Meal {
 
 ---
 
-## Step 35 Ã¢â‚¬â€ Seed the Indian Food Database
+## Step 35 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Seed the Indian Food Database
 
 Create a `data.sql` file in `src/main/resources/` with INSERT statements for 100+ Indian foods:
 
 ```sql
 INSERT INTO meals (name, name_hindi, category, region, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, serving_unit, typical_serving)
 VALUES
-('Masoor Dal',  'Ã Â¤Â®Ã Â¤Â¸Ã Â¥â€šÃ Â¤Â° Ã Â¤Â¦Ã Â¤Â¾Ã Â¤Â²',  'dal',   'general', 116, 9.0, 20.1, 0.4, 3.2, 'katori', 150),
-('Toor Dal',    'Ã Â¤Â¤Ã Â¥â€šÃ Â¤Â° Ã Â¤Â¦Ã Â¤Â¾Ã Â¤Â²',   'dal',   'general', 118, 8.4, 21.0, 0.5, 3.0, 'katori', 150),
-('Steamed Rice','Ã Â¤â€°Ã Â¤â€¢Ã Â¤Â¡Ã Â¤Â¾ Ã Â¤Â­Ã Â¤Â¾Ã Â¤Â¤',  'rice',  'general',  86, 1.8, 19.0, 0.1, 0.3, 'katori', 150),
-('Jowar Bhakri','Ã Â¤Å“Ã Â¥ÂÃ Â¤ÂµÃ Â¤Â¾Ã Â¤Â°Ã Â¥â‚¬ Ã Â¤Â­Ã Â¤Â¾Ã Â¤â€¢Ã Â¤Â°Ã Â¥â‚¬','roti', 'konkan',   85, 2.7, 17.1, 0.8, 1.2, 'piece',  60),
-('Chapati',     'Ã Â¤Å¡Ã Â¤ÂªÃ Â¤Â¾Ã Â¤Â¤Ã Â¥â‚¬',     'roti',  'general',  71, 2.7, 15.0, 0.4, 1.9, 'piece',  40),
+('Masoor Dal',  'ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â®ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¥ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â° ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¾ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â²',  'dal',   'general', 116, 9.0, 20.1, 0.4, 3.2, 'katori', 150),
+('Toor Dal',    'ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¤ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¥ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â° ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¾ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â²',   'dal',   'general', 118, 8.4, 21.0, 0.5, 3.0, 'katori', 150),
+('Steamed Rice','ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¾ ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â­ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¾ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¤',  'rice',  'general',  86, 1.8, 19.0, 0.1, 0.3, 'katori', 150),
+('Jowar Bhakri','ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¥Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚ÂµÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¾ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â°ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¥ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â­ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¾ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â°ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¥ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬','roti', 'konkan',   85, 2.7, 17.1, 0.8, 1.2, 'piece',  60),
+('Chapati',     'ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚ÂªÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¾ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¤Ãƒâ€šÃ‚Â¤ÃƒÆ’Ã‚Â Ãƒâ€šÃ‚Â¥ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬',     'roti',  'general',  71, 2.7, 15.0, 0.4, 1.9, 'piece',  40),
 -- ... 95 more rows
 ;
 ```
@@ -1239,7 +1239,7 @@ Start with staples: dal varieties, roti types, rice preparations, common sabzis.
 
 ---
 
-## Step 36 Ã¢â‚¬â€ Macro Search Endpoint
+## Step 36 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Macro Search Endpoint
 
 ```java
 @GetMapping("/meals/search")
@@ -1255,22 +1255,22 @@ public ResponseEntity<List<Meal>> byCategory(@PathVariable String category) {
 
 ---
 
-## Step 37 Ã¢â‚¬â€ Build the MacrosScreen UI
+## Step 37 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Build the MacrosScreen UI
 
 The MacrosScreen becomes a full tracker:
-- Search bar Ã¢â€ â€™ type "dal" Ã¢â€ â€™ shows all dal options
-- Tap a meal Ã¢â€ â€™ adds to today's log with a default serving size
+- Search bar ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ type "dal" ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ shows all dal options
+- Tap a meal ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ adds to today's log with a default serving size
 - Adjust serving size with a slider
 - Running total: Calories | Protein | Carbs | Fat
 - Daily goal progress bars (based on user's TDEE set in Profile)
 
 ---
 
-# Ã°Å¸Ââ€¹Ã¯Â¸Â PART 8 Ã¢â‚¬â€ Workout Logger
+# ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â PART 8 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Workout Logger
 
 > **Status: Upcoming**
 
-## Step 38 Ã¢â‚¬â€ Workout Models
+## Step 38 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Workout Models
 
 Two tables: `exercises` (the library) and `workout_logs` (what you did today).
 
@@ -1298,34 +1298,34 @@ public class WorkoutLog {
 
 ---
 
-## Step 39 Ã¢â‚¬â€ Workout Endpoints
+## Step 39 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Workout Endpoints
 
 ```
-GET  /api/exercises            Ã¢â€ â€™ full exercise library
+GET  /api/exercises            ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ full exercise library
 GET  /api/exercises?category=yoga
-POST /api/workouts/log         Ã¢â€ â€™ log today's exercise
-GET  /api/workouts/today       Ã¢â€ â€™ get today's logged exercises
-GET  /api/workouts/week        Ã¢â€ â€™ weekly summary
+POST /api/workouts/log         ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ log today's exercise
+GET  /api/workouts/today       ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ get today's logged exercises
+GET  /api/workouts/week        ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ weekly summary
 ```
 
 ---
 
-## Step 40 Ã¢â‚¬â€ Build the WorkoutScreen UI
+## Step 40 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Build the WorkoutScreen UI
 
 - Browse exercises by category (Strength, Cardio, Yoga, Flexibility)
-- Tap exercise Ã¢â€ â€™ log sets/reps
+- Tap exercise ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ log sets/reps
 - Today's workout summary at the top
 - XP reward shown on each exercise (completing a workout gives XP)
 
 ---
 
-# Ã°Å¸Â¤â€“ PART 9 Ã¢â‚¬â€ Python Flask AI Layer
+# ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚Â¤ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ PART 9 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Python Flask AI Layer
 
 > **Status: Upcoming**
 
-The AI layer is a separate microservice. Spring Boot calls it Ã¢â‚¬â€ the mobile app never talks to Flask directly. This keeps the AI layer isolated and swappable.
+The AI layer is a separate microservice. Spring Boot calls it ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the mobile app never talks to Flask directly. This keeps the AI layer isolated and swappable.
 
-## Step 41 Ã¢â‚¬â€ Set Up Python Environment
+## Step 41 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Set Up Python Environment
 
 ```bash
 cd nira-ai
@@ -1352,7 +1352,7 @@ Run: `python app.py`
 
 ---
 
-## Step 42 Ã¢â‚¬â€ Connect to Ollama
+## Step 42 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Connect to Ollama
 
 Install Ollama from **ollama.ai**. Pull a model:
 ```bash
@@ -1374,7 +1374,7 @@ def ask_ollama(prompt):
 
 ---
 
-## Step 43 Ã¢â‚¬â€ Meal Planner Endpoint
+## Step 43 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Meal Planner Endpoint
 
 ```python
 @app.route('/ai/meal-plan', methods=['POST'])
@@ -1400,7 +1400,7 @@ def meal_plan():
 
 ---
 
-## Step 44 Ã¢â‚¬â€ CBT Wellness Chatbot Endpoint
+## Step 44 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â CBT Wellness Chatbot Endpoint
 
 ```python
 @app.route('/ai/chat', methods=['POST'])
@@ -1421,7 +1421,7 @@ def chat():
 
 ---
 
-## Step 45 Ã¢â‚¬â€ Spring Boot Calls Flask
+## Step 45 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Spring Boot Calls Flask
 
 In Spring Boot, create an `AIService` that calls Flask:
 
@@ -1445,17 +1445,17 @@ public class AIService {
 }
 ```
 
-The mobile app calls Spring Boot (`/api/ai/meal-plan`) Ã¢â€ â€™ Spring Boot calls Flask Ã¢â€ â€™ Flask calls Ollama Ã¢â€ â€™ response flows back.
+The mobile app calls Spring Boot (`/api/ai/meal-plan`) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Spring Boot calls Flask ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Flask calls Ollama ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ response flows back.
 
 ---
 
-# Ã¢Å¡â€Ã¯Â¸Â PART 10 Ã¢â‚¬â€ Dynamic Quest Engine & Ranking
+# ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â PART 10 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Dynamic Quest Engine & Ranking
 
 > **Status: Upcoming**
 
-Right now quests are hardcoded in the mobile app. This milestone makes quests dynamic Ã¢â‚¬â€ generated by the backend based on your history, rank, and health goals.
+Right now quests are hardcoded in the mobile app. This milestone makes quests dynamic ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â generated by the backend based on your history, rank, and health goals.
 
-## Step 46 Ã¢â‚¬â€ Quest Model
+## Step 46 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Quest Model
 
 ```java
 @Entity
@@ -1481,7 +1481,7 @@ public class UserQuestLog {
 
 ---
 
-## Step 47 Ã¢â‚¬â€ Daily Quest Generation
+## Step 47 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Daily Quest Generation
 
 ```java
 @Scheduled(cron = "0 0 0 * * *")  // runs at midnight every day
@@ -1495,13 +1495,13 @@ public void generateDailyQuests() {
 ```
 
 Quest generation logic:
-- Pull user's current rank and weak areas (e.g. skipped workouts 3 days in a row Ã¢â€ â€™ more workout quests)
-- Higher rank Ã¢â€ â€™ harder quests + more XP
+- Pull user's current rank and weak areas (e.g. skipped workouts 3 days in a row ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ more workout quests)
+- Higher rank ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ harder quests + more XP
 - Mix of quest types each day (never 3 of the same type)
 
 ---
 
-## Step 48 Ã¢â‚¬â€ XP and Rank Calculation
+## Step 48 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â XP and Rank Calculation
 
 ```java
 public String calculateRank(int totalXp) {
@@ -1514,11 +1514,11 @@ public String calculateRank(int totalXp) {
 }
 ```
 
-When a quest is marked complete: add XP to user Ã¢â€ â€™ recalculate rank Ã¢â€ â€™ if rank changed, return a rank-up event to the mobile app Ã¢â€ â€™ show a celebration animation.
+When a quest is marked complete: add XP to user ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ recalculate rank ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ if rank changed, return a rank-up event to the mobile app ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ show a celebration animation.
 
 ---
 
-## Step 49 Ã¢â‚¬â€ Home Screen Pulls Live Quests
+## Step 49 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Home Screen Pulls Live Quests
 
 Update `HomeScreen.js` to fetch today's quests from the backend:
 
@@ -1536,11 +1536,11 @@ The hardcoded `DAILY_QUESTS` array is replaced with real data. Rank badge, XP, a
 
 ---
 
-# Ã°Å¸Å¡â‚¬ PART 11 Ã¢â‚¬â€ Deployment
+# ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â¡ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ PART 11 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Deployment
 
 > **Status: Upcoming**
 
-## Step 50 Ã¢â‚¬â€ Dockerize the Spring Boot Backend
+## Step 50 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Dockerize the Spring Boot Backend
 
 Create `nira-backend/Dockerfile`:
 ```dockerfile
@@ -1559,7 +1559,7 @@ docker run -p 8080:8080 nira-backend
 
 ---
 
-## Step 51 Ã¢â‚¬â€ Deploy to AWS EC2
+## Step 51 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Deploy to AWS EC2
 
 1. Launch an EC2 instance (Ubuntu 22.04, t3.micro for dev)
 2. Install Docker on the instance
@@ -1570,7 +1570,7 @@ docker run -p 8080:8080 nira-backend
 
 ---
 
-## Step 52 Ã¢â‚¬â€ Build the Android APK
+## Step 52 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Build the Android APK
 
 ```bash
 cd nira-mobile
@@ -1587,47 +1587,47 @@ Share the APK with test users via a direct download link.
 
 ---
 
-# Ã°Å¸Â§Â  Concepts You Learned Along the Way
+# ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚Â§Ãƒâ€šÃ‚Â  Concepts You Learned Along the Way
 
 | Concept | Plain English Explanation |
 |---|---|
-| `main` branch protection | Like a lock on production Ã¢â‚¬â€ forces code review before anything goes live |
+| `main` branch protection | Like a lock on production ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â forces code review before anything goes live |
 | `JAVA_HOME` | Tells every tool on your PC which Java installation to use |
-| User PATH vs System PATH | User PATH loads first Ã¢â‚¬â€ putting Java 17 here overrides system-wide defaults |
+| User PATH vs System PATH | User PATH loads first ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â putting Java 17 here overrides system-wide defaults |
 | `.gitkeep` | A dummy empty file so Git tracks otherwise-empty folders |
-| GitHub Flow | The simplest git strategy Ã¢â‚¬â€ feature Ã¢â€ â€™ dev Ã¢â€ â€™ main, all via PRs |
-| ADB | Android Debug Bridge Ã¢â‚¬â€ the tool that lets your PC communicate with Android devices |
+| GitHub Flow | The simplest git strategy ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â feature ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ dev ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ main, all via PRs |
+| ADB | Android Debug Bridge ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the tool that lets your PC communicate with Android devices |
 | `ANDROID_HOME` | Tells React Native where your Android SDK is installed |
-| AVD | Android Virtual Device Ã¢â‚¬â€ the emulator (virtual phone) running on your PC |
+| AVD | Android Virtual Device ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the emulator (virtual phone) running on your PC |
 | `npx` | Runs a Node package without installing it permanently |
-| `npx expo install` | Expo-aware package installer Ã¢â‚¬â€ always grabs the SDK-compatible version |
-| Metro Bundler | The JavaScript bundler for React Native Ã¢â‚¬â€ converts your code to run on Android/iOS |
-| `useState` | React hook Ã¢â‚¬â€ stores a value that, when changed, re-renders the screen |
+| `npx expo install` | Expo-aware package installer ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â always grabs the SDK-compatible version |
+| Metro Bundler | The JavaScript bundler for React Native ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â converts your code to run on Android/iOS |
+| `useState` | React hook ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â stores a value that, when changed, re-renders the screen |
 | `SafeAreaView` | Keeps content away from phone notches and status bars |
 | `NavigationContainer` | The root wrapper required by React Navigation |
-| `RestController` | Spring Boot annotation Ã¢â‚¬â€ marks a class as an HTTP API endpoint handler |
-| JWT | JSON Web Token Ã¢â‚¬â€ a signed string that proves who the user is on every API call |
-| `ddl-auto=update` | Spring JPA setting Ã¢â‚¬â€ auto-creates DB tables from your Java classes |
+| `RestController` | Spring Boot annotation ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â marks a class as an HTTP API endpoint handler |
+| JWT | JSON Web Token ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â a signed string that proves who the user is on every API call |
+| `ddl-auto=update` | Spring JPA setting ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â auto-creates DB tables from your Java classes |
 | `10.0.2.2` | Special Android emulator address that maps to your PC's localhost |
-| Context API | React pattern Ã¢â‚¬â€ share state (like login status) across all screens without prop drilling |
-| `@Scheduled` | Spring annotation Ã¢â‚¬â€ runs a method on a cron schedule (like daily quest generation) |
+| Context API | React pattern ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â share state (like login status) across all screens without prop drilling |
+| `@Scheduled` | Spring annotation ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â runs a method on a cron schedule (like daily quest generation) |
 
 ---
 
-# Ã°Å¸â€™Â¡ Decisions We Made and Why
+# ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Ãƒâ€šÃ‚Â¡ Decisions We Made and Why
 
 | Decision | Why |
 |---|---|
 | Java 17 over 21 or 25 | React Native + Spring Boot 3.x sweet spot. Most compatible, most stable. |
 | Temurin (Adoptium) over Oracle JDK | Free, open source, no license issues. Oracle JDK has commercial restrictions. |
-| Renamed Java 25 bin instead of uninstalling | Keeps Java 25 available if ever needed Ã¢â‚¬â€ just stops it from interfering. |
+| Renamed Java 25 bin instead of uninstalling | Keeps Java 25 available if ever needed ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â just stops it from interfering. |
 | Expo for React Native | Removes native config pain for a solo beginner. Managed builds, great tooling. |
-| Pixel 7 + API 34 emulator | Modern device, latest stable Android Ã¢â‚¬â€ matches real Indian user devices. |
+| Pixel 7 + API 34 emulator | Modern device, latest stable Android ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â matches real Indian user devices. |
 | GitHub Flow over Gitflow | Simpler. Less overhead. Perfect for a solo project. |
 | JavaScript over TypeScript | TypeScript adds cognitive overhead for a beginner. Add it once the app is stable. |
 | React Navigation over Expo Router | More beginner-friendly, better documentation, more StackOverflow answers. |
 | `src/` folder structure from day one | Prevents root-level chaos as the project grows. One decision now saves many later. |
-| Colors in a constants file | One source of truth for the theme Ã¢â‚¬â€ change once, updates everywhere. |
+| Colors in a constants file | One source of truth for the theme ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â change once, updates everywhere. |
 | Flask as separate AI microservice | Keeps AI isolated. Spring Boot stays focused on REST APIs. Swap the AI model anytime. |
 | Ollama (local LLM) for AI | No API costs during development. Run the model on your own machine. |
 | Indian food database seeded manually | Scraped generic food databases miss Indian context. We control the data. |
@@ -1636,9 +1636,7 @@ Share the APK with test users via a direct download link.
 
 ---
 
-*Last updated: 2026-05-29 - Phase 5 complete (Nutrition system live and tested)*
-*Done: Environment, mobile scaffold, Solo Leveling Home Screen, navigation*
-*Done: Spring Boot backend - User entity, register/login endpoints, JWT filter, PostgreSQL*
-*Done: Mobile auth - Login/Register screens, AuthContext, AsyncStorage, route protection*
-*Done: Nutrition system - 52 Indian foods, macro tracker, daily log, macro progress bars*
-*Next: Workout Logger - exercise library, log sets/reps, WorkoutScreen (Phase 6)*
+*Last updated: 2026-05-30 - Phase 9 complete (Water tracker, sleep log, voice reminders)*
+*Done: Phases 1-9 — env, mobile scaffold, backend, auth, macros, workout, habits, planner, reminders*
+*Done: Hindi/Marathi voice — expo-speech, 5 regional reminder phrases*
+*Next: Phase 10 - Python Flask AI Layer (meal planner + chatbot + habit insights)*
