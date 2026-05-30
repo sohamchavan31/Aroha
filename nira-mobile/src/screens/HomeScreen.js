@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Speech from 'expo-speech';
 import Colors from '../constants/colors';
+import client from '../api/client';
+import WellnessModal from '../components/WellnessModal';
 
 const DAILY_QUESTS = [
   { id: '1', title: 'Walk 5000 steps', xp: 50, icon: 'walk-outline' },
@@ -26,9 +29,37 @@ function getTodayDate() {
 
 export default function HomeScreen() {
   const [completedQuests, setCompletedQuests] = useState({});
+  const [water, setWater]           = useState({ glasses: 0, dailyGoal: 8 });
+  const [showWellness, setShowWellness] = useState(false);
   const streak = 1;
   const rank = 'E';
   const totalXP = 120;
+
+  const loadWater = useCallback(async () => {
+    try {
+      const { data } = await client.get('/wellness/water/today');
+      setWater({ glasses: data.glasses, dailyGoal: data.dailyGoal });
+    } catch {}
+  }, []);
+
+  useEffect(() => { loadWater(); }, [loadWater]);
+
+  async function addGlass() {
+    if (water.glasses >= water.dailyGoal) return;
+    setWater(prev => ({ ...prev, glasses: prev.glasses + 1 }));
+    try { await client.post('/wellness/water/add'); } catch {}
+  }
+
+  async function removeGlass() {
+    if (water.glasses <= 0) return;
+    setWater(prev => ({ ...prev, glasses: prev.glasses - 1 }));
+    try { await client.post('/wellness/water/remove'); } catch {}
+  }
+
+
+  function speakReminder() {
+    Speech.speak('Bhai, paani pi le!', { language: 'hi-IN', rate: 0.9 });
+  }
 
   function toggleQuest(id) {
     setCompletedQuests(prev => ({ ...prev, [id]: !prev[id] }));
@@ -70,6 +101,48 @@ export default function HomeScreen() {
             <Text style={styles.statValue}>{completedCount}/{DAILY_QUESTS.length}</Text>
             <Text style={styles.statLabel}>Quests Done</Text>
           </View>
+        </View>
+
+        {/* Water Tracker */}
+        <View style={styles.waterCard}>
+          <View style={styles.waterHeader}>
+            <View style={styles.waterTitleRow}>
+              <Ionicons name="water" size={16} color="#2E86AB" />
+              <Text style={styles.waterTitle}>Water Intake</Text>
+            </View>
+            <View style={styles.waterActions}>
+              <TouchableOpacity onPress={speakReminder} hitSlop={{ top:8,bottom:8,left:8,right:8 }}>
+                <Ionicons name="mic-outline" size={16} color={Colors.accentGold} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowWellness(true)} hitSlop={{ top:8,bottom:8,left:8,right:8 }}>
+                <Ionicons name="moon-outline" size={16} color={Colors.accentPurple} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.waterBody}>
+            {/* Remove */}
+            <TouchableOpacity onPress={removeGlass} style={styles.waterCtrlBtn} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
+              <Ionicons name="remove" size={20} color={Colors.textSub} />
+            </TouchableOpacity>
+
+            {/* Counter */}
+            <View style={styles.waterCounterBlock}>
+              <Text style={styles.waterGlasses}>{water.glasses}</Text>
+              <Text style={styles.waterGoalText}>/ {water.dailyGoal} glasses</Text>
+            </View>
+
+            {/* Add */}
+            <TouchableOpacity onPress={addGlass} style={[styles.waterCtrlBtn, styles.waterAddBtn]} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
+              <Ionicons name="add" size={20} color={Colors.background} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Progress bar */}
+          <View style={styles.waterTrack}>
+            <View style={[styles.waterFill, { width: `${Math.min((water.glasses / water.dailyGoal) * 100, 100)}%` }]} />
+          </View>
+          <Text style={styles.waterHint}>Goal set in Profile · Long press − to reset</Text>
         </View>
 
         {/* Daily Quests Section */}
@@ -137,6 +210,8 @@ export default function HomeScreen() {
 
         <View style={styles.bottomPad} />
       </ScrollView>
+
+      <WellnessModal visible={showWellness} onClose={() => setShowWellness(false)} />
     </SafeAreaView>
   );
 }
@@ -377,4 +452,58 @@ const styles = StyleSheet.create({
   bottomPad: {
     height: 20,
   },
+
+  // Water tracker
+  waterCard: {
+    backgroundColor: Colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    padding: 14,
+    marginBottom: 20,
+  },
+  waterHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  waterTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  waterTitle: { fontSize: 14, fontWeight: '700', color: Colors.text },
+  waterActions: { flexDirection: 'row', gap: 12 },
+  waterBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  waterCtrlBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  waterAddBtn: {
+    backgroundColor: '#2E86AB',
+    borderColor: '#2E86AB',
+  },
+  waterCounterBlock: { alignItems: 'center' },
+  waterGlasses: { fontSize: 32, fontWeight: '900', color: '#2E86AB' },
+  waterGoalText: { fontSize: 12, color: Colors.textSub, marginTop: 2 },
+  waterTrack: {
+    height: 6,
+    backgroundColor: Colors.cardBorder,
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  waterFill: {
+    height: '100%',
+    backgroundColor: '#2E86AB',
+    borderRadius: 3,
+  },
+  waterHint: { fontSize: 10, color: Colors.textMuted, textAlign: 'center' },
 });

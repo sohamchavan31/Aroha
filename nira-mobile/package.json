@@ -10,6 +10,8 @@
     "@react-navigation/stack": "^7.9.3",
     "axios": "^1.16.1",
     "expo": "~56.0.5",
+    "expo-notifications": "~56.0.15",
+    "expo-speech": "~56.0.3",
     "expo-status-bar": "~56.0.4",
     "react": "19.2.3",
     "react-native": "0.85.3",
