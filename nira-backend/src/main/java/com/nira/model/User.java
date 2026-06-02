@@ -47,9 +47,7 @@ public class User {
 
     private Integer waterGoalGlasses;
 
-    @Column(nullable = false)
-    @Builder.Default
-    private boolean profileComplete = false;
+    private Boolean profileComplete;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

@@ -11,7 +11,7 @@ const client = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Automatically attach JWT token to every request if one is stored
+// Attach JWT token to every request
 client.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('nira_token');
   if (token) {
@@ -19,5 +19,20 @@ client.interceptors.request.use(async (config) => {
   }
   return config;
 });
+
+// Auto-clear stale token on 401 (expired) or 403 (user deleted/not found)
+client.interceptors.response.use(
+  response => response,
+  async error => {
+    const status = error.response?.status;
+    if (status === 401 || status === 403) {
+      await AsyncStorage.removeItem('nira_token');
+      await AsyncStorage.removeItem('nira_user');
+      // Reloading the app bundle will cause RootNavigator to re-render
+      // and show the Login screen since token is now cleared
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default client;

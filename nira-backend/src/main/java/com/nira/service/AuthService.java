@@ -32,6 +32,7 @@ public class AuthService {
                 .rank("E")
                 .totalXp(0)
                 .streak(0)
+                .profileComplete(false)
                 .build();
 
         userRepository.save(user);
@@ -41,7 +42,7 @@ public class AuthService {
                 .name(user.getName())
                 .rank(user.getRank())
                 .totalXp(user.getTotalXp())
-                .profileComplete(user.isProfileComplete())
+                .profileComplete(user.getProfileComplete())
                 .build();
     }
 
@@ -58,7 +59,7 @@ public class AuthService {
                 .name(user.getName())
                 .rank(user.getRank())
                 .totalXp(user.getTotalXp())
-                .profileComplete(user.isProfileComplete())
+                .profileComplete(user.getProfileComplete())
                 .build();
     }
 }

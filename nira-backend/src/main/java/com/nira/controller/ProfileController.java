@@ -35,7 +35,7 @@ public class ProfileController {
         user.setHeightCm(request.getHeightCm());
         user.setHealthGoal(request.getHealthGoal());
         user.setWaterGoalGlasses(request.getWaterGoalGlasses() != null ? request.getWaterGoalGlasses() : 8);
-        user.setProfileComplete(true);
+        user.setProfileComplete(Boolean.TRUE);
 
         userRepository.save(user);
         return ResponseEntity.ok(buildProfile(user));
@@ -49,7 +49,7 @@ public class ProfileController {
         p.put("rank",             user.getRank());
         p.put("totalXp",          user.getTotalXp());
         p.put("streak",           user.getStreak());
-        p.put("profileComplete",  user.isProfileComplete());
+        p.put("profileComplete",  user.getProfileComplete());
         p.put("age",              user.getAge());
         p.put("weightKg",         user.getWeightKg());
         p.put("heightCm",         user.getHeightCm());

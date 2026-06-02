@@ -19,7 +19,7 @@ const HEALTH_GOALS = [
 const WATER_GOALS = [6, 7, 8, 10, 12];
 
 export default function OnboardingScreen({ onComplete }) {
-  const { user, login } = useAuth();
+  const { token, user, login } = useAuth();
   const [step, setStep]         = useState(1);
   const [age, setAge]           = useState('');
   const [weight, setWeight]     = useState('');
@@ -45,8 +45,11 @@ export default function OnboardingScreen({ onComplete }) {
       const heightCm = getHeightCm();
       if (!age || !weight) { setError('Fill in all fields.'); return; }
       if (heightUnit === 'cm' && !height) { setError('Fill in your height.'); return; }
-      if (heightUnit === 'ft' && !feet) { setError('Fill in your height.'); return; }
-      if (isNaN(age) || isNaN(weight) || isNaN(heightCm)) { setError('Enter valid numbers.'); return; }
+      if (heightUnit === 'ft' && !feet) { setError('Fill in your height in feet.'); return; }
+      if (isNaN(parseFloat(age)) || isNaN(parseFloat(weight)) || !heightCm || isNaN(heightCm) || heightCm < 50) {
+        setError('Check your values — height must be at least 50 cm.');
+        return;
+      }
       setStep(2);
     } else if (step === 2) {
       if (!healthGoal) { setError('Pick a goal.'); return; }
@@ -64,17 +67,15 @@ export default function OnboardingScreen({ onComplete }) {
         healthGoal,
         waterGoalGlasses: waterGoal,
       });
-      // Update stored user with profileComplete = true
-      const token = await import('@react-native-async-storage/async-storage')
-        .then(m => m.default.getItem('nira_token'));
       await login(token, {
         ...user,
         profileComplete: true,
         waterGoalGlasses: waterGoal,
       });
       onComplete();
-    } catch {
-      setError('Could not save. Try again.');
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || 'Could not save.';
+      setError(msg);
     } finally {
       setSaving(false);
     }
@@ -227,7 +228,7 @@ export default function OnboardingScreen({ onComplete }) {
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryKey}>Height</Text>
-                <Text style={styles.summaryVal}>{height} cm</Text>
+                <Text style={styles.summaryVal}>{getHeightCm() || '—'} cm</Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryKey}>Goal</Text>
