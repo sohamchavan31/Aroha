@@ -13,6 +13,7 @@ import * as Speech from 'expo-speech';
 import Colors from '../constants/colors';
 import client from '../api/client';
 import WellnessModal from '../components/WellnessModal';
+import ProfileScreen from './ProfileScreen';
 
 const DAILY_QUESTS = [
   { id: '1', title: 'Walk 5000 steps', xp: 50, icon: 'walk-outline' },
@@ -29,8 +30,9 @@ function getTodayDate() {
 
 export default function HomeScreen() {
   const [completedQuests, setCompletedQuests] = useState({});
-  const [water, setWater]           = useState({ glasses: 0, dailyGoal: 8 });
+  const [water, setWater]               = useState({ glasses: 0, dailyGoal: 8 });
   const [showWellness, setShowWellness] = useState(false);
+  const [showProfile, setShowProfile]   = useState(false);
   const streak = 1;
   const rank = 'E';
   const totalXP = 120;
@@ -78,10 +80,10 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>Ohayo, Hunter</Text>
             <Text style={styles.date}>{getTodayDate()}</Text>
           </View>
-          <View style={styles.rankBadge}>
+          <TouchableOpacity style={styles.rankBadge} onPress={() => setShowProfile(true)} activeOpacity={0.8}>
             <Text style={styles.rankLabel}>RANK</Text>
             <Text style={styles.rankText}>{rank}</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Streak + XP Row */}
@@ -212,6 +214,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       <WellnessModal visible={showWellness} onClose={() => setShowWellness(false)} />
+      <ProfileScreen visible={showProfile} onClose={() => setShowProfile(false)} />
     </SafeAreaView>
   );
 }

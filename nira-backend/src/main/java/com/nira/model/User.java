@@ -37,6 +37,20 @@ public class User {
     @Column(nullable = false)
     private int streak;
 
+    // ── Health profile (set during onboarding) ───────────────────────────────
+    private Integer age;
+    private Double weightKg;
+    private Double heightCm;
+
+    // lose_weight | gain_muscle | stay_fit | improve_flexibility
+    private String healthGoal;
+
+    private Integer waterGoalGlasses;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean profileComplete = false;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }

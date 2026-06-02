@@ -15,4 +15,5 @@ public class AuthResponse {
     private String name;
     private String rank;
     private int totalXp;
+    private boolean profileComplete;
 }
