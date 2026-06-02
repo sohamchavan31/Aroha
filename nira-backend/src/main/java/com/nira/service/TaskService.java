@@ -3,7 +3,6 @@ package com.nira.service;
 import com.nira.dto.TaskRequest;
 import com.nira.model.Task;
 import com.nira.model.User;
-import com.nira.repository.HabitLogRepository;
 import com.nira.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,7 +19,6 @@ import java.util.Map;
 public class TaskService {
 
     private final TaskRepository taskRepository;
-    private final HabitLogRepository habitLogRepository;
 
     public Task createTask(User user, TaskRequest request) {
         LocalDate date = request.getTaskDate() != null
@@ -64,29 +62,7 @@ public class TaskService {
         }
 
         task.setCompleted(!task.isCompleted());
-        final Task saved = taskRepository.save(task);
-
-        // If task is linked to a habit and was just completed, auto-toggle the habit for today
-        if (saved.isCompleted() && saved.getLinkedHabitId() != null) {
-            habitLogRepository.findByHabitIdAndLogDate(saved.getLinkedHabitId(), saved.getTaskDate())
-                    .ifPresentOrElse(
-                            log -> {
-                                log.setCompleted(true);
-                                habitLogRepository.save(log);
-                            },
-                            () -> {
-                                com.nira.model.HabitLog log = com.nira.model.HabitLog.builder()
-                                        .habitId(saved.getLinkedHabitId())
-                                        .userId(user.getId())
-                                        .logDate(saved.getTaskDate())
-                                        .completed(true)
-                                        .build();
-                                habitLogRepository.save(log);
-                            }
-                    );
-        }
-
-        return saved;
+        return taskRepository.save(task);
     }
 
     public void deleteTask(User user, Long taskId) {

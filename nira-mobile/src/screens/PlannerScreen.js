@@ -268,8 +268,8 @@ export default function PlannerScreen() {
           <ActivityIndicator color={Colors.accentGold} style={{ marginTop: 40 }} />
         ) : (
           <>
-            {/* ── Carry Forward Button (today only, if no tasks yet) ── */}
-            {isToday && tasks.length === 0 && (
+            {/* ── Carry Forward Button (always visible on today's view) ── */}
+            {isToday && (
               <TouchableOpacity style={styles.carryBtn} onPress={handleCarryForward}>
                 <Ionicons name="return-down-forward-outline" size={16} color={Colors.accentGold} />
                 <Text style={styles.carryBtnText}>Carry forward yesterday's tasks</Text>
