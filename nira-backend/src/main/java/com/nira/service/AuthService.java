@@ -41,6 +41,7 @@ public class AuthService {
                 .name(user.getName())
                 .rank(user.getRank())
                 .totalXp(user.getTotalXp())
+                .profileComplete(user.isProfileComplete())
                 .build();
     }
 
@@ -57,6 +58,7 @@ public class AuthService {
                 .name(user.getName())
                 .rank(user.getRank())
                 .totalXp(user.getTotalXp())
+                .profileComplete(user.isProfileComplete())
                 .build();
     }
 }
