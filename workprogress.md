@@ -1,196 +1,216 @@
-# Nira — Work Progress Log
+# Aroha — Work Progress Log
 
 **Stack:** React Native (Expo) | Spring Boot | Python Flask | PostgreSQL | MongoDB
-**Style:** Solo Leveling — daily quests, hunter ranks, intentional screen time
+**Identity:** AI-powered wellness evolution platform — grow physically, mentally, consistently
 **Dev:** Soham | Solo | 2–4 hrs/day
 
 ---
 
 ## Current Status
-> Phase 9 complete — Water tracker, sleep log, Hindi/Marathi voice reminders live.
-> Next: Phase 10 — Python Flask AI Layer (meal planner, chatbot, habit insights).
+> Rebrand Nira → Aroha COMPLETE (2026-06-04).
+> Next: Evolution Engine (Phase 11) — missions, EP, stages, health attributes.
 
 ---
 
-## What's Done ✅
+## Evolution System Reference
+
+| Old (Nira) | New (Aroha) |
+|---|---|
+| Hunter Rank E→S | Evolution Stage: Spark → Awakened → Ascender → Guardian → Titan → Apex → Legend |
+| XP | Evolution Points (EP) |
+| Daily Quests | Missions (Daily + Weekly) |
+| Streak counter | Consistency Score |
+| Rank badge | Health Attributes: Strength / Discipline / Recovery / Nutrition |
+
+**Evolution Stage EP Thresholds:**
+
+| Stage | EP Range |
+|---|---|
+| Spark | 0 – 999 |
+| Awakened | 1,000 – 2,999 |
+| Ascender | 3,000 – 5,999 |
+| Guardian | 6,000 – 10,999 |
+| Titan | 11,000 – 17,999 |
+| Apex | 18,000 – 27,999 |
+| Legend | 28,000+ |
+
+---
+
+## Rebrand Checklist — Nira → Aroha ✅ COMPLETE
+
+### GitHub
+- [ ] Rename repo Nira → Aroha on GitHub
+- [ ] Update repo description and About section
+- [ ] Update README.md — project name, vision, stack
+
+### Mobile (aroha-mobile/)
+- [x] Rename folder nira-mobile → aroha-mobile
+- [x] app.json — name: "Aroha", slug: "aroha"
+- [x] LoginScreen.js — "The Hunter's Path Begins Here" → "Your Evolution Begins Here"
+- [x] RegisterScreen.js — "NEW HUNTER" → "NEW MEMBER"
+- [x] OnboardingScreen.js — "Begin the Hunt" → "Begin Your Evolution"
+- [x] HomeScreen.js — "Daily Quests" → "Daily Missions"
+- [x] HomeScreen.js — XP → EP, Rank badge → Evolution Stage badge (SP/AW etc.)
+- [x] HomeScreen.js — "Rank Progress" → "Evolution Progress"
+- [x] ProfileScreen.js — "E RANK" → "Spark", "Total XP" → "Evolution Points"
+- [x] AuthContext.js — nira_token/nira_user → aroha_token/aroha_user
+- [x] LoginScreen.js / RegisterScreen.js — data.rank/totalXp → data.evolutionStage/evolutionPoints
+
+### Backend (aroha-backend/)
+- [x] Rename folder nira-backend → aroha-backend
+- [x] pom.xml — groupId: com.aroha, artifactId: aroha-backend
+- [x] Rename Java package com.nira → com.aroha across all files
+- [x] application.properties — DB: aroha_db, user: aroha_user, app name: aroha-backend
+- [x] User.java — rename rank → evolutionStage, totalXp → evolutionPoints
+- [x] AuthResponse.java — evolutionStage + evolutionPoints fields
+- [x] AuthService.java — new users start at "Spark" + 0 EP
+- [x] ProfileController.java — returns evolutionStage + evolutionPoints
+- [x] NiraBackendApplication.java → ArohaBackendApplication.java
+- [x] NiraBackendApplicationTests.java → ArohaBackendApplicationTests.java
+- [x] backend-ci.yml — paths updated to aroha-backend
+- [ ] PostgreSQL — create aroha_db + aroha_user, migrate data (manual step)
+
+### AI Service (aroha-ai/)
+- [x] Rename folder nira-ai → aroha-ai
+
+### Docs
+- [x] NIRA_DEV_JOURNEY.md → AROHA_DEV_JOURNEY.md
+- [x] workprogress.md updated
+
+---
+
+## What's Done
 
 | Area | What was built |
 |------|---------------|
-| Repo & Git | GitHub repo, branch protection on `main`, GitHub Flow (feature → dev → main) |
-| Environment | Java 17 (Temurin), Android Studio, Nira_Dev emulator (Pixel 7, API 34, x86_64) |
-| Mobile scaffold | Expo SDK 56, blank template, JavaScript (no TypeScript) |
-| Navigation | React Navigation v7, bottom tabs — Home / Macros / Workout / Profile |
-| Theme | `src/constants/colors.js` — Solo Leveling dark palette (black, gold, purple) |
-| Home Screen | Rank badge (E), greeting, streak counter, XP display, 3 daily quests (toggleable), rank progress bar E→D |
-| Placeholder screens | Macros, Workout, Profile — styled with dark theme, not blank |
-| App config | `app.json` — name "Nira", dark UI, black background |
-| Backend scaffold | Spring Boot 3.3, Java 17, Maven — pom.xml with web, security, JPA, validation, JWT, H2 for tests |
-| User entity | `User.java` → users table — email, bcrypt password, name, rank, totalXp, streak |
-| Auth endpoints | `POST /api/auth/register` (201) + `POST /api/auth/login` (200) — returns JWT token |
-| Health endpoint | `GET /api/health` — public, no auth required |
-| JWT security | `JwtUtil`, `JwtFilter`, `SecurityConfig` — stateless, Bearer token on every protected request |
-| Backend CI | `backend-ci.yml` — mvn verify on push/PR, H2 in-memory DB so no PostgreSQL needed in CI |
-| PostgreSQL | `nira_db` database live on local PostgreSQL 16, `nira_user` configured |
-| Auth screens | `LoginScreen.js` + `RegisterScreen.js` — Solo Leveling dark UI, gold buttons, form validation |
-| API client | `src/api/client.js` — Axios with auto JWT header interceptor, points to `10.0.2.2:8080` |
-| AuthContext | `src/context/AuthContext.js` — token + user state, persisted via AsyncStorage across sessions |
-| Route protection | `App.js` — gold spinner on launch, Login/Register if no token, tabs if logged in |
-| AuthNavigator | `src/navigation/AuthNavigator.js` — stack navigator for Login ↔ Register |
-| End-to-end auth | Register → Spring Boot → PostgreSQL → JWT → Home screen. Full flow tested and working. |
-| Meal entity | `Meal.java` → meals table — name, category, region, macros per 100g, serving unit + size |
-| Indian food DB | 52 foods seeded via `data.sql` — dals, rice, roti, sabzi, snacks, dairy, fruits, Konkan specials |
-| Meal endpoints | `GET /api/meals/search?q=`, `/category/{cat}`, `/all` |
-| DailyLog entity | `DailyLog.java` → daily_logs table — pre-calculated macros per entry for instant totals |
-| Daily log endpoints | `POST /api/logs`, `GET /api/logs/today`, `DELETE /api/logs/{id}` |
-| MacrosScreen | Full UI — search bar, meal results with macro preview, daily log list, calorie ring + macro progress bars |
-| Exercise library | 34 exercises seeded — strength, cardio, yoga, flexibility (Surya Namaskar included) |
-| WorkoutScreen | Category tabs, exercise list, log modal (sets/reps/weight), today's session summary |
-| Habit entity | `Habit.java` + `HabitLog.java` — userId, name, hex color, icon, daily completion log |
-| Habit endpoints | `POST/GET/DELETE /api/habits`, `POST /{id}/toggle?date=`, `GET /monthly` |
-| HabitScreen | Weekly grid (Sa-Fr), week navigation, checkbox cells, metrics table, progress chart (Day/Week/Month) |
-| Task entity | `Task.java` — title, date, optional time slot, completed, carriedForward, linkedHabitId |
-| Task endpoints | `POST/GET /api/tasks`, `PATCH /{id}/toggle`, `DELETE /{id}`, `POST /carry-forward` |
-| PlannerScreen | Date nav, stats bar, time-blocked schedule, to-do list, carry forward, FAB, time chip picker |
-| Navigation | 5 tabs icons-only — Home, Macros, Workout, Habits, Planner |
-| WaterLog entity | Daily water tracking — glasses count + goal per user per day |
-| SleepLog entity | Sleep time, wake time, quality rating (1-5), duration calculation |
-| Wellness endpoints | `GET/POST /api/wellness/water/today`, `/water/add`, `/water/remove`, `/sleep` |
-| Water widget | Home screen — large counter, +/- buttons, progress bar, mic button |
-| Hindi/Marathi voice | expo-speech — "Bhai, paani pi le!" + 4 more reminders in Hindi/Marathi |
-| WellnessModal | Sleep tab (time pickers, emoji quality), Voice tab (5 regional reminders) |
+| Repo & Git | GitHub repo, branch protection on main, GitHub Flow |
+| Environment | Java 17 (Temurin), Android Studio, emulator (Pixel 7, API 34, x86_64) |
+| Mobile scaffold | Expo SDK 56, blank template, JavaScript |
+| Navigation | React Navigation v7, 5 tabs icons-only — Home / Macros / Workout / Habits / Planner |
+| Theme | src/constants/colors.js — dark palette (black, gold, purple) |
+| Home Screen | Stage badge (SP), greeting, EP display, daily missions, evolution progress bar, water widget |
+| Backend scaffold | Spring Boot 3.3, Java 17, Maven — web, security, JPA, JWT, H2 for tests |
+| User entity | User.java — email, bcrypt password, name, evolutionStage, evolutionPoints, streak |
+| Auth endpoints | POST /api/auth/register + POST /api/auth/login — returns JWT |
+| JWT security | JwtUtil, JwtFilter, SecurityConfig — stateless Bearer token |
+| Backend CI | backend-ci.yml — mvn verify on push/PR |
+| Auth screens | LoginScreen.js + RegisterScreen.js — dark UI, gold buttons, validation |
+| API client | src/api/client.js — Axios with JWT interceptor |
+| AuthContext | aroha_token/aroha_user — AsyncStorage persistence across sessions |
+| End-to-end auth | Register → Spring Boot → PostgreSQL → JWT → Home. Working. |
+| Meal entity | Meal.java — name, category, region, macros per 100g, serving |
+| Indian food DB | 52 foods seeded — dals, rice, roti, sabzi, snacks, dairy, Konkan specials |
+| Meal endpoints | GET /api/meals/search?q=, /category/{cat}, /all |
+| DailyLog entity | daily_logs table — pre-calculated macros per entry |
+| Daily log endpoints | POST /api/logs, GET /api/logs/today, DELETE /api/logs/{id} |
+| MacrosScreen | Search, meal results, daily log, calorie ring, macro bars |
+| Exercise library | 34 exercises — strength, cardio, yoga, flexibility (Surya Namaskar included) |
+| WorkoutScreen | Category tabs, log modal (sets/reps/weight), today's session summary |
+| Habit entity | Habit.java + HabitLog.java — userId, name, color, icon, daily log |
+| Habit endpoints | POST/GET/DELETE /api/habits, toggle, monthly |
+| HabitScreen | Weekly grid, week nav, metrics table, chart (Day/Week/Month) |
+| Task entity | Task.java — title, date, time slot, completed, carriedForward |
+| Task endpoints | POST/GET/PATCH/DELETE tasks, carry-forward |
+| PlannerScreen | Date nav, stats bar, time-blocked schedule, to-do, carry forward, FAB |
+| WaterLog entity | Daily glasses count + goal per user |
+| SleepLog entity | Sleep/wake time, quality (1–5), duration |
+| Wellness endpoints | water today/add/remove, sleep |
+| Water widget | Home screen counter, +/- buttons, progress bar, voice mic |
+| Hindi/Marathi voice | expo-speech — 5 regional reminder phrases |
+| WellnessModal | Sleep tab + Voice tab |
+| User profile fields | age, weightKg, heightCm, healthGoal, waterGoalGlasses, profileComplete |
+| Profile endpoints | GET /api/profile (BMI + TDEE), PATCH /api/profile |
+| OnboardingScreen | 3-step: body stats → health goal → water goal → Begin Your Evolution |
+| ProfileScreen | Stage, EP, BMI grid, TDEE, health goal, logout |
+| Rebrand | Nira → Aroha — all folders, packages, UI strings, field names, storage keys |
 
 ---
 
-## What's Left (Ordered by Priority)
+## What's Left
 
-### Phase 3 — Spring Boot Backend ✅
-- [x] Initialize Spring Boot project
-- [x] Connect to PostgreSQL — `nira_db` running on PostgreSQL 16
-- [x] User entity + repository
-- [x] Health check endpoint
-- [x] JWT register + login endpoints
-- [x] JWT filter + security config
-
----
-
-### Phase 4 — Auth Flow (Mobile) ✅
-- [x] Build Register screen UI
-- [x] Build Login screen UI
-- [x] Install Axios for HTTP calls
-- [x] Store JWT token in AsyncStorage
-- [x] Create AuthContext to share login state across screens
-- [x] Protect tabs — redirect to login if not authenticated
-
----
-
-### Phase 5 — Nutrition System ✅
-- [x] Create Meal entity in Spring Boot
-- [x] Seed 52 Indian foods into PostgreSQL
-- [x] `GET /api/meals/search?q=` endpoint
-- [x] MacrosScreen — search + add meals + daily total display
-- [x] Daily macro summary with calorie ring + macro bars
-- [ ] Serving size modal on meal add — adjust grams/pieces before logging (like workout sets/reps modal)
-- [ ] Custom dish builder — user creates their own meal with custom macros
-- [ ] Indian food database expansion to 500+ items (Konkan cuisine priority)
-- [ ] Support non-standard quantities — "1 bowl", "half plate", user-defined units
-
----
-
-### Phase 6 — Workout System ✅
-- [x] Exercise + WorkoutLog entities in Spring Boot
-- [x] Exercise library — 34 exercises (strength, cardio, yoga, flexibility)
-- [x] WorkoutScreen — category tabs, log sets/reps/weight, today's session summary
-- [ ] Gym machine exercises — bench press, lat pulldown, leg press, cable rows, etc.
-- [ ] Muscle pressure visualization — AI-generated model showing which muscles activate per exercise
-- [ ] Exercise guide videos — animated/AI model demonstrating correct form
-- [ ] AI workout schedule generator — user inputs goal + days/week + gym/home → gets daily/weekly/monthly plan
-- [ ] Muscle variation selector — user picks 4/5/N exercises per muscle group per session
-- [ ] Rest timer between sets
-- [ ] Weekly workout summary + progress graph
-- [ ] Personal records tracker — track best weight/reps per exercise over time
-
----
-
-### Phase 7 — Habit & Routine System ✅
-- [x] Habit + HabitLog entities in Spring Boot
-- [x] HabitScreen — weekly grid (Sa-Fr), week navigation, checkbox cells
-- [x] Metrics table — Progress % / Done / Not Done for Day and Week
-- [x] Progress chart — Day/Week/Month tabs with bar chart
-- [x] Add habit modal — name, color picker, icon picker
-- [ ] Streak calculation per habit (future)
-- [ ] Insights screen — consistency analysis (future)
-- [ ] Link habits to planner auto-check (future)
-
----
-
-### Phase 8 — Planner & Productivity ✅
-- [x] Task entity — title, date, time slot, completed, carriedForward
-- [x] Daily planner screen — date navigation, time-blocked schedule, to-do list
-- [x] Add task modal — title + optional time slot picker
-- [x] Carry forward yesterday's incomplete tasks
-- [ ] Weekly scheduler view (future)
-- [ ] Auto-check linked habit when task completed (future — needs branch merge)
-
----
-
-### Phase 9 — Reminders & Recovery ✅
-- [x] Water tracker widget on Home screen — counter, +/-, progress bar
-- [x] Sleep log — sleep time, wake time, quality rating (1-5 emoji), duration
-- [x] Hindi/Marathi voice reminders — expo-speech, 5 phrases
-- [ ] Supplement reminder with scheduled notifications (needs dev build, not Expo Go)
-- [ ] Water goal set from Profile (Phase 12 — onboarding will ask this)
+### Phase 11 — Evolution Engine (NEXT)
+- [ ] Mission entity — title, type (daily/weekly), epReward, category
+- [ ] Daily mission generation based on user history + weak attributes
+- [ ] Weekly mission generation — bigger goals, bigger EP
+- [ ] EP award on mission completion → stage auto-advance
+- [ ] Consistency Score — 30-day rolling habit completion % replaces streak
+- [ ] Health Attributes — Strength, Discipline, Recovery, Nutrition (0–100)
+- [ ] Attribute update logic — missions contribute to relevant attribute
+- [ ] Evolution moment — stage-up celebration animation on mobile
+- [ ] Home screen pulls live missions from backend (replace hardcoded)
+- [ ] Achievements system (future)
+- [ ] Boss Battles — large monthly goals (future)
 
 ---
 
 ### Phase 10 — Python Flask AI Layer
-> AI meal planner + chatbot advisor + smart insights
-
-- [ ] Set up Python venv in `nira-ai/`
+- [ ] Set up Python venv in aroha-ai/
 - [ ] Flask boilerplate + Ollama connection
-- [ ] AI meal planner endpoint (`POST /ai/meal-plan`) — takes macros goal + region, returns Indian meal plan
-- [ ] AI fitness advisor chatbot (`POST /ai/chat`) — exercise advice, form tips, motivation
-- [ ] Habit & nutrition insights (`POST /ai/insights`) — pattern analysis from user data
-- [ ] Smart suggestions — "You skipped leg day 3 times, here's a home routine"
-- [ ] Spring Boot calls Flask via HTTP — all AI exposed through backend API
+- [ ] AI meal planner — POST /ai/meal-plan (macros + region → Indian meal plan)
+- [ ] AI fitness chatbot — POST /ai/chat (exercise advice, form tips, motivation)
+- [ ] Habit + nutrition insights — POST /ai/insights
+- [ ] Spring Boot calls Flask via HTTP
 
 ---
 
-### Phase 11 — Dynamic Quest Engine
-> Live quests from backend, XP system, rank progression
-
-- [ ] Quest model in Spring Boot
-- [ ] Daily quest generation based on user history + weak areas
-- [ ] XP system — complete quest → earn XP → rank up
-- [ ] Rank thresholds: E (0–999) → D (1000–2499) → C (2500–4999) → B (5000–9999) → A (10000+) → S
-- [ ] Streak persistence in PostgreSQL — reset if day missed
-- [ ] Rank-up animation/celebration on mobile
-- [ ] Home screen pulls live quests from backend (replace hardcoded)
+### Phase 5 (Remaining) — Nutrition
+- [ ] Serving size modal on meal add
+- [ ] Custom food builder with custom macros
+- [ ] Indian food DB → 500+ items (Konkan priority)
+- [ ] Meal templates — save common combos
+- [ ] Non-standard quantities (1 bowl, half plate)
 
 ---
 
-### Phase 12 — Profile, Onboarding & Health Stats
-- [ ] Onboarding flow — first launch collects: name, age, weight, height, health goal
-- [ ] BMI + TDEE calculator (Indian body composition context)
-- [ ] Profile screen — health stats, goal progress, rank history
-- [ ] Hindi/Marathi language toggle (i18n setup)
-- [ ] Settings screen — notifications, language, theme, account
+### Phase 6 (Remaining) — Workout
+- [ ] Gym machine exercises
+- [ ] Muscle visualization per exercise
+- [ ] Exercise form guide (animated demo)
+- [ ] AI workout schedule generator
+- [ ] Rest timer between sets
+- [ ] Weekly progress graph
+- [ ] Personal records (PR) tracker
 
 ---
 
-### Phase 13 — Offline-First Sync
-- [ ] Local SQLite storage via WatermelonDB or AsyncStorage
-- [ ] All core features work without internet
-- [ ] Background sync when connection restored
-- [ ] Privacy-first — sensitive data stays on device
+### Phase 7 (Remaining) — Habits
+- [ ] Consistency Score per habit
+- [ ] Streak freeze (earned via EP)
+- [ ] Monthly achievement badges
+- [ ] Habit insights screen
 
 ---
 
-### Phase 14 — Deployment (Nira v1.0)
-- [ ] Docker containerize Spring Boot backend
+### Phase 12 — Profile (Remaining)
+- [ ] Edit profile after onboarding
+- [ ] Health Attributes display (Strength / Discipline / Recovery / Nutrition)
+- [ ] Evolution history — log of stage-ups
+- [ ] Achievements wall
+- [ ] Hindi/Marathi language toggle
+- [ ] Settings screen
+
+---
+
+### Phase 13 — Offline-First
+- [ ] WatermelonDB or AsyncStorage local storage
+- [ ] All features work without internet
+- [ ] Background sync on reconnect
+
+---
+
+### Phase 14 — Website & Content Platform
+- [ ] Aroha website — wellness knowledge hub
+- [ ] Articles, guides, blogs (fitness, nutrition, recovery, habits)
+- [ ] AI-recommended articles based on behavior
+
+---
+
+### Phase 15 — Deployment (Aroha v1.0)
+- [ ] Docker containerize Spring Boot
 - [ ] Deploy to AWS EC2
 - [ ] PostgreSQL on RDS or EC2
-- [ ] Build release APK
-- [ ] Internal testing with physical Android device
+- [ ] Release APK build
+- [ ] Play Store setup
 
 ---
 
@@ -198,78 +218,38 @@
 
 | # | Milestone | Status |
 |---|-----------|--------|
-| 1 | Dev environment ready (Java 17, Android Studio, emulator) | ✅ Done |
-| 2 | React Native app scaffolded and running on emulator | ✅ Done |
-| 3 | Home screen — Solo Leveling UI with daily quests | ✅ Done |
-| 4 | Bottom tab navigation (Home, Macros, Workout, Profile) | ✅ Done |
-| 5 | Spring Boot backend scaffold + JWT auth | ✅ Done |
-| 6 | Auth flow — mobile login/register screens | ✅ Done |
-| 7 | Nutrition system — macro calculator + Indian food DB | ✅ Done |
-| 8 | Workout logger + exercise library | ✅ Done |
-| 9 | Habit tracker — weekly grid, metrics, chart | ✅ Done |
-| 10 | Planner + to-do + carry forward | ✅ Done |
-| 11 | Reminders — water tracker, sleep log, regional voice | ✅ Done |
-| 12 | Flask AI layer — meal planner + chatbot | ⏳ Next |
-| 13 | Dynamic quest engine (live from backend) | Pending |
-| 14 | Full deployment (EC2 + APK) | Pending |
+| 1 | Dev environment ready | Done |
+| 2 | React Native scaffold on emulator | Done |
+| 3 | Home screen — Evolution UI + missions | Done |
+| 4 | 5-tab navigation | Done |
+| 5 | Spring Boot + JWT auth | Done |
+| 6 | Auth flow — login/register | Done |
+| 7 | Nutrition — 52 Indian foods + macro tracker | Done |
+| 8 | Workout logger + 34 exercises | Done |
+| 9 | Habit tracker — weekly grid, metrics, chart | Done |
+| 10 | Planner — time-blocked + to-do + carry forward | Done |
+| 11 | Reminders — water, sleep, Hindi/Marathi voice | Done |
+| 12 | Profile + onboarding — BMI, TDEE, health goal | Done |
+| 13 | Rebrand Nira → Aroha (codebase + repo) | Done |
+| 14 | Evolution Engine — missions, EP, stages, attributes | Next |
+| 15 | Flask AI — meal planner, chatbot, insights | Pending |
+| 16 | Website + content platform | Pending |
+| 17 | Full deployment (EC2 + APK + Play Store) | Pending |
 
 ---
 
-## 🌍 Ecosystem Vision — Where Nira is Going
+## Ecosystem Vision
 
 ```
-Nira (wellness) + HealthBridge (medical) + IoT Layer
-         = India's own health super-app
+Aroha (wellness) + HealthBridge (medical) + IoT Layer
+         = India's own health evolution platform
 ```
 
-### 🏋️ Nira — Indian Wellness App (This Project)
-Core focus: nutrition, workouts, habits, AI coaching, mental wellness.
-The foundation everything else connects to.
+**Aroha** — AI wellness evolution app. Nutrition, workouts, habits, EP system, AI coaching.
 
-### 🏥 HealthBridge — AI Diagnostic Assistant (Future Project)
-Built for Soham's sister (upcoming doctor) and 2+ billion people
-without access to quality healthcare.
+**HealthBridge** — AI diagnostic assistant for underserved communities.
 
-**Features:**
-- Symptom checker with smart follow-up questions
-- Skin condition analysis (rashes, wounds, infections)
-- Eye disease detection (cataracts, diabetic retinopathy)
-- Medication info + drug interactions
-- First aid with videos/images
-- Connect to nearby clinics when online
-- Multi-language support (critical for rural India)
-
-**AI Models:**
-- Vision: MobileNetV3 / EfficientNet (image classification)
-- NLP: DistilBERT (symptom understanding)
-- Medical LLM: Fine-tuned LLaMA 3.2 1B
-
-**Shared with Nira:** User profile, AI health core, sync API
-
-### ⚡ IoT Layer — FitKonkan Hardware (Phase 3, Future)
-ESP32 sensors on gym equipment + smart home fitness devices.
-- Auto-log sets, reps, rest time from real equipment
-- Smart scale, water bottle, posture sensor, step counter
-- ESP32 → MQTT → Spring Boot → Nira app
-- LoRa for offline rural use (sync when connected)
-- Smart home: fan on during workout, motivational lights, voice reminders
-
-### 🧠 Shared AI Health Core
-```
-┌──────────────────────────────────────────────┐
-│              AI Health Core                   │
-│  Symptom Understanding (DistilBERT)           │
-│  Image Recognition (MobileNetV3)              │
-│  Nutrition AI (Macro + Deficiency Insights)   │
-│  Personalized Health Insights                 │
-└──────────────────────────────────────────────┘
-         ▲                        ▲
-    Nira App               HealthBridge
- (wellness)               (diagnostic)
-         └──────────┬───────────┘
-              Shared User Profile
-              Cloud / Offline Sync
-```
+**IoT Layer** — Smart fitness hardware (future). ESP32 sensors → auto-log workouts.
 
 ---
 
@@ -277,20 +257,21 @@ ESP32 sensors on gym equipment + smart home fitness devices.
 
 | Decision | Why |
 |---|---|
-| JavaScript over TypeScript | Less overhead for beginner. Add TS once app is stable. |
-| React Navigation over Expo Router | Simpler, better docs, more community answers. |
-| No IoT right now | Strong mobile-only app first. IoT layer added in Phase 3. |
-| Habit tracker as key feature | Differentiates Nira from generic fitness apps. Calendar grid = sticky feature. |
-| Regional language reminders | Indian cultural fit — Hindi/Marathi voice feels personal, not generic. |
-| Offline-first | Rural India, low connectivity areas. Privacy-first design. |
-| HealthBridge as separate app | Different use case (medical vs wellness). Shared AI core, separate UI. |
-| Flask as AI microservice | Isolated. Spring Boot stays clean. Swap AI models anytime. |
-| Ollama for local LLM | Zero API cost during development. Full privacy. |
+| Aroha over Nira | Unique, meaningful. Maori for love/compassion. Globally pronounceable. |
+| Evolution System | Original identity. Deeper than ranks. Attributes + stages + missions = real system. |
+| com.aroha | Clean, short, future-proof for Play Store. |
+| JavaScript not TypeScript | Less overhead for beginner. Add TS when stable. |
+| Flask AI microservice | Isolated from Spring Boot. Swap models freely. |
+| Ollama | Zero API cost in dev. Full privacy. |
+| Offline-first | Rural India, low connectivity. Privacy-first design. |
 
 ---
 
-_Updated: 2026-05-29 — Feature scope expanded. Full ecosystem vision documented._
+_Updated: 2026-06-04 — Rebrand Nira → Aroha complete. Evolution Engine is next._
 
 <!-- Session log -->
-<!-- 2026-05-28: Mobile scaffold + Solo Leveling Home Screen done. Backend scaffold + JWT done. -->
-<!-- 2026-05-29: Feature scope expanded — nutrition calculators, habit tracker grid, planner, reminders, regional voice, AI advisor, workout recorder, HealthBridge ecosystem, IoT vision documented. Auth flow (mobile) is immediate next step. -->
+<!-- 2026-05-28: Mobile scaffold + home screen + backend JWT done. -->
+<!-- 2026-05-29: Auth, nutrition, workout, habits, planner, reminders, profile all built. -->
+<!-- 2026-06-02: Phase 12 complete. Home PC setup done. -->
+<!-- 2026-06-04: Full rebrand Nira → Aroha. Evolution System designed. -->
+<!-- 2026-06-04: Rebrand executed in codebase — all packages, folders, UI strings, field names updated. -->

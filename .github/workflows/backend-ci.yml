@@ -6,13 +6,13 @@ on:
       - dev
       - 'feature/**'
     paths:
-      - 'nira-backend/**'
+      - 'aroha-backend/**'
   pull_request:
     branches:
       - dev
       - main
     paths:
-      - 'nira-backend/**'
+      - 'aroha-backend/**'
 
 jobs:
   build-and-test:
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: nira-backend
+        working-directory: aroha-backend
 
     steps:
       - name: Checkout code

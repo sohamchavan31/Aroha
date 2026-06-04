@@ -8,18 +8,18 @@ build/
 .env.local
 
 # ─── Java / Spring Boot ────────────────────────────
-nira-backend/target/
+aroha-backend/target/
 *.class
 *.jar
 *.war
-nira-backend/.env
+aroha-backend/.env
 
 # ─── Python / Flask ────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
-nira-ai/venv/
-nira-ai/.env
+aroha-ai/venv/
+aroha-ai/.env
 *.egg-info/
 
 # ─── OS & Editor ───────────────────────────────────
