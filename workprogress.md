@@ -190,7 +190,7 @@
 ### Phase 12 — Profile (In Progress)
 - [x] Edit profile after onboarding
 - [x] Health Attributes display (Strength / Discipline / Recovery / Nutrition)
-- [ ] Evolution history — log of stage-ups
+- [x] Evolution history — log of stage-ups
 - [ ] Achievements wall
 - [ ] Hindi/Marathi language toggle
 - [ ] Settings screen
