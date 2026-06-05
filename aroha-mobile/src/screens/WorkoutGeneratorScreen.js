@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  StatusBar, ActivityIndicator, Modal,
+  StatusBar, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,7 +31,7 @@ const WORKOUT_TYPES = [
 const MUSCLE_COLOR = {
   chest: '#E74C3C', shoulders: '#E74C3C', arms: '#E67E22',
   back: '#2E86AB',  legs: '#27AE60',      core: '#7B2FBE',
-  cardio: '#FF6B35', full_body: Colors.accentGold,
+  cardio: '#FF6B35', full_body: Colors.accentGold, custom: Colors.accentPurple,
 };
 
 function fmt(seconds) {
@@ -41,23 +41,27 @@ function fmt(seconds) {
 }
 
 // ── Session Screen ────────────────────────────────────────────────────────────
-function SessionScreen({ exercises, onFinish }) {
-  const [exIdx, setExIdx]         = useState(0);
-  const [setNum, setSetNum]       = useState(1);
-  const [phase, setPhase]         = useState('work');   // 'work' | 'rest' | 'done'
-  const [restLeft, setRestLeft]   = useState(0);
-  const [totalSecs, setTotalSecs] = useState(0);
-  const timerRef = useRef(null);
+function SessionScreen({ initialExercises, onFinish }) {
+  const [exerciseList, setExerciseList] = useState(initialExercises);
+  const [exIdx, setExIdx]               = useState(0);
+  const [setNum, setSetNum]             = useState(1);
+  const [phase, setPhase]               = useState('work');
+  const [restLeft, setRestLeft]         = useState(0);
+  const [totalSecs, setTotalSecs]       = useState(0);
 
-  const ex = exercises[exIdx];
+  // Custom exercise modal
+  const [showAddEx, setShowAddEx]       = useState(false);
+  const [customName, setCustomName]     = useState('');
+  const [customSets, setCustomSets]     = useState('3');
+  const [customReps, setCustomReps]     = useState('10');
+
+  const timerRef = useRef(null);
+  const ex = exerciseList[exIdx];
 
   const tick = useCallback(() => {
     setTotalSecs(t => t + 1);
     setRestLeft(r => {
-      if (r <= 1) {
-        setPhase('work');
-        return 0;
-      }
+      if (r <= 1) { setPhase('work'); return 0; }
       return r - 1;
     });
   }, []);
@@ -72,11 +76,11 @@ function SessionScreen({ exercises, onFinish }) {
       setSetNum(s => s + 1);
       setPhase('rest');
       setRestLeft(ex.restSeconds);
-    } else if (exIdx < exercises.length - 1) {
+    } else if (exIdx < exerciseList.length - 1) {
       setExIdx(i => i + 1);
       setSetNum(1);
       setPhase('rest');
-      setRestLeft(30); // 30s transition between exercises
+      setRestLeft(30);
     } else {
       clearInterval(timerRef.current);
       setPhase('done');
@@ -88,57 +92,173 @@ function SessionScreen({ exercises, onFinish }) {
     setPhase('work');
   }
 
+  function addCustomExercise() {
+    if (!customName.trim()) return;
+    const newEx = {
+      id: Date.now(),
+      name: customName.trim(),
+      sets: parseInt(customSets) || 3,
+      reps: parseInt(customReps) || 10,
+      restSeconds: 60,
+      muscleGroup: 'custom',
+      isCustom: true,
+    };
+    setExerciseList(list => [...list, newEx]);
+    setCustomName('');
+    setCustomSets('3');
+    setCustomReps('10');
+    setShowAddEx(false);
+  }
+
+  // ── Done screen ──
   if (phase === 'done') {
+    const totalSetsCompleted = exerciseList.reduce((sum, e) => sum + e.sets, 0);
+    const mins = Math.floor(totalSecs / 60);
     return (
       <View style={styles.doneScreen}>
         <Text style={styles.doneIcon}>🏆</Text>
         <Text style={styles.doneTitle}>Session Complete!</Text>
-        <Text style={styles.doneSub}>Total time: {fmt(totalSecs)}</Text>
-        <Text style={styles.doneSub}>{exercises.length} exercises · great work</Text>
-        <TouchableOpacity style={styles.doneBtn} onPress={onFinish} activeOpacity={0.8}>
-          <Text style={styles.doneBtnText}>Done</Text>
+
+        <View style={styles.doneStatsRow}>
+          <View style={styles.doneStat}>
+            <Text style={styles.doneStatValue}>{fmt(totalSecs)}</Text>
+            <Text style={styles.doneStatLabel}>Total Time</Text>
+          </View>
+          <View style={styles.doneStatDivider} />
+          <View style={styles.doneStat}>
+            <Text style={styles.doneStatValue}>{exerciseList.length}</Text>
+            <Text style={styles.doneStatLabel}>Exercises</Text>
+          </View>
+          <View style={styles.doneStatDivider} />
+          <View style={styles.doneStat}>
+            <Text style={styles.doneStatValue}>{totalSetsCompleted}</Text>
+            <Text style={styles.doneStatLabel}>Total Sets</Text>
+          </View>
+        </View>
+
+        <View style={styles.doneExList}>
+          {exerciseList.map((e, i) => (
+            <View key={e.id} style={styles.doneExRow}>
+              <Text style={styles.doneExNum}>{i + 1}</Text>
+              <Text style={styles.doneExName}>{e.name}</Text>
+              <Text style={styles.doneExSets}>{e.sets}×{e.reps}</Text>
+            </View>
+          ))}
+        </View>
+
+        <TouchableOpacity
+          style={styles.doneBtn}
+          onPress={() => onFinish({
+            totalSecs,
+            exercisesCompleted: exerciseList.length,
+            totalSets: totalSetsCompleted,
+            exerciseNames: exerciseList.map(e => e.name),
+          })}
+          activeOpacity={0.8}>
+          <Text style={styles.doneBtnText}>Finish & Save</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const progress = ((exIdx * ex.sets + setNum - 1) / (exercises.length * ex.sets)) * 100;
-  const muscleColor = MUSCLE_COLOR[ex.muscleGroup] || Colors.accentGold;
+  const progress = ((exIdx * (ex?.sets || 1) + setNum - 1) /
+    (exerciseList.length * (ex?.sets || 1))) * 100;
+  const muscleColor = MUSCLE_COLOR[ex?.muscleGroup] || Colors.accentGold;
 
   return (
     <View style={{ flex: 1 }}>
+      {/* Add custom exercise modal */}
+      <Modal visible={showAddEx} transparent animationType="slide" onRequestClose={() => setShowAddEx(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.addExOverlay}>
+          <View style={styles.addExSheet}>
+            <View style={styles.addExHeader}>
+              <Text style={styles.addExTitle}>Add Exercise</Text>
+              <TouchableOpacity onPress={() => setShowAddEx(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close" size={22} color={Colors.textSub} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.addExLabel}>Exercise Name</Text>
+            <TextInput
+              style={styles.addExInput}
+              value={customName}
+              onChangeText={setCustomName}
+              placeholder="e.g. Dumbbell Curl"
+              placeholderTextColor={Colors.textMuted}
+              autoFocus
+              autoCorrect={false}
+            />
+
+            <View style={styles.addExRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.addExLabel}>Sets</Text>
+                <TextInput
+                  style={styles.addExNumInput}
+                  value={customSets}
+                  onChangeText={setCustomSets}
+                  keyboardType="numeric"
+                  selectTextOnFocus
+                />
+              </View>
+              <View style={{ width: 16 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.addExLabel}>Reps</Text>
+                <TextInput
+                  style={styles.addExNumInput}
+                  value={customReps}
+                  onChangeText={setCustomReps}
+                  keyboardType="numeric"
+                  selectTextOnFocus
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.addExSaveBtn, !customName.trim() && { opacity: 0.4 }]}
+              onPress={addCustomExercise}
+              disabled={!customName.trim()}
+              activeOpacity={0.8}>
+              <Text style={styles.addExSaveBtnText}>Add to Session</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
       {/* Progress bar */}
       <View style={styles.sessionProgressTrack}>
-        <View style={[styles.sessionProgressFill, { width: `${progress}%` }]} />
+        <View style={[styles.sessionProgressFill, { width: `${Math.min(progress, 100)}%` }]} />
       </View>
 
-      {/* Exercise counter */}
       <Text style={styles.sessionExerciseCount}>
-        Exercise {exIdx + 1} of {exercises.length}
+        Exercise {exIdx + 1} of {exerciseList.length}
+        {exerciseList.some(e => e.isCustom) && ' (+custom)'}
       </Text>
 
       {/* Main content */}
       <View style={styles.sessionMain}>
         <View style={[styles.sessionCategoryChip, { backgroundColor: muscleColor + '22' }]}>
           <Text style={[styles.sessionCategoryText, { color: muscleColor }]}>
-            {ex.muscleGroup?.toUpperCase()}
+            {ex?.muscleGroup?.toUpperCase()}
           </Text>
         </View>
 
-        <Text style={styles.sessionExName}>{ex.name}</Text>
-        <Text style={styles.sessionSetInfo}>{ex.sets} sets × {ex.reps} reps</Text>
+        <Text style={styles.sessionExName}>{ex?.name}</Text>
+        <Text style={styles.sessionSetInfo}>{ex?.sets} sets × {ex?.reps} reps</Text>
 
         <View style={styles.sessionSetIndicator}>
-          {Array.from({ length: ex.sets }).map((_, i) => (
+          {Array.from({ length: ex?.sets || 1 }).map((_, i) => (
             <View
               key={i}
-              style={[styles.sessionSetDot, i < setNum - 1 && styles.sessionSetDotDone, i === setNum - 1 && styles.sessionSetDotActive]}
+              style={[
+                styles.sessionSetDot,
+                i < setNum - 1 && styles.sessionSetDotDone,
+                i === setNum - 1 && styles.sessionSetDotActive,
+              ]}
             />
           ))}
         </View>
-        <Text style={styles.sessionCurrentSet}>Set {setNum} of {ex.sets}</Text>
+        <Text style={styles.sessionCurrentSet}>Set {setNum} of {ex?.sets}</Text>
 
-        {/* Phase display */}
         {phase === 'rest' ? (
           <View style={styles.restBlock}>
             <Text style={styles.restLabel}>Rest</Text>
@@ -157,6 +277,12 @@ function SessionScreen({ exercises, onFinish }) {
       {/* Bottom controls */}
       <View style={styles.sessionBottom}>
         <Text style={styles.sessionTimer}>{fmt(totalSecs)}</Text>
+        <TouchableOpacity
+          style={styles.addExBtn}
+          onPress={() => setShowAddEx(true)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Ionicons name="add-circle-outline" size={24} color={Colors.textSub} />
+        </TouchableOpacity>
         {phase === 'work' && (
           <TouchableOpacity style={styles.markDoneBtn} onPress={markSetDone} activeOpacity={0.8}>
             <Ionicons name="checkmark-circle" size={22} color={Colors.background} />
@@ -170,12 +296,13 @@ function SessionScreen({ exercises, onFinish }) {
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
 export default function WorkoutGeneratorScreen({ visible, onClose }) {
-  const [step, setStep]               = useState(1);
-  const [duration, setDuration]       = useState(null);
-  const [workoutType, setWorkoutType] = useState(null);
-  const [plan, setPlan]               = useState(null);
-  const [loading, setLoading]         = useState(false);
+  const [step, setStep]                   = useState(1);
+  const [duration, setDuration]           = useState(null);
+  const [workoutType, setWorkoutType]     = useState(null);
+  const [plan, setPlan]                   = useState(null);
+  const [loading, setLoading]             = useState(false);
   const [sessionActive, setSessionActive] = useState(false);
+  const [saving, setSaving]               = useState(false);
 
   function reset() {
     setStep(1);
@@ -183,6 +310,7 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
     setWorkoutType(null);
     setPlan(null);
     setSessionActive(false);
+    setSaving(false);
   }
 
   async function generate() {
@@ -195,21 +323,39 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
       setPlan(data);
       setStep(3);
     } catch {
-      // Mock plan for offline dev
       setPlan({
         workoutType,
         requestedMinutes: duration,
         estimatedMinutes: duration - 2,
         exercises: [
-          { id: 1, name: 'Push-ups',       sets: 4, reps: 10, restSeconds: 90, muscleGroup: 'chest',     estimatedSeconds: 390 },
-          { id: 2, name: 'Pike Push-ups',  sets: 4, reps: 10, restSeconds: 90, muscleGroup: 'shoulders', estimatedSeconds: 390 },
-          { id: 3, name: 'Diamond Push-ups', sets: 3, reps: 10, restSeconds: 90, muscleGroup: 'arms',    estimatedSeconds: 300 },
-          { id: 4, name: 'Dips',           sets: 3, reps: 12, restSeconds: 90, muscleGroup: 'arms',      estimatedSeconds: 306 },
+          { id: 1, name: 'Push-ups',          sets: 4, reps: 10, restSeconds: 90, muscleGroup: 'chest',     estimatedSeconds: 390 },
+          { id: 2, name: 'Pike Push-ups',      sets: 4, reps: 10, restSeconds: 90, muscleGroup: 'shoulders', estimatedSeconds: 390 },
+          { id: 3, name: 'Diamond Push-ups',   sets: 3, reps: 10, restSeconds: 90, muscleGroup: 'arms',      estimatedSeconds: 300 },
+          { id: 4, name: 'Dips',               sets: 3, reps: 12, restSeconds: 90, muscleGroup: 'arms',      estimatedSeconds: 306 },
         ],
       });
       setStep(3);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSessionFinish(sessionData) {
+    setSaving(true);
+    try {
+      await client.post('/workout/sessions', {
+        workoutType:         plan.workoutType,
+        plannedMinutes:      duration,
+        actualSeconds:       sessionData.totalSecs,
+        exercisesCompleted:  sessionData.exercisesCompleted,
+        totalSets:           sessionData.totalSets,
+        exerciseNames:       sessionData.exerciseNames,
+      });
+    } catch {
+      // fail silently — session is already done, don't block the user
+    } finally {
+      reset();
+      onClose();
     }
   }
 
@@ -221,11 +367,14 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
         <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Session</Text>
-          <TouchableOpacity onPress={() => { reset(); onClose(); }} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
+          <TouchableOpacity onPress={() => { reset(); onClose(); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Ionicons name="close" size={24} color={Colors.textSub} />
           </TouchableOpacity>
         </View>
-        <SessionScreen exercises={plan.exercises} onFinish={() => { reset(); onClose(); }} />
+        {saving
+          ? <View style={styles.savingOverlay}><ActivityIndicator color={Colors.accentGold} size="large" /><Text style={styles.savingText}>Saving session…</Text></View>
+          : <SessionScreen initialExercises={plan.exercises} onFinish={handleSessionFinish} />
+        }
       </SafeAreaView>
     );
   }
@@ -234,11 +383,10 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
-      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           {step > 1 && (
-            <TouchableOpacity onPress={() => setStep(s => s - 1)} hitSlop={{ top:10,bottom:10,left:10,right:10 }} style={{ marginRight: 12 }}>
+            <TouchableOpacity onPress={() => setStep(s => s - 1)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={{ marginRight: 12 }}>
               <Ionicons name="chevron-back" size={22} color={Colors.textSub} />
             </TouchableOpacity>
           )}
@@ -246,12 +394,11 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
             {step === 1 ? 'Duration' : step === 2 ? 'Workout Type' : 'Your Workout'}
           </Text>
         </View>
-        <TouchableOpacity onPress={onClose} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
+        <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="close" size={24} color={Colors.textSub} />
         </TouchableOpacity>
       </View>
 
-      {/* Step indicator */}
       <View style={styles.stepRow}>
         {[1, 2, 3].map(s => (
           <View key={s} style={[styles.stepDot, step >= s && styles.stepDotActive]} />
@@ -270,8 +417,7 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
                   key={d.value}
                   style={[styles.durationBtn, duration === d.value && styles.durationBtnActive]}
                   onPress={() => setDuration(d.value)}
-                  activeOpacity={0.7}
-                >
+                  activeOpacity={0.7}>
                   <Text style={[styles.durationBtnText, duration === d.value && styles.durationBtnTextActive]}>
                     {d.label}
                   </Text>
@@ -282,8 +428,7 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
               style={[styles.nextBtn, !duration && styles.nextBtnDisabled]}
               onPress={() => duration && setStep(2)}
               disabled={!duration}
-              activeOpacity={0.8}
-            >
+              activeOpacity={0.8}>
               <Text style={styles.nextBtnText}>Next →</Text>
             </TouchableOpacity>
           </View>
@@ -299,8 +444,7 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
                   key={t.key}
                   style={[styles.typeCard, workoutType === t.key && styles.typeCardActive]}
                   onPress={() => setWorkoutType(t.key)}
-                  activeOpacity={0.7}
-                >
+                  activeOpacity={0.7}>
                   <Ionicons name={t.icon} size={24} color={workoutType === t.key ? Colors.accentGold : Colors.textSub} />
                   <Text style={[styles.typeCardLabel, workoutType === t.key && styles.typeCardLabelActive]}>{t.label}</Text>
                   <Text style={styles.typeCardDesc}>{t.desc}</Text>
@@ -311,8 +455,7 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
               style={[styles.nextBtn, (!workoutType || loading) && styles.nextBtnDisabled]}
               onPress={generate}
               disabled={!workoutType || loading}
-              activeOpacity={0.8}
-            >
+              activeOpacity={0.8}>
               {loading
                 ? <ActivityIndicator color={Colors.background} />
                 : <Text style={styles.nextBtnText}>Generate Workout ✦</Text>
@@ -343,9 +486,7 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
                     </Text>
                   </View>
                   <View style={[styles.previewChip, { backgroundColor: color + '22' }]}>
-                    <Text style={[styles.previewChipText, { color }]}>
-                      {ex.muscleGroup}
-                    </Text>
+                    <Text style={[styles.previewChipText, { color }]}>{ex.muscleGroup}</Text>
                   </View>
                 </View>
               );
@@ -354,8 +495,7 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
             <TouchableOpacity
               style={styles.startBtn}
               onPress={() => setSessionActive(true)}
-              activeOpacity={0.8}
-            >
+              activeOpacity={0.8}>
               <Ionicons name="play-circle" size={22} color={Colors.background} />
               <Text style={styles.startBtnText}>Start Session</Text>
             </TouchableOpacity>
@@ -378,17 +518,14 @@ const styles = StyleSheet.create({
   stepRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 8 },
   stepDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.cardBorder },
   stepDotActive: { backgroundColor: Colors.accentGold },
-
   stepHint: { fontSize: 14, color: Colors.textSub, textAlign: 'center', marginBottom: 24, marginTop: 8 },
 
-  // Duration
   durationGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 32 },
   durationBtn: { flex: 1, minWidth: '28%', backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: Colors.cardBorder, padding: 18, alignItems: 'center' },
   durationBtnActive: { borderColor: Colors.accentGold, backgroundColor: Colors.accentGold + '22' },
   durationBtnText: { fontSize: 15, fontWeight: '700', color: Colors.textSub },
   durationBtnTextActive: { color: Colors.accentGold },
 
-  // Workout type
   typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 32 },
   typeCard: { width: '47%', backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, alignItems: 'center', gap: 6 },
   typeCardActive: { borderColor: Colors.accentGold, backgroundColor: Colors.accentGold + '11' },
@@ -400,7 +537,6 @@ const styles = StyleSheet.create({
   nextBtnDisabled: { backgroundColor: Colors.card, borderWidth: 1, borderColor: Colors.cardBorder },
   nextBtnText: { fontSize: 15, fontWeight: '800', color: Colors.background },
 
-  // Plan preview
   planHeader: { alignItems: 'center', paddingVertical: 20 },
   planTitle: { fontSize: 22, fontWeight: '800', color: Colors.text, letterSpacing: 0.5 },
   planMeta:  { fontSize: 13, color: Colors.textSub, marginTop: 6 },
@@ -415,7 +551,7 @@ const styles = StyleSheet.create({
   startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: Colors.accentGold, borderRadius: 14, padding: 18, marginTop: 16 },
   startBtnText: { fontSize: 16, fontWeight: '800', color: Colors.background },
 
-  // Session screen
+  // Session
   sessionProgressTrack: { height: 4, backgroundColor: Colors.cardBorder },
   sessionProgressFill:  { height: 4, backgroundColor: Colors.accentGold },
   sessionExerciseCount: { fontSize: 12, color: Colors.textSub, textAlign: 'center', marginTop: 12, fontWeight: '600' },
@@ -426,7 +562,7 @@ const styles = StyleSheet.create({
   sessionSetInfo: { fontSize: 14, color: Colors.textSub, marginBottom: 20 },
   sessionSetIndicator: { flexDirection: 'row', gap: 10, marginBottom: 8 },
   sessionSetDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.cardBorder },
-  sessionSetDotDone: { backgroundColor: Colors.success },
+  sessionSetDotDone: { backgroundColor: '#27AE60' },
   sessionSetDotActive: { backgroundColor: Colors.accentGold, transform: [{ scale: 1.3 }] },
   sessionCurrentSet: { fontSize: 13, color: Colors.textSub, marginBottom: 28 },
   workBlock: { alignItems: 'center' },
@@ -438,14 +574,40 @@ const styles = StyleSheet.create({
   skipBtnText: { fontSize: 13, color: Colors.textSub, fontWeight: '600' },
   sessionBottom: { padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: Colors.cardBorder },
   sessionTimer: { fontSize: 20, fontWeight: '800', color: Colors.textSub, fontVariant: ['tabular-nums'] },
+  addExBtn: { padding: 4 },
   markDoneBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.accentGold, borderRadius: 14, paddingHorizontal: 24, paddingVertical: 14 },
   markDoneBtnText: { fontSize: 15, fontWeight: '800', color: Colors.background },
 
   // Done screen
-  doneScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 },
+  doneScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 16 },
   doneIcon:  { fontSize: 64 },
-  doneTitle: { fontSize: 28, fontWeight: '900', color: Colors.text },
-  doneSub:   { fontSize: 15, color: Colors.textSub },
-  doneBtn:   { backgroundColor: Colors.accentGold, borderRadius: 14, paddingHorizontal: 40, paddingVertical: 16, marginTop: 16 },
+  doneTitle: { fontSize: 26, fontWeight: '900', color: Colors.text },
+  doneStatsRow: { flexDirection: 'row', backgroundColor: Colors.card, borderRadius: 16, borderWidth: 1, borderColor: Colors.cardBorder, padding: 20, width: '100%' },
+  doneStat: { flex: 1, alignItems: 'center' },
+  doneStatValue: { fontSize: 20, fontWeight: '800', color: Colors.accentGold },
+  doneStatLabel: { fontSize: 11, color: Colors.textSub, marginTop: 4 },
+  doneStatDivider: { width: 1, backgroundColor: Colors.cardBorder, marginVertical: 4 },
+  doneExList: { width: '100%', maxHeight: 160, backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: Colors.cardBorder, overflow: 'hidden' },
+  doneExRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: Colors.cardBorder },
+  doneExNum: { fontSize: 12, fontWeight: '800', color: Colors.accentGold, width: 20 },
+  doneExName: { flex: 1, fontSize: 13, color: Colors.text, fontWeight: '500' },
+  doneExSets: { fontSize: 12, color: Colors.textSub },
+  doneBtn: { backgroundColor: Colors.accentGold, borderRadius: 14, paddingHorizontal: 40, paddingVertical: 16, marginTop: 8, width: '100%', alignItems: 'center' },
   doneBtnText: { fontSize: 16, fontWeight: '800', color: Colors.background },
+
+  // Saving overlay
+  savingOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
+  savingText: { fontSize: 15, color: Colors.textSub, fontWeight: '600' },
+
+  // Add exercise modal
+  addExOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
+  addExSheet: { backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  addExHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  addExTitle: { fontSize: 17, fontWeight: '700', color: Colors.text },
+  addExLabel: { fontSize: 12, color: Colors.textSub, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  addExInput: { backgroundColor: Colors.background, borderRadius: 10, borderWidth: 1, borderColor: Colors.cardBorder, color: Colors.text, fontSize: 15, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 16 },
+  addExRow: { flexDirection: 'row', marginBottom: 20 },
+  addExNumInput: { backgroundColor: Colors.background, borderRadius: 10, borderWidth: 1, borderColor: Colors.cardBorder, color: Colors.text, fontSize: 20, fontWeight: '700', textAlign: 'center', paddingVertical: 10 },
+  addExSaveBtn: { backgroundColor: Colors.accentGold, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  addExSaveBtnText: { fontSize: 15, fontWeight: '800', color: Colors.background },
 });
