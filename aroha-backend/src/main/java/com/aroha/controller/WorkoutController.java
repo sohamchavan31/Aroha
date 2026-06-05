@@ -1,4 +1,4 @@
-﻿package com.aroha.controller;
+package com.aroha.controller;
 
 import com.aroha.dto.WorkoutLogRequest;
 import com.aroha.model.Exercise;

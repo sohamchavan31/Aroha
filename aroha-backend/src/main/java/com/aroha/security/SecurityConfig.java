@@ -1,4 +1,4 @@
-﻿package com.aroha.security;
+package com.aroha.security;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

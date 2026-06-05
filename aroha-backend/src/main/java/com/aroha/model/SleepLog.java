@@ -1,4 +1,4 @@
-﻿package com.aroha.model;
+package com.aroha.model;
 
 import jakarta.persistence.*;
 import lombok.*;

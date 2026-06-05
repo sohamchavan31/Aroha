@@ -1,4 +1,4 @@
-﻿package com.aroha.repository;
+package com.aroha.repository;
 
 import com.aroha.model.SleepLog;
 import org.springframework.data.jpa.repository.JpaRepository;

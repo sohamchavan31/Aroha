@@ -1,4 +1,4 @@
-﻿package com.aroha.security;
+package com.aroha.security;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
