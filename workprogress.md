@@ -149,13 +149,15 @@
 
 ---
 
-### Phase 10 — Python Flask AI Layer
-- [ ] Set up Python venv in aroha-ai/
-- [ ] Flask boilerplate + Ollama connection
-- [ ] AI meal planner — POST /ai/meal-plan (macros + region → Indian meal plan)
-- [ ] AI fitness chatbot — POST /ai/chat (exercise advice, form tips, motivation)
-- [ ] Habit + nutrition insights — POST /ai/insights
-- [ ] Spring Boot calls Flask via HTTP
+### Phase 10 — Python Flask AI Layer (In Progress)
+- [ ] Set up Python venv in aroha-ai/ (manual — run setup commands below)
+- [x] Flask boilerplate + Ollama connection (app.py, services/ollama.py)
+- [x] AI meal planner — POST /ai/meal-plan (macros + region → Indian meal plan)
+- [x] AI fitness chatbot — POST /ai/chat (exercise advice, form tips, motivation)
+- [x] Habit + nutrition insights — POST /ai/insights
+- [x] Spring Boot calls Flask via HTTP (AiService + AiController)
+- [ ] Mobile UI — AI chat screen
+- [ ] Mobile UI — AI meal plan screen
 
 ---
 
