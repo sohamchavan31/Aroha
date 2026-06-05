@@ -9,6 +9,8 @@ public interface ExerciseRepository extends JpaRepository<Exercise, Long> {
 
     List<Exercise> findByCategory(String category);
 
+    List<Exercise> findByCategoryIn(List<String> categories);
+
     List<Exercise> findByEquipment(String equipment);
 
     List<Exercise> findByNameContainingIgnoreCase(String name);

@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/colors';
 import client from '../api/client';
+import WorkoutGeneratorScreen from './WorkoutGeneratorScreen';
 
 const CATEGORIES = [
   { key: 'all',         label: 'All',         icon: 'grid-outline' },
@@ -93,8 +94,9 @@ export default function WorkoutScreen() {
   const [todayLog, setTodayLog]         = useState([]);
   const [stats, setStats]               = useState({ exerciseCount: 0, totalSets: 0, totalReps: 0 });
   const [loading, setLoading]           = useState(true);
-  const [selected, setSelected]         = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [selected, setSelected]           = useState(null);
+  const [modalVisible, setModalVisible]   = useState(false);
+  const [showGenerator, setShowGenerator] = useState(false);
 
   const loadExercises = useCallback(async () => {
     try {
@@ -165,6 +167,10 @@ export default function WorkoutScreen() {
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>Workout Logger</Text>
+              <TouchableOpacity style={styles.generateBtn} onPress={() => setShowGenerator(true)} activeOpacity={0.8}>
+                <Ionicons name="flash-outline" size={15} color={Colors.background} />
+                <Text style={styles.generateBtnText}>Generate</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Today stats */}
@@ -258,6 +264,10 @@ export default function WorkoutScreen() {
         onClose={() => setModalVisible(false)}
         onSave={saveLog}
       />
+
+      <Modal visible={showGenerator} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowGenerator(false)}>
+        <WorkoutGeneratorScreen visible={showGenerator} onClose={() => setShowGenerator(false)} />
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -266,7 +276,9 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
   list: { flex: 1, paddingHorizontal: 20 },
 
-  header: { marginTop: 20, marginBottom: 16 },
+  header: { marginTop: 20, marginBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  generateBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.accentGold, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  generateBtnText: { fontSize: 13, fontWeight: '800', color: Colors.background },
   title: { fontSize: 22, fontWeight: '700', color: Colors.text },
 
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
