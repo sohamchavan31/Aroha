@@ -16,6 +16,7 @@ import Colors from '../constants/colors';
 import client from '../api/client';
 import WellnessModal from '../components/WellnessModal';
 import ProfileScreen from './ProfileScreen';
+import AiScreen from './AiScreen';
 import { useLanguage } from '../context/LanguageContext';
 
 function getTodayDate() {
@@ -49,6 +50,7 @@ export default function HomeScreen() {
   const [water, setWater]               = useState({ glasses: 0, dailyGoal: 8 });
   const [showWellness, setShowWellness] = useState(false);
   const [showProfile, setShowProfile]   = useState(false);
+  const [showAi, setShowAi]             = useState(false);
   const [stageUp, setStageUp]           = useState(null); // { oldStage, newStage }
   const [userEP, setUserEP]             = useState(0);
   const [userStage, setUserStage]       = useState('Spark');
@@ -151,6 +153,15 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>Ohayo, Warrior</Text>
             <Text style={styles.date}>{getTodayDate()}</Text>
           </View>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.aiBtn}
+              onPress={() => setShowAi(true)}
+              activeOpacity={0.8}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="sparkles" size={18} color={Colors.accentGold} />
+            </TouchableOpacity>
           <TouchableOpacity
             style={[styles.stageBadge, { backgroundColor: stageColor + '22', borderColor: stageColor }]}
             onPress={() => setShowProfile(true)}
@@ -159,6 +170,7 @@ export default function HomeScreen() {
             <Text style={[styles.stageLabel, { color: stageColor }]}>STAGE</Text>
             <Text style={[styles.stageText, { color: stageColor }]}>{userStage}</Text>
           </TouchableOpacity>
+          </View>
         </View>
 
         {/* Streak + EP Row */}
@@ -289,6 +301,9 @@ export default function HomeScreen() {
 
       <WellnessModal visible={showWellness} onClose={() => setShowWellness(false)} />
       <ProfileScreen visible={showProfile} onClose={() => setShowProfile(false)} />
+      <Modal visible={showAi} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowAi(false)}>
+        <AiScreen visible={showAi} onClose={() => setShowAi(false)} />
+      </Modal>
 
       {/* Stage-up Celebration Modal */}
       <Modal visible={!!stageUp} transparent animationType="fade">
@@ -321,8 +336,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'flex-start', marginTop: 20, marginBottom: 24,
   },
-  greeting: { fontSize: 24, fontWeight: '700', color: Colors.text, letterSpacing: 0.5 },
-  date:     { fontSize: 13, color: Colors.textSub, marginTop: 4 },
+  greeting:    { fontSize: 24, fontWeight: '700', color: Colors.text, letterSpacing: 0.5 },
+  date:        { fontSize: 13, color: Colors.textSub, marginTop: 4 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  aiBtn:       { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.accentGold + '22', borderWidth: 1, borderColor: Colors.accentGold + '55', alignItems: 'center', justifyContent: 'center' },
   stageBadge: {
     borderRadius: 12, borderWidth: 1,
     paddingHorizontal: 14, paddingVertical: 8, alignItems: 'center',
