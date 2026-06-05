@@ -35,8 +35,9 @@ function StatBox({ label, value, unit, color }) {
 
 export default function ProfileScreen({ visible, onClose }) {
   const { user, logout } = useAuth();
-  const [profile, setProfile]   = useState(null);
-  const [loading, setLoading]   = useState(true);
+  const [profile, setProfile]       = useState(null);
+  const [loading, setLoading]       = useState(true);
+  const [evoHistory, setEvoHistory] = useState([]);
   const [editing, setEditing]       = useState(false);
   const [saving, setSaving]         = useState(false);
   const [heightUnit, setHeightUnit] = useState('cm');
@@ -52,8 +53,12 @@ export default function ProfileScreen({ visible, onClose }) {
   async function loadProfile() {
     setLoading(true);
     try {
-      const { data } = await client.get('/profile');
-      setProfile(data);
+      const [profileRes, historyRes] = await Promise.all([
+        client.get('/profile'),
+        client.get('/evolution/history'),
+      ]);
+      setProfile(profileRes.data);
+      setEvoHistory(historyRes.data ?? []);
     } catch {
       Alert.alert('Error', 'Could not load profile.');
     } finally {
@@ -357,6 +362,30 @@ export default function ProfileScreen({ visible, onClose }) {
               })}
             </View>
 
+            {/* Evolution History */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Evolution History</Text>
+              {evoHistory.length === 0 ? (
+                <Text style={styles.evoEmpty}>No stage-ups yet. Keep completing missions!</Text>
+              ) : (
+                evoHistory.map(entry => {
+                  const date = new Date(entry.stagedUpAt);
+                  const label = `${date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+                  return (
+                    <View key={entry.id} style={styles.evoRow}>
+                      <View style={styles.evoDot} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.evoStages}>
+                          {entry.fromStage} <Text style={styles.evoArrow}>→</Text> {entry.toStage}
+                        </Text>
+                        <Text style={styles.evoMeta}>{label} · {entry.epAtStageUp} EP</Text>
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+
             {/* Water Goal */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Daily Water Goal</Text>
@@ -414,6 +443,13 @@ const styles = StyleSheet.create({
   goalRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   goalDot: { width: 10, height: 10, borderRadius: 5 },
   goalText: { fontSize: 15, fontWeight: '700' },
+
+  evoEmpty: { fontSize: 13, color: Colors.textMuted, fontStyle: 'italic', textAlign: 'center', paddingVertical: 8 },
+  evoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
+  evoDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.accentGold, marginTop: 5 },
+  evoStages: { fontSize: 14, fontWeight: '700', color: Colors.text },
+  evoArrow: { color: Colors.accentGold },
+  evoMeta: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
 
   attrRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   attrLabel: { fontSize: 12, fontWeight: '600', color: Colors.textSub, width: 72 },

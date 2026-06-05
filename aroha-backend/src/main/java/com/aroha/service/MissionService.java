@@ -2,8 +2,10 @@ package com.aroha.service;
 
 import com.aroha.dto.CompleteResponse;
 import com.aroha.dto.MissionResponse;
+import com.aroha.model.EvolutionLog;
 import com.aroha.model.Mission;
 import com.aroha.model.User;
+import com.aroha.repository.EvolutionLogRepository;
 import com.aroha.repository.HabitLogRepository;
 import com.aroha.repository.MissionRepository;
 import com.aroha.repository.UserRepository;
@@ -26,6 +28,7 @@ public class MissionService {
     private final MissionRepository missionRepository;
     private final UserRepository userRepository;
     private final HabitLogRepository habitLogRepository;
+    private final EvolutionLogRepository evolutionLogRepository;
 
     // ── EP thresholds ────────────────────────────────────────────────────────
     private static final int[] EP_THRESHOLDS = {0, 1000, 3000, 6000, 11000, 18000, 28000};
@@ -105,6 +108,16 @@ public class MissionService {
         userRepository.save(user);
 
         boolean stagedUp = !oldStage.equals(newStage);
+
+        if (stagedUp) {
+            evolutionLogRepository.save(EvolutionLog.builder()
+                    .userId(user.getId())
+                    .fromStage(oldStage)
+                    .toStage(newStage)
+                    .epAtStageUp(user.getEvolutionPoints())
+                    .stagedUpAt(LocalDateTime.now())
+                    .build());
+        }
 
         return CompleteResponse.builder()
                 .missionId(missionId)
