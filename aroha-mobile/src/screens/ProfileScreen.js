@@ -8,12 +8,14 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/colors';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import SettingsScreen from './SettingsScreen';
+import { useLanguage } from '../context/LanguageContext';
 
-const GOAL_LABELS = {
-  lose_weight:         'Lose Weight',
-  gain_muscle:         'Gain Muscle',
-  stay_fit:            'Stay Fit',
-  improve_flexibility: 'Improve Flexibility',
+const GOAL_KEYS = {
+  lose_weight:         'loseWeight',
+  gain_muscle:         'gainMuscle',
+  stay_fit:            'stayFit',
+  improve_flexibility: 'improveFlexibility',
 };
 
 const GOAL_COLORS = {
@@ -35,11 +37,13 @@ function StatBox({ label, value, unit, color }) {
 
 export default function ProfileScreen({ visible, onClose }) {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const [profile, setProfile]       = useState(null);
   const [loading, setLoading]       = useState(true);
   const [evoHistory, setEvoHistory] = useState([]);
-  const [editing, setEditing]       = useState(false);
-  const [saving, setSaving]         = useState(false);
+  const [editing, setEditing]         = useState(false);
+  const [saving, setSaving]           = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [heightUnit, setHeightUnit] = useState('cm');
 
   const [form, setForm] = useState({
@@ -138,12 +142,17 @@ export default function ProfileScreen({ visible, onClose }) {
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>{editing ? 'Edit Profile' : 'Profile'}</Text>
+          <Text style={styles.headerTitle}>{editing ? t('editProfile') : t('profile')}</Text>
           <View style={styles.headerRight}>
             {!editing && !loading && (
-              <TouchableOpacity onPress={openEdit} hitSlop={{ top:10,bottom:10,left:10,right:10 }} style={{ marginRight: 16 }}>
-                <Ionicons name="pencil-outline" size={20} color={Colors.accentGold} />
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity onPress={openEdit} hitSlop={{ top:10,bottom:10,left:10,right:10 }} style={{ marginRight: 16 }}>
+                  <Ionicons name="pencil-outline" size={20} color={Colors.accentGold} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowSettings(true)} hitSlop={{ top:10,bottom:10,left:10,right:10 }} style={{ marginRight: 16 }}>
+                  <Ionicons name="settings-outline" size={20} color={Colors.textSub} />
+                </TouchableOpacity>
+              </>
             )}
             <TouchableOpacity onPress={editing ? () => setEditing(false) : onClose} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
               <Ionicons name="close" size={24} color={Colors.textSub} />
@@ -249,7 +258,8 @@ export default function ProfileScreen({ visible, onClose }) {
 
             <Text style={styles.editSection}>Health Goal</Text>
             <View style={styles.goalGrid}>
-              {Object.entries(GOAL_LABELS).map(([key, label]) => {
+              {Object.entries(GOAL_KEYS).map(([key, labelKey]) => {
+              const label = t(labelKey);
                 const selected = form.healthGoal === key;
                 const color = GOAL_COLORS[key];
                 return (
@@ -267,7 +277,7 @@ export default function ProfileScreen({ visible, onClose }) {
             <TouchableOpacity style={styles.saveBtn} onPress={saveEdit} disabled={saving} activeOpacity={0.8}>
               {saving
                 ? <ActivityIndicator color={Colors.background} />
-                : <Text style={styles.saveBtnText}>Save Changes</Text>
+                : <Text style={styles.saveBtnText}>{t('save')}</Text>
               }
             </TouchableOpacity>
 
@@ -292,22 +302,22 @@ export default function ProfileScreen({ visible, onClose }) {
             <View style={styles.xpRow}>
               <View style={styles.xpCard}>
                 <Text style={styles.xpValue}>{profile?.evolutionPoints ?? 0}</Text>
-                <Text style={styles.xpLabel}>Evolution Points</Text>
+                <Text style={styles.xpLabel}>{t('evolutionPoints')}</Text>
               </View>
               <View style={styles.xpCard}>
                 <Text style={styles.xpValue}>{profile?.streak ?? 0}</Text>
-                <Text style={styles.xpLabel}>Day Streak</Text>
+                <Text style={styles.xpLabel}>{t('dayStreak')}</Text>
               </View>
             </View>
 
             {/* Health Stats */}
             {profile?.weightKg && (
               <View style={styles.card}>
-                <Text style={styles.cardTitle}>Body Stats</Text>
+                <Text style={styles.cardTitle}>{t('bodyStats')}</Text>
                 <View style={styles.statsGrid}>
-                  <StatBox label="Weight" value={profile.weightKg} unit="kg" />
-                  <StatBox label="Height" value={profile.heightCm} unit="cm" />
-                  <StatBox label="Age"    value={profile.age}      unit="yrs" />
+                  <StatBox label={t('weight')} value={profile.weightKg} unit="kg" />
+                  <StatBox label={t('height')} value={profile.heightCm} unit="cm" />
+                  <StatBox label={t('age')}    value={profile.age}      unit="yrs" />
                   <StatBox label="BMI"    value={profile.bmi}      color={
                     profile.bmi < 18.5 ? '#2E86AB'
                     : profile.bmi < 25  ? '#2ECC71'
@@ -329,11 +339,11 @@ export default function ProfileScreen({ visible, onClose }) {
             {/* Health Goal */}
             {profile?.healthGoal && (
               <View style={[styles.card, { borderColor: goalColor + '44' }]}>
-                <Text style={styles.cardTitle}>Health Goal</Text>
+                <Text style={styles.cardTitle}>{t('healthGoal')}</Text>
                 <View style={styles.goalRow}>
                   <View style={[styles.goalDot, { backgroundColor: goalColor }]} />
                   <Text style={[styles.goalText, { color: goalColor }]}>
-                    {GOAL_LABELS[profile.healthGoal]}
+                    {t(GOAL_KEYS[profile.healthGoal])}
                   </Text>
                 </View>
               </View>
@@ -341,12 +351,12 @@ export default function ProfileScreen({ visible, onClose }) {
 
             {/* Health Attributes */}
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Health Attributes</Text>
+              <Text style={styles.cardTitle}>{t('healthAttributes')}</Text>
               {[
-                { key: 'strengthAttr',   label: 'Strength',   color: '#E74C3C', icon: 'barbell-outline' },
-                { key: 'disciplineAttr', label: 'Discipline', color: '#7B2FBE', icon: 'medal-outline' },
-                { key: 'recoveryAttr',   label: 'Recovery',   color: '#2E86AB', icon: 'bed-outline' },
-                { key: 'nutritionAttr',  label: 'Nutrition',  color: '#2ECC71', icon: 'leaf-outline' },
+                { key: 'strengthAttr',   label: t('strength'),   color: '#E74C3C', icon: 'barbell-outline' },
+                { key: 'disciplineAttr', label: t('discipline'), color: '#7B2FBE', icon: 'medal-outline' },
+                { key: 'recoveryAttr',   label: t('recovery'),   color: '#2E86AB', icon: 'bed-outline' },
+                { key: 'nutritionAttr',  label: t('nutrition'),  color: '#2ECC71', icon: 'leaf-outline' },
               ].map(({ key, label, color, icon }) => {
                 const val = profile?.[key] ?? 0;
                 return (
@@ -364,9 +374,9 @@ export default function ProfileScreen({ visible, onClose }) {
 
             {/* Evolution History */}
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Evolution History</Text>
+              <Text style={styles.cardTitle}>{t('evolutionHistory')}</Text>
               {evoHistory.length === 0 ? (
-                <Text style={styles.evoEmpty}>No stage-ups yet. Keep completing missions!</Text>
+                <Text style={styles.evoEmpty}>{t('noStageUps')}</Text>
               ) : (
                 evoHistory.map(entry => {
                   const date = new Date(entry.stagedUpAt);
@@ -388,11 +398,11 @@ export default function ProfileScreen({ visible, onClose }) {
 
             {/* Water Goal */}
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Daily Water Goal</Text>
+              <Text style={styles.cardTitle}>{t('waterGoal')}</Text>
               <View style={styles.goalRow}>
                 <Ionicons name="water" size={16} color="#2E86AB" />
                 <Text style={[styles.goalText, { color: '#2E86AB' }]}>
-                  {profile?.waterGoalGlasses ?? 8} glasses per day
+                  {profile?.waterGoalGlasses ?? 8} {t('glassesPerDay')}
                 </Text>
               </View>
             </View>
@@ -400,13 +410,17 @@ export default function ProfileScreen({ visible, onClose }) {
             {/* Logout */}
             <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
               <Ionicons name="log-out-outline" size={18} color="#E74C3C" />
-              <Text style={styles.logoutText}>Logout</Text>
+              <Text style={styles.logoutText}>{t('logout')}</Text>
             </TouchableOpacity>
 
             <View style={{ height: 40 }} />
           </ScrollView>
         )}
       </SafeAreaView>
+
+      <Modal visible={showSettings} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowSettings(false)}>
+        <SettingsScreen visible={showSettings} onClose={() => setShowSettings(false)} />
+      </Modal>
     </Modal>
   );
 }
