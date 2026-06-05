@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/colors';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import SettingsScreen from './SettingsScreen';
 
 const GOAL_LABELS = {
   lose_weight:         'Lose Weight',
@@ -38,8 +39,9 @@ export default function ProfileScreen({ visible, onClose }) {
   const [profile, setProfile]       = useState(null);
   const [loading, setLoading]       = useState(true);
   const [evoHistory, setEvoHistory] = useState([]);
-  const [editing, setEditing]       = useState(false);
-  const [saving, setSaving]         = useState(false);
+  const [editing, setEditing]         = useState(false);
+  const [saving, setSaving]           = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [heightUnit, setHeightUnit] = useState('cm');
 
   const [form, setForm] = useState({
@@ -141,9 +143,14 @@ export default function ProfileScreen({ visible, onClose }) {
           <Text style={styles.headerTitle}>{editing ? 'Edit Profile' : 'Profile'}</Text>
           <View style={styles.headerRight}>
             {!editing && !loading && (
-              <TouchableOpacity onPress={openEdit} hitSlop={{ top:10,bottom:10,left:10,right:10 }} style={{ marginRight: 16 }}>
-                <Ionicons name="pencil-outline" size={20} color={Colors.accentGold} />
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity onPress={openEdit} hitSlop={{ top:10,bottom:10,left:10,right:10 }} style={{ marginRight: 16 }}>
+                  <Ionicons name="pencil-outline" size={20} color={Colors.accentGold} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowSettings(true)} hitSlop={{ top:10,bottom:10,left:10,right:10 }} style={{ marginRight: 16 }}>
+                  <Ionicons name="settings-outline" size={20} color={Colors.textSub} />
+                </TouchableOpacity>
+              </>
             )}
             <TouchableOpacity onPress={editing ? () => setEditing(false) : onClose} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
               <Ionicons name="close" size={24} color={Colors.textSub} />
@@ -407,6 +414,10 @@ export default function ProfileScreen({ visible, onClose }) {
           </ScrollView>
         )}
       </SafeAreaView>
+
+      <Modal visible={showSettings} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowSettings(false)}>
+        <SettingsScreen visible={showSettings} onClose={() => setShowSettings(false)} />
+      </Modal>
     </Modal>
   );
 }

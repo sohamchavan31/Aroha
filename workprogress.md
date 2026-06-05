@@ -193,7 +193,7 @@
 - [x] Evolution history — log of stage-ups
 - [ ] Achievements wall
 - [ ] Hindi/Marathi language toggle
-- [ ] Settings screen
+- [x] Settings screen (notifications toggles, language selector, about)
 
 ---
 
