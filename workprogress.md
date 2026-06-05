@@ -156,8 +156,7 @@
 - [x] AI fitness chatbot — POST /ai/chat (exercise advice, form tips, motivation)
 - [x] Habit + nutrition insights — POST /ai/insights
 - [x] Spring Boot calls Flask via HTTP (AiService + AiController)
-- [ ] Mobile UI — AI chat screen
-- [ ] Mobile UI — AI meal plan screen
+- [x] Mobile UI — AiScreen modal (Chat + Meal Plan + Insights tabs, ✨ button on HomeScreen)
 
 ---
 
@@ -174,10 +173,13 @@
 - [ ] Gym machine exercises
 - [ ] Muscle visualization per exercise
 - [ ] Exercise form guide (animated demo)
-- [ ] AI workout schedule generator
-- [ ] Rest timer between sets
 - [ ] Weekly progress graph
 - [ ] Personal records (PR) tracker
+- [ ] **AI Workout Generator + Session Timer**
+  - Step 1: Select duration (30m / 45m / 1hr / 1.5hr / 2hr)
+  - Step 2: Select type (Push / Pull / Legs / Cardio / Full Body / Crossfit / Yoga / Core)
+  - Step 3: Backend calculates exercises, sets×reps, rest periods to fill exact time
+  - Step 4: Session screen — current exercise, rest countdown, progress bar, total timer, mark set done
 
 ---
 
