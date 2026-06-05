@@ -334,6 +334,29 @@ export default function ProfileScreen({ visible, onClose }) {
               </View>
             )}
 
+            {/* Health Attributes */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Health Attributes</Text>
+              {[
+                { key: 'strengthAttr',   label: 'Strength',   color: '#E74C3C', icon: 'barbell-outline' },
+                { key: 'disciplineAttr', label: 'Discipline', color: '#7B2FBE', icon: 'medal-outline' },
+                { key: 'recoveryAttr',   label: 'Recovery',   color: '#2E86AB', icon: 'bed-outline' },
+                { key: 'nutritionAttr',  label: 'Nutrition',  color: '#2ECC71', icon: 'leaf-outline' },
+              ].map(({ key, label, color, icon }) => {
+                const val = profile?.[key] ?? 0;
+                return (
+                  <View key={key} style={styles.attrRow}>
+                    <Ionicons name={icon} size={16} color={color} style={{ width: 20 }} />
+                    <Text style={styles.attrLabel}>{label}</Text>
+                    <View style={styles.attrBarBg}>
+                      <View style={[styles.attrBarFill, { width: `${val}%`, backgroundColor: color }]} />
+                    </View>
+                    <Text style={[styles.attrValue, { color }]}>{val}</Text>
+                  </View>
+                );
+              })}
+            </View>
+
             {/* Water Goal */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Daily Water Goal</Text>
@@ -391,6 +414,12 @@ const styles = StyleSheet.create({
   goalRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   goalDot: { width: 10, height: 10, borderRadius: 5 },
   goalText: { fontSize: 15, fontWeight: '700' },
+
+  attrRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  attrLabel: { fontSize: 12, fontWeight: '600', color: Colors.textSub, width: 72 },
+  attrBarBg: { flex: 1, height: 6, backgroundColor: Colors.background, borderRadius: 3, overflow: 'hidden' },
+  attrBarFill: { height: 6, borderRadius: 3 },
+  attrValue: { fontSize: 12, fontWeight: '700', width: 28, textAlign: 'right' },
 
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: '#E74C3C33', padding: 16, marginTop: 8 },
   logoutText: { fontSize: 15, fontWeight: '700', color: '#E74C3C' },

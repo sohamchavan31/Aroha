@@ -7,8 +7,8 @@
 ---
 
 ## Current Status
-> Rebrand Nira → Aroha COMPLETE (2026-06-05). README written, dev journey updated, app.json package set.
-> **NOW: Phase 11 — Evolution Engine** — missions, EP, stages, health attributes.
+> Phase 11 Evolution Engine COMPLETE (2026-06-05). Missions, EP, stages, health attributes, live HomeScreen, stage-up animation.
+> **NOW: Phase 12 — Profile** — evolution history, achievements wall, language toggle, settings screen.
 
 ---
 
@@ -125,21 +125,25 @@
 | OnboardingScreen | 3-step: body stats → health goal → water goal → Begin Your Evolution |
 | ProfileScreen | Stage, EP, BMI grid, TDEE, health goal, logout |
 | Rebrand | Nira → Aroha — all folders, packages, UI strings, field names, storage keys, README, dev journal |
+| Evolution Engine | Mission entity, daily generation, EP award, stage auto-advance, health attributes (0–100), stage-up animation |
+| Live Missions | HomeScreen pulls missions from backend, completeMission API, stagedUp flag handling |
+| Edit Profile | ProfileScreen edit mode — age, weight, height (cm/ft toggle), water goal, health goal |
+| Health Attributes | ProfileScreen displays Strength/Discipline/Recovery/Nutrition progress bars |
 
 ---
 
 ## What's Left
 
-### Phase 11 — Evolution Engine (NEXT)
-- [ ] Mission entity — title, type (daily/weekly), epReward, category
-- [ ] Daily mission generation based on user history + weak attributes
-- [ ] Weekly mission generation — bigger goals, bigger EP
-- [ ] EP award on mission completion → stage auto-advance
-- [ ] Consistency Score — 30-day rolling habit completion % replaces streak
-- [ ] Health Attributes — Strength, Discipline, Recovery, Nutrition (0–100)
-- [ ] Attribute update logic — missions contribute to relevant attribute
-- [ ] Evolution moment — stage-up celebration animation on mobile
-- [ ] Home screen pulls live missions from backend (replace hardcoded)
+### Phase 11 — Evolution Engine ✅ COMPLETE
+- [x] Mission entity — title, type (daily/weekly), epReward, category
+- [x] Daily mission generation based on user history + weak attributes
+- [x] EP award on mission completion → stage auto-advance
+- [x] Consistency Score — 30-day rolling habit completion % replaces streak
+- [x] Health Attributes — Strength, Discipline, Recovery, Nutrition (0–100)
+- [x] Attribute update logic — missions contribute to relevant attribute
+- [x] Evolution moment — stage-up celebration animation on mobile
+- [x] Home screen pulls live missions from backend (replace hardcoded)
+- [ ] Weekly mission generation — bigger goals, bigger EP (future)
 - [ ] Achievements system (future)
 - [ ] Boss Battles — large monthly goals (future)
 
@@ -183,9 +187,9 @@
 
 ---
 
-### Phase 12 — Profile (Remaining)
-- [ ] Edit profile after onboarding
-- [ ] Health Attributes display (Strength / Discipline / Recovery / Nutrition)
+### Phase 12 — Profile (In Progress)
+- [x] Edit profile after onboarding
+- [x] Health Attributes display (Strength / Discipline / Recovery / Nutrition)
 - [ ] Evolution history — log of stage-ups
 - [ ] Achievements wall
 - [ ] Hindi/Marathi language toggle
@@ -269,7 +273,7 @@ Aroha (wellness) + HealthBridge (medical) + IoT Layer
 
 ---
 
-_Updated: 2026-06-05 — Rebrand fully complete. Phase 11 Evolution Engine is next._
+_Updated: 2026-06-05 — Phase 11 complete. Phase 12 in progress (edit profile + health attributes done)._
 
 <!-- Session log -->
 <!-- 2026-05-28: Mobile scaffold + home screen + backend JWT done. -->
@@ -278,3 +282,5 @@ _Updated: 2026-06-05 — Rebrand fully complete. Phase 11 Evolution Engine is ne
 <!-- 2026-06-04: Full rebrand Nira → Aroha. Evolution System designed. -->
 <!-- 2026-06-04: Rebrand executed in codebase — all packages, folders, UI strings, field names updated. -->
 <!-- 2026-06-05: Rebrand checklist closed. README written, AROHA_DEV_JOURNEY.md fully updated, app.json package added, HomeScreen comments fixed. Phase 11 begins. -->
+<!-- 2026-06-05: Phase 11 complete. Missions, EP, stages, health attributes, stage-up animation, live HomeScreen. BOM fix committed. Profile edit + height unit toggle added. -->
+<!-- 2026-06-05: Phase 12 started. Health Attributes display added to ProfileScreen. ProfileController updated to return attr values. -->

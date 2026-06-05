@@ -55,6 +55,10 @@ public class ProfileController {
         p.put("heightCm",         user.getHeightCm());
         p.put("healthGoal",       user.getHealthGoal());
         p.put("waterGoalGlasses", user.getWaterGoalGlasses() != null ? user.getWaterGoalGlasses() : 8);
+        p.put("strengthAttr",    user.getStrengthAttr());
+        p.put("disciplineAttr",  user.getDisciplineAttr());
+        p.put("recoveryAttr",    user.getRecoveryAttr());
+        p.put("nutritionAttr",   user.getNutritionAttr());
 
         // BMI
         if (user.getWeightKg() != null && user.getHeightCm() != null) {
