@@ -47,4 +47,11 @@ public class Meal {
 
     @Column(name = "typical_serving")
     private double typicalServing;
+
+    @Builder.Default
+    @Column(name = "is_custom", nullable = false, columnDefinition = "BOOLEAN DEFAULT false")
+    private boolean isCustom = false;
+
+    @Column(name = "created_by")
+    private Long createdBy;
 }
