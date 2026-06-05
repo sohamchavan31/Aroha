@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Colors from '../constants/colors';
+import { useLanguage } from '../context/LanguageContext';
 
 const SETTINGS_KEY = 'aroha_settings';
 
@@ -34,6 +35,7 @@ function SettingRow({ icon, label, children }) {
 }
 
 export default function SettingsScreen({ visible, onClose }) {
+  const { language, setLanguage, t } = useLanguage();
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
 
   useEffect(() => {
@@ -63,7 +65,7 @@ export default function SettingsScreen({ visible, onClose }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={styles.headerTitle}>{t('settings')}</Text>
         <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="close" size={24} color={Colors.textSub} />
         </TouchableOpacity>
@@ -72,9 +74,9 @@ export default function SettingsScreen({ visible, onClose }) {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
         {/* Notifications */}
-        <Text style={styles.section}>Notifications</Text>
+        <Text style={styles.section}>{t('notifications')}</Text>
         <View style={styles.card}>
-          <SettingRow icon="water-outline" label="Water reminders">
+          <SettingRow icon="water-outline" label={t('waterReminders')}>
             <Switch
               value={settings.waterReminders}
               onValueChange={v => updateSetting('waterReminders', v)}
@@ -83,7 +85,7 @@ export default function SettingsScreen({ visible, onClose }) {
             />
           </SettingRow>
           <View style={styles.divider} />
-          <SettingRow icon="moon-outline" label="Sleep reminders">
+          <SettingRow icon="moon-outline" label={t('sleepReminders')}>
             <Switch
               value={settings.sleepReminders}
               onValueChange={v => updateSetting('sleepReminders', v)}
@@ -92,7 +94,7 @@ export default function SettingsScreen({ visible, onClose }) {
             />
           </SettingRow>
           <View style={styles.divider} />
-          <SettingRow icon="flag-outline" label="Mission reminders">
+          <SettingRow icon="flag-outline" label={t('missionReminders')}>
             <Switch
               value={settings.missionReminders}
               onValueChange={v => updateSetting('missionReminders', v)}
@@ -103,15 +105,15 @@ export default function SettingsScreen({ visible, onClose }) {
         </View>
 
         {/* Language */}
-        <Text style={styles.section}>Language</Text>
+        <Text style={styles.section}>{t('language')}</Text>
         <View style={styles.card}>
           {LANGUAGES.map((lang, idx) => {
-            const selected = settings.language === lang.code;
+            const selected = language === lang.code;
             return (
               <View key={lang.code}>
                 <TouchableOpacity
                   style={styles.langRow}
-                  onPress={() => updateSetting('language', lang.code)}
+                  onPress={() => setLanguage(lang.code)}
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.langLabel, selected && styles.langLabelActive]}>
@@ -126,20 +128,19 @@ export default function SettingsScreen({ visible, onClose }) {
             );
           })}
         </View>
-        <Text style={styles.hint}>Hindi and Marathi translations coming soon.</Text>
 
         {/* About */}
-        <Text style={styles.section}>About</Text>
+        <Text style={styles.section}>{t('about')}</Text>
         <View style={styles.card}>
-          <SettingRow icon="leaf-outline" label="App">
+          <SettingRow icon="leaf-outline" label={t('app')}>
             <Text style={styles.aboutValue}>Aroha</Text>
           </SettingRow>
           <View style={styles.divider} />
-          <SettingRow icon="code-slash-outline" label="Version">
+          <SettingRow icon="code-slash-outline" label={t('version')}>
             <Text style={styles.aboutValue}>1.0.0</Text>
           </SettingRow>
           <View style={styles.divider} />
-          <SettingRow icon="person-outline" label="Built by">
+          <SettingRow icon="person-outline" label={t('builtBy')}>
             <Text style={styles.aboutValue}>Soham</Text>
           </SettingRow>
         </View>

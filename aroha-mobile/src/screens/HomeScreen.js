@@ -16,6 +16,7 @@ import Colors from '../constants/colors';
 import client from '../api/client';
 import WellnessModal from '../components/WellnessModal';
 import ProfileScreen from './ProfileScreen';
+import { useLanguage } from '../context/LanguageContext';
 
 function getTodayDate() {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -42,6 +43,7 @@ const STAGE_COLOR = {
 const EP_NEXT = { Spark: 1000, Awakened: 3000, Ascender: 6000, Guardian: 11000, Titan: 18000, Apex: 28000, Legend: 28000 };
 
 export default function HomeScreen() {
+  const { t } = useLanguage();
   const [missions, setMissions]         = useState([]);
   const [missionsLoading, setMissionsLoading] = useState(true);
   const [water, setWater]               = useState({ glasses: 0, dailyGoal: 8 });
@@ -164,12 +166,12 @@ export default function HomeScreen() {
           <View style={styles.statCard}>
             <Text style={styles.statIcon}>🔥</Text>
             <Text style={styles.statValue}>{streak}</Text>
-            <Text style={styles.statLabel}>Day Streak</Text>
+            <Text style={styles.statLabel}>{t('streak')}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statIcon}>⚡</Text>
             <Text style={styles.statValue}>{userEP}</Text>
-            <Text style={styles.statLabel}>Total EP</Text>
+            <Text style={styles.statLabel}>Total {t('ep')}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statIcon}>🎯</Text>
@@ -217,7 +219,7 @@ export default function HomeScreen() {
         {/* Daily Missions Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Daily Missions</Text>
+            <Text style={styles.sectionTitle}>{t('dailyMissions')}</Text>
             <View style={styles.epBadge}>
               <Text style={styles.epBadgeText}>
                 +{missions.reduce((s, m) => s + m.epReward, 0)} EP
@@ -226,7 +228,7 @@ export default function HomeScreen() {
           </View>
 
           {missionsLoading ? (
-            <Text style={styles.loadingText}>Loading missions...</Text>
+            <Text style={styles.loadingText}>{t('dailyMissions')}...</Text>
           ) : missions.map(mission => (
             <TouchableOpacity
               key={mission.id}
@@ -254,7 +256,7 @@ export default function HomeScreen() {
 
         {/* Evolution Progress Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Evolution Progress</Text>
+          <Text style={styles.sectionTitle}>{t('evolutionProgress')}</Text>
           <View style={styles.evolutionCard}>
             <View style={styles.stageRow}>
               <View style={styles.stageCircleBlock}>

@@ -192,7 +192,7 @@
 - [x] Health Attributes display (Strength / Discipline / Recovery / Nutrition)
 - [x] Evolution history — log of stage-ups
 - [ ] Achievements wall
-- [ ] Hindi/Marathi language toggle
+- [x] Hindi/Marathi language toggle (LanguageContext, translations EN/HI/MR, HomeScreen + ProfileScreen + SettingsScreen)
 - [x] Settings screen (notifications toggles, language selector, about)
 
 ---
