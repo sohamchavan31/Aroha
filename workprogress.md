@@ -7,8 +7,8 @@
 ---
 
 ## Current Status
-> Rebrand Nira → Aroha COMPLETE (2026-06-04).
-> Next: Evolution Engine (Phase 11) — missions, EP, stages, health attributes.
+> Rebrand Nira → Aroha COMPLETE (2026-06-05). README written, dev journey updated, app.json package set.
+> **NOW: Phase 11 — Evolution Engine** — missions, EP, stages, health attributes.
 
 ---
 
@@ -39,19 +39,20 @@
 ## Rebrand Checklist — Nira → Aroha ✅ COMPLETE
 
 ### GitHub
-- [ ] Rename repo Nira → Aroha on GitHub
-- [ ] Update repo description and About section
-- [ ] Update README.md — project name, vision, stack
+- [x] Rename repo Nira → Aroha on GitHub
+- [ ] Update repo description and About section (manual — GitHub UI)
+- [x] Update README.md — project name, vision, stack
 
 ### Mobile (aroha-mobile/)
 - [x] Rename folder nira-mobile → aroha-mobile
-- [x] app.json — name: "Aroha", slug: "aroha"
+- [x] app.json — name: "Aroha", slug: "aroha", package: "com.aroha"
 - [x] LoginScreen.js — "The Hunter's Path Begins Here" → "Your Evolution Begins Here"
 - [x] RegisterScreen.js — "NEW HUNTER" → "NEW MEMBER"
 - [x] OnboardingScreen.js — "Begin the Hunt" → "Begin Your Evolution"
 - [x] HomeScreen.js — "Daily Quests" → "Daily Missions"
 - [x] HomeScreen.js — XP → EP, Rank badge → Evolution Stage badge (SP/AW etc.)
 - [x] HomeScreen.js — "Rank Progress" → "Evolution Progress"
+- [x] HomeScreen.js — code comments updated (XP Row, Daily Quests, Rank Progress)
 - [x] ProfileScreen.js — "E RANK" → "Spark", "Total XP" → "Evolution Points"
 - [x] AuthContext.js — nira_token/nira_user → aroha_token/aroha_user
 - [x] LoginScreen.js / RegisterScreen.js — data.rank/totalXp → data.evolutionStage/evolutionPoints
@@ -75,6 +76,7 @@
 
 ### Docs
 - [x] NIRA_DEV_JOURNEY.md → AROHA_DEV_JOURNEY.md
+- [x] AROHA_DEV_JOURNEY.md — all Nira references replaced with Aroha throughout
 - [x] workprogress.md updated
 
 ---
@@ -122,7 +124,7 @@
 | Profile endpoints | GET /api/profile (BMI + TDEE), PATCH /api/profile |
 | OnboardingScreen | 3-step: body stats → health goal → water goal → Begin Your Evolution |
 | ProfileScreen | Stage, EP, BMI grid, TDEE, health goal, logout |
-| Rebrand | Nira → Aroha — all folders, packages, UI strings, field names, storage keys |
+| Rebrand | Nira → Aroha — all folders, packages, UI strings, field names, storage keys, README, dev journal |
 
 ---
 
@@ -267,7 +269,7 @@ Aroha (wellness) + HealthBridge (medical) + IoT Layer
 
 ---
 
-_Updated: 2026-06-04 — Rebrand Nira → Aroha complete. Evolution Engine is next._
+_Updated: 2026-06-05 — Rebrand fully complete. Phase 11 Evolution Engine is next._
 
 <!-- Session log -->
 <!-- 2026-05-28: Mobile scaffold + home screen + backend JWT done. -->
@@ -275,3 +277,4 @@ _Updated: 2026-06-04 — Rebrand Nira → Aroha complete. Evolution Engine is ne
 <!-- 2026-06-02: Phase 12 complete. Home PC setup done. -->
 <!-- 2026-06-04: Full rebrand Nira → Aroha. Evolution System designed. -->
 <!-- 2026-06-04: Rebrand executed in codebase — all packages, folders, UI strings, field names updated. -->
+<!-- 2026-06-05: Rebrand checklist closed. README written, AROHA_DEV_JOURNEY.md fully updated, app.json package added, HomeScreen comments fixed. Phase 11 begins. -->

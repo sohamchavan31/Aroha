@@ -1,4 +1,4 @@
-﻿package com.aroha.model;
+package com.aroha.model;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -48,6 +48,19 @@ public class User {
     private Integer waterGoalGlasses;
 
     private Boolean profileComplete;
+
+    // ── Health Attributes (0–100) ────────────────────────────────────────────
+    @Column(columnDefinition = "integer default 0")
+    private int strengthAttr;
+
+    @Column(columnDefinition = "integer default 0")
+    private int disciplineAttr;
+
+    @Column(columnDefinition = "integer default 0")
+    private int recoveryAttr;
+
+    @Column(columnDefinition = "integer default 0")
+    private int nutritionAttr;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

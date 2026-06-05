@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  StatusBar, Modal, Alert, ActivityIndicator,
+  StatusBar, Modal, Alert, ActivityIndicator, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,8 +35,15 @@ function StatBox({ label, value, unit, color }) {
 
 export default function ProfileScreen({ visible, onClose }) {
   const { user, logout } = useAuth();
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile]   = useState(null);
+  const [loading, setLoading]   = useState(true);
+  const [editing, setEditing]       = useState(false);
+  const [saving, setSaving]         = useState(false);
+  const [heightUnit, setHeightUnit] = useState('cm');
+
+  const [form, setForm] = useState({
+    age: '', weightKg: '', heightCm: '', feet: '', inches: '', healthGoal: '', waterGoalGlasses: '',
+  });
 
   useEffect(() => {
     if (visible) loadProfile();
@@ -51,6 +58,62 @@ export default function ProfileScreen({ visible, onClose }) {
       Alert.alert('Error', 'Could not load profile.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  function cmToFtIn(cm) {
+    const totalInches = cm / 2.54;
+    return { feet: String(Math.floor(totalInches / 12)), inches: String(Math.round(totalInches % 12)) };
+  }
+
+  function getHeightCm() {
+    if (heightUnit === 'cm') return parseFloat(form.heightCm);
+    const f = parseFloat(form.feet) || 0;
+    const i = parseFloat(form.inches) || 0;
+    return Math.round((f * 30.48 + i * 2.54) * 10) / 10;
+  }
+
+  function openEdit() {
+    const storedCm = profile?.heightCm ?? '';
+    const ftIn = storedCm ? cmToFtIn(storedCm) : { feet: '', inches: '' };
+    setHeightUnit('cm');
+    setForm({
+      age:              String(profile?.age ?? ''),
+      weightKg:         String(profile?.weightKg ?? ''),
+      heightCm:         String(storedCm),
+      feet:             ftIn.feet,
+      inches:           ftIn.inches,
+      healthGoal:       profile?.healthGoal ?? '',
+      waterGoalGlasses: String(profile?.waterGoalGlasses ?? '8'),
+    });
+    setEditing(true);
+  }
+
+  async function saveEdit() {
+    const heightCm = getHeightCm();
+    if (!form.age || !form.weightKg || !heightCm || !form.healthGoal) {
+      Alert.alert('Missing fields', 'Please fill in all fields.');
+      return;
+    }
+    if (isNaN(heightCm) || heightCm < 50) {
+      Alert.alert('Invalid height', 'Height must be at least 50 cm.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data } = await client.patch('/profile', {
+        age:              parseInt(form.age),
+        weightKg:         parseFloat(form.weightKg),
+        heightCm,
+        healthGoal:       form.healthGoal,
+        waterGoalGlasses: parseInt(form.waterGoalGlasses) || 8,
+      });
+      setProfile(data);
+      setEditing(false);
+    } catch {
+      Alert.alert('Error', 'Could not save profile.');
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -70,15 +133,143 @@ export default function ProfileScreen({ visible, onClose }) {
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
-          <TouchableOpacity onPress={onClose} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-            <Ionicons name="close" size={24} color={Colors.textSub} />
-          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{editing ? 'Edit Profile' : 'Profile'}</Text>
+          <View style={styles.headerRight}>
+            {!editing && !loading && (
+              <TouchableOpacity onPress={openEdit} hitSlop={{ top:10,bottom:10,left:10,right:10 }} style={{ marginRight: 16 }}>
+                <Ionicons name="pencil-outline" size={20} color={Colors.accentGold} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={editing ? () => setEditing(false) : onClose} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
+              <Ionicons name="close" size={24} color={Colors.textSub} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {loading ? (
           <ActivityIndicator color={Colors.accentGold} style={{ marginTop: 60 }} />
+        ) : editing ? (
+          // ── Edit Mode ──────────────────────────────────────────────────────
+          <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+            <Text style={styles.editSection}>Body Stats</Text>
+
+            <View style={styles.inputRow}>
+              <View style={styles.inputHalf}>
+                <Text style={styles.inputLabel}>Age</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.age}
+                  onChangeText={v => setForm(f => ({ ...f, age: v }))}
+                  keyboardType="numeric"
+                  placeholder="e.g. 22"
+                  placeholderTextColor={Colors.textMuted}
+                />
+              </View>
+              <View style={styles.inputHalf}>
+                <Text style={styles.inputLabel}>Weight (kg)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.weightKg}
+                  onChangeText={v => setForm(f => ({ ...f, weightKg: v }))}
+                  keyboardType="decimal-pad"
+                  placeholder="e.g. 70"
+                  placeholderTextColor={Colors.textMuted}
+                />
+              </View>
+            </View>
+
+            <View style={styles.heightHeader}>
+              <Text style={styles.inputLabel}>Height</Text>
+              <View style={styles.unitToggle}>
+                <TouchableOpacity
+                  style={[styles.unitBtn, heightUnit === 'cm' && styles.unitBtnActive]}
+                  onPress={() => setHeightUnit('cm')}
+                >
+                  <Text style={[styles.unitBtnText, heightUnit === 'cm' && styles.unitBtnTextActive]}>cm</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.unitBtn, heightUnit === 'ft' && styles.unitBtnActive]}
+                  onPress={() => setHeightUnit('ft')}
+                >
+                  <Text style={[styles.unitBtnText, heightUnit === 'ft' && styles.unitBtnTextActive]}>ft / in</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {heightUnit === 'cm' ? (
+              <TextInput
+                style={styles.input}
+                value={form.heightCm}
+                onChangeText={v => setForm(f => ({ ...f, heightCm: v }))}
+                keyboardType="decimal-pad"
+                placeholder="e.g. 175"
+                placeholderTextColor={Colors.textMuted}
+              />
+            ) : (
+              <View style={styles.ftRow}>
+                <TextInput
+                  style={[styles.input, styles.ftInput]}
+                  value={form.feet}
+                  onChangeText={v => setForm(f => ({ ...f, feet: v }))}
+                  keyboardType="numeric"
+                  placeholder="5"
+                  placeholderTextColor={Colors.textMuted}
+                />
+                <Text style={styles.ftLabel}>ft</Text>
+                <TextInput
+                  style={[styles.input, styles.ftInput]}
+                  value={form.inches}
+                  onChangeText={v => setForm(f => ({ ...f, inches: v }))}
+                  keyboardType="numeric"
+                  placeholder="9"
+                  placeholderTextColor={Colors.textMuted}
+                />
+                <Text style={styles.ftLabel}>in</Text>
+              </View>
+            )}
+
+            <View style={[styles.inputRow, { marginTop: 16 }]}>
+              <View style={styles.inputHalf}>
+                <Text style={styles.inputLabel}>Water Goal (glasses)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.waterGoalGlasses}
+                  onChangeText={v => setForm(f => ({ ...f, waterGoalGlasses: v }))}
+                  keyboardType="numeric"
+                  placeholder="e.g. 8"
+                  placeholderTextColor={Colors.textMuted}
+                />
+              </View>
+            </View>
+
+            <Text style={styles.editSection}>Health Goal</Text>
+            <View style={styles.goalGrid}>
+              {Object.entries(GOAL_LABELS).map(([key, label]) => {
+                const selected = form.healthGoal === key;
+                const color = GOAL_COLORS[key];
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    style={[styles.goalOption, selected && { borderColor: color, backgroundColor: color + '22' }]}
+                    onPress={() => setForm(f => ({ ...f, healthGoal: key }))}
+                  >
+                    <Text style={[styles.goalOptionText, selected && { color }]}>{label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <TouchableOpacity style={styles.saveBtn} onPress={saveEdit} disabled={saving} activeOpacity={0.8}>
+              {saving
+                ? <ActivityIndicator color={Colors.background} />
+                : <Text style={styles.saveBtnText}>Save Changes</Text>
+              }
+            </TouchableOpacity>
+
+            <View style={{ height: 40 }} />
+          </ScrollView>
         ) : (
+          // ── View Mode ──────────────────────────────────────────────────────
           <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
             {/* Avatar + Name */}
@@ -172,6 +363,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.text },
+  headerRight: { flexDirection: 'row', alignItems: 'center' },
   scroll: { flex: 1, paddingHorizontal: 20 },
 
   avatarSection: { alignItems: 'center', paddingVertical: 24 },
@@ -202,4 +394,26 @@ const styles = StyleSheet.create({
 
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: '#E74C3C33', padding: 16, marginTop: 8 },
   logoutText: { fontSize: 15, fontWeight: '700', color: '#E74C3C' },
+
+  // Edit mode
+  editSection: { fontSize: 13, fontWeight: '700', color: Colors.textSub, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 20, marginBottom: 12 },
+  inputRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  inputHalf: { flex: 1 },
+  inputLabel: { fontSize: 12, color: Colors.textSub, marginBottom: 6, fontWeight: '600' },
+  input: { backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, color: Colors.text, fontSize: 15 },
+  goalGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
+  goalOption: { flex: 1, minWidth: '45%', backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, alignItems: 'center' },
+  goalOptionText: { fontSize: 13, fontWeight: '700', color: Colors.textSub },
+  saveBtn: { backgroundColor: Colors.accentGold, borderRadius: 14, padding: 16, alignItems: 'center', marginTop: 4 },
+  saveBtnText: { fontSize: 15, fontWeight: '800', color: Colors.background },
+
+  heightHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  unitToggle: { flexDirection: 'row', backgroundColor: Colors.card, borderRadius: 8, borderWidth: 1, borderColor: Colors.cardBorder, overflow: 'hidden' },
+  unitBtn: { paddingHorizontal: 12, paddingVertical: 5 },
+  unitBtnActive: { backgroundColor: Colors.accentGold },
+  unitBtnText: { fontSize: 12, color: Colors.textMuted, fontWeight: '600' },
+  unitBtnTextActive: { color: Colors.background },
+  ftRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 18 },
+  ftInput: { flex: 1, marginBottom: 0 },
+  ftLabel: { fontSize: 15, color: Colors.textSub, fontWeight: '600' },
 });
