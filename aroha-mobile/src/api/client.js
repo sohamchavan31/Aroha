@@ -13,7 +13,7 @@ const client = axios.create({
 
 // Attach JWT token to every request
 client.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem('nira_token');
+  const token = await AsyncStorage.getItem('aroha_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -26,8 +26,8 @@ client.interceptors.response.use(
   async error => {
     const status = error.response?.status;
     if (status === 401 || status === 403) {
-      await AsyncStorage.removeItem('nira_token');
-      await AsyncStorage.removeItem('nira_user');
+      await AsyncStorage.removeItem('aroha_token');
+      await AsyncStorage.removeItem('aroha_user');
       // Reloading the app bundle will cause RootNavigator to re-render
       // and show the Login screen since token is now cleared
     }
