@@ -12,6 +12,7 @@
 > Phase 6 partial COMPLETE (2026-06-05) — AI Workout Generator + Session Timer added.
 > Phase 5 partial COMPLETE (2026-06-05) — Serving size modal, custom food builder, 170+ Indian food DB.
 > **OPEN PRs:** feat/phase-12-evolution-history · feat/phase-12-settings-language · feat/phase-10-flask-ai · feat/phase-5-nutrition
+> **New tweaks queued:** AI Screen upgrades · Workout custom exercise in session · More exercises + foods
 
 ---
 
@@ -300,3 +301,41 @@ _Updated: 2026-06-05 — Phase 12 ✅, Phase 10 ✅, Phase 5 (partial) ✅, Phas
 <!-- 2026-06-05: Phase 10 complete — Flask AI service (meal plan, chat, insights) + Spring Boot proxy + AiScreen modal. -->
 <!-- 2026-06-05: Phase 6 partial — AI Workout Generator + session timer with work/rest phases. -->
 <!-- 2026-06-05: Phase 5 partial — serving size modal, custom food builder, 120 new foods (170+ total). -->
+<!-- 2026-06-05 (session 2): Aroha AI modal live (Chat + Meal Plan + Insights). Workout Generator live (duration → type → preview → session timer + rest timer + complete screen). Rebrand fully visible on emulator. New tweaks queued: add custom exercise inside workout session, AI screen upgrades, gym machine exercises, more Indian foods. -->
+
+---
+## Tweaks & Upgrades Queue (added 2026-06-05)
+
+### AI Screen (AiScreen.js) Upgrades
+- [ ] Chat tab — wire to real Flask endpoint when Ollama ready (POST /api/ai/chat)
+- [ ] Chat tab — streaming response (typewriter effect as AI replies)
+- [ ] Chat tab — conversation history persists within session
+- [ ] Chat tab — suggested quick questions ("How do I improve pull-ups?", "Best Indian protein sources?")
+- [ ] Meal Plan tab — auto-fill calorie target from user's TDEE in profile
+- [ ] Meal Plan tab — wire to Flask when ready (POST /api/ai/meal-plan)
+- [ ] Meal Plan tab — save generated plan to use in macro tracker
+- [ ] Insights tab — wire to real habit + nutrition data from backend
+- [ ] Insights tab — wire to Flask when ready (POST /api/ai/insights)
+
+### Workout Session Upgrades
+- [ ] Add custom exercise inside active session — "+" button → name + sets/reps → logs with session
+- [ ] Session summary saved to WorkoutLog after "Done" tapped
+- [ ] Generated workout plan saved to backend (POST /api/workouts/generated)
+- [ ] Session summary screen — total volume, total time, exercises done
+- [ ] Share session (future — screenshot card)
+
+### Exercise Library Expansion
+- [ ] Gym machine exercises — bench press, lat pulldown, leg press, cable rows, shoulder press machine
+- [ ] Dumbbell exercises — dumbbell curl, lateral raise, Romanian deadlift, goblet squat
+- [ ] Indian traditional exercises — Surya Namaskar (full 12-step), Dand (Hindu push-up), Baithak
+- [ ] Target: 100+ exercises (currently 34)
+
+### Food Database Expansion
+- [x] More Konkan cuisine items — Pomfret Fry, Surmai/Crab/Prawn/Tisre curries, Thalipeeth, Chakli, Pithla, Zunka, Matki Usal, Puran Poli, Shrikhand, Basundi, Rava Laddoo (Phase 5)
+- [x] Street food — Vada Pav, Misal Pav, Pav Bhaji, Bhel Puri, Sev Puri, Pani Puri, Ragda, Chole Bhature, Dabeli (Phase 5)
+- [x] South Indian — Rasam, Sambhar, Curd/Lemon/Tamarind Rice, Medu Vada, Uttapam, Pesarattu, Pongal, Rava Idli (Phase 5, Idli/Dosa/Vada in original seed)
+- [x] North Indian — Chole Bhature, Aloo Paratha, Dal Tadka, Aloo Gobi, Shahi Paneer, Gajar Halwa, Kheer (Phase 5, Lassi/Butter Chicken in original seed)
+- [ ] More Konkan remaining — Kaju curry, more fish varieties, Kombdi Vade variations
+- [ ] Dry fruits, nuts, seeds — already have almonds/cashews/walnuts; add flaxseed, chia, sunflower seeds
+- [ ] Protein supplements — whey, casein, plant protein (per scoop)
+- [ ] Target: 500+ items (currently 170+)
