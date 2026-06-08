@@ -50,7 +50,7 @@ export default function LoginScreen({ navigation }) {
           <View style={styles.header}>
             <View style={styles.rankBadge}>
               <Text style={styles.rankLabel}>STAGE</Text>
-              <Text style={styles.rankText}>SP</Text>
+              <Text style={styles.rankText}>SPARK</Text>
             </View>
             <Text style={styles.title}>Aroha</Text>
             <Text style={styles.subtitle}>Your Evolution Begins Here</Text>
