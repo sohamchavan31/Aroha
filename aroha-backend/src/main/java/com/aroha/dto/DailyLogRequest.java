@@ -12,4 +12,7 @@ public class DailyLogRequest {
 
     @Min(value = 1, message = "Serving must be at least 1 gram")
     private double servingGrams;
+
+    // optional — BREAKFAST | LUNCH | DINNER | SNACK
+    private String mealSlot;
 }

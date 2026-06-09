@@ -29,6 +29,9 @@ public class DailyLog {
     @Column(nullable = false)
     private String mealName;
 
+    // BREAKFAST | LUNCH | DINNER | SNACK (nullable — legacy rows have null, treated as SNACK)
+    private String mealSlot;
+
     // how many grams the user actually ate
     @Column(nullable = false)
     private double servingGrams;
