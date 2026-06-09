@@ -13,4 +13,6 @@ public interface DailyLogRepository extends JpaRepository<DailyLog, Long> {
 
     @Query("SELECT COALESCE(SUM(d.calories), 0) FROM DailyLog d WHERE d.userId = :userId AND d.logDate = :date")
     double sumCaloriesByUserIdAndDate(Long userId, LocalDate date);
+
+    List<DailyLog> findByUserIdAndLogDateBetween(Long userId, LocalDate start, LocalDate end);
 }
