@@ -33,6 +33,7 @@ public class DailyLogService {
                 .userId(user.getId())
                 .mealId(meal.getId())
                 .mealName(meal.getName())
+                .mealSlot(request.getMealSlot())
                 .servingGrams(request.getServingGrams())
                 .calories(Math.round(meal.getCaloriesPer100g() * ratio * 10.0) / 10.0)
                 .protein(Math.round(meal.getProteinPer100g() * ratio * 10.0) / 10.0)
