@@ -8,13 +8,21 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Colors from '../constants/colors';
 import { useLanguage } from '../context/LanguageContext';
+import {
+  scheduleWaterReminders,
+  scheduleMealReminders,
+  scheduleWorkoutReminder,
+  scheduleMissionReminder,
+} from '../utils/notifications';
 
 const SETTINGS_KEY = 'aroha_settings';
 
 const DEFAULT_SETTINGS = {
   waterReminders:   true,
-  sleepReminders:   true,
+  mealReminders:    true,
+  workoutReminder:  true,
   missionReminders: true,
+  sleepReminders:   true,
   language:         'en',
 };
 
@@ -24,11 +32,22 @@ const LANGUAGES = [
   { code: 'mr', label: 'मराठी (Marathi)' },
 ];
 
-function SettingRow({ icon, label, children }) {
+// Maps setting key → notification schedule function
+const NOTIF_HANDLERS = {
+  waterReminders:   scheduleWaterReminders,
+  mealReminders:    scheduleMealReminders,
+  workoutReminder:  scheduleWorkoutReminder,
+  missionReminders: scheduleMissionReminder,
+};
+
+function SettingRow({ icon, label, sub, children }) {
   return (
     <View style={styles.row}>
       <Ionicons name={icon} size={20} color={Colors.accentGold} style={styles.rowIcon} />
-      <Text style={styles.rowLabel}>{label}</Text>
+      <View style={styles.rowText}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        {sub ? <Text style={styles.rowSub}>{sub}</Text> : null}
+      </View>
       <View style={styles.rowControl}>{children}</View>
     </View>
   );
@@ -55,6 +74,9 @@ export default function SettingsScreen({ visible, onClose }) {
     try {
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
     } catch {}
+    // Fire notification schedule function if one is mapped to this key
+    const handler = NOTIF_HANDLERS[key];
+    if (handler) handler(value).catch(() => {});
   }
 
   if (!visible) return null;
@@ -63,7 +85,6 @@ export default function SettingsScreen({ visible, onClose }) {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('settings')}</Text>
         <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -76,10 +97,37 @@ export default function SettingsScreen({ visible, onClose }) {
         {/* Notifications */}
         <Text style={styles.section}>{t('notifications')}</Text>
         <View style={styles.card}>
-          <SettingRow icon="water-outline" label={t('waterReminders')}>
+          <SettingRow icon="water-outline" label={t('waterReminders')} sub="Every 2 hours">
             <Switch
               value={settings.waterReminders}
               onValueChange={v => updateSetting('waterReminders', v)}
+              trackColor={{ false: Colors.cardBorder, true: Colors.accentGold }}
+              thumbColor={Colors.text}
+            />
+          </SettingRow>
+          <View style={styles.divider} />
+          <SettingRow icon="restaurant-outline" label="Meal Reminders" sub="8 AM · 1 PM · 7 PM">
+            <Switch
+              value={settings.mealReminders}
+              onValueChange={v => updateSetting('mealReminders', v)}
+              trackColor={{ false: Colors.cardBorder, true: Colors.accentGold }}
+              thumbColor={Colors.text}
+            />
+          </SettingRow>
+          <View style={styles.divider} />
+          <SettingRow icon="barbell-outline" label="Workout Reminder" sub="Daily at 6:30 PM">
+            <Switch
+              value={settings.workoutReminder}
+              onValueChange={v => updateSetting('workoutReminder', v)}
+              trackColor={{ false: Colors.cardBorder, true: Colors.accentGold }}
+              thumbColor={Colors.text}
+            />
+          </SettingRow>
+          <View style={styles.divider} />
+          <SettingRow icon="flag-outline" label={t('missionReminders')} sub="Daily at 8 PM">
+            <Switch
+              value={settings.missionReminders}
+              onValueChange={v => updateSetting('missionReminders', v)}
               trackColor={{ false: Colors.cardBorder, true: Colors.accentGold }}
               thumbColor={Colors.text}
             />
@@ -93,15 +141,6 @@ export default function SettingsScreen({ visible, onClose }) {
               thumbColor={Colors.text}
             />
           </SettingRow>
-          <View style={styles.divider} />
-          <SettingRow icon="flag-outline" label={t('missionReminders')}>
-            <Switch
-              value={settings.missionReminders}
-              onValueChange={v => updateSetting('missionReminders', v)}
-              trackColor={{ false: Colors.cardBorder, true: Colors.accentGold }}
-              thumbColor={Colors.text}
-            />
-          </SettingRow>
         </View>
 
         {/* Language */}
@@ -111,17 +150,9 @@ export default function SettingsScreen({ visible, onClose }) {
             const selected = language === lang.code;
             return (
               <View key={lang.code}>
-                <TouchableOpacity
-                  style={styles.langRow}
-                  onPress={() => setLanguage(lang.code)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.langLabel, selected && styles.langLabelActive]}>
-                    {lang.label}
-                  </Text>
-                  {selected && (
-                    <Ionicons name="checkmark-circle" size={20} color={Colors.accentGold} />
-                  )}
+                <TouchableOpacity style={styles.langRow} onPress={() => setLanguage(lang.code)} activeOpacity={0.7}>
+                  <Text style={[styles.langLabel, selected && styles.langLabelActive]}>{lang.label}</Text>
+                  {selected && <Ionicons name="checkmark-circle" size={20} color={Colors.accentGold} />}
                 </TouchableOpacity>
                 {idx < LANGUAGES.length - 1 && <View style={styles.divider} />}
               </View>
@@ -163,7 +194,9 @@ const styles = StyleSheet.create({
 
   row:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
   rowIcon:    { marginRight: 12 },
-  rowLabel:   { flex: 1, fontSize: 15, color: Colors.text, fontWeight: '500' },
+  rowText:    { flex: 1 },
+  rowLabel:   { fontSize: 15, color: Colors.text, fontWeight: '500' },
+  rowSub:     { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
   rowControl: { alignItems: 'flex-end' },
 
   langRow:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16 },
@@ -171,5 +204,4 @@ const styles = StyleSheet.create({
   langLabelActive:{ color: Colors.text, fontWeight: '700' },
 
   aboutValue: { fontSize: 14, color: Colors.textSub, fontWeight: '600' },
-  hint:       { fontSize: 12, color: Colors.textMuted, marginTop: 8, marginLeft: 4, fontStyle: 'italic' },
 });
