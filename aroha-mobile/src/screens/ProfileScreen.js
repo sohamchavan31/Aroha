@@ -11,20 +11,57 @@ import { useAuth } from '../context/AuthContext';
 import SettingsScreen from './SettingsScreen';
 import { useLanguage } from '../context/LanguageContext';
 
-const GOAL_KEYS = {
-  lose_weight:         'loseWeight',
-  gain_muscle:         'gainMuscle',
-  stay_fit:            'stayFit',
-  improve_flexibility: 'improveFlexibility',
+// ── Constants ──────────────────────────────────────────────────────────────
+const ALL_GOALS = {
+  lose_weight:         { label: 'Lose Weight',         color: '#E74C3C' },
+  reduce_body_fat:     { label: 'Reduce Body Fat',     color: '#FF6B6B' },
+  gain_muscle:         { label: 'Gain Muscle',         color: '#E67E22' },
+  gain_weight:         { label: 'Gain Weight',         color: '#F39C12' },
+  increase_strength:   { label: 'Increase Strength',   color: '#E2B714' },
+  general_fitness:     { label: 'General Fitness',     color: '#2ECC71' },
+  maintain:            { label: 'Maintain Weight',     color: '#1ABC9C' },
+  endurance:           { label: 'Endurance',           color: '#2E86AB' },
+  improve_flexibility: { label: 'Improve Flexibility', color: '#9B59B6' },
 };
 
-const GOAL_COLORS = {
-  lose_weight:         '#E74C3C',
-  gain_muscle:         '#E67E22',
-  stay_fit:            '#2ECC71',
-  improve_flexibility: '#2E86AB',
-};
+const ACTIVITY_LEVELS = [
+  { key: 'sedentary',         label: 'Sedentary',          sub: 'Desk job, little movement' },
+  { key: 'lightly_active',    label: 'Lightly Active',     sub: 'Light exercise 1–3×/week' },
+  { key: 'moderately_active', label: 'Moderately Active',  sub: 'Moderate exercise 3–5×/week' },
+  { key: 'very_active',       label: 'Very Active',        sub: 'Hard training 6–7×/week' },
+  { key: 'athlete',           label: 'Athlete',            sub: 'Twice-daily or physical job' },
+];
 
+const EXPERIENCE_LEVELS = [
+  { key: 'beginner',     label: 'Beginner',     sub: '< 1 year' },
+  { key: 'intermediate', label: 'Intermediate', sub: '1–3 years' },
+  { key: 'advanced',     label: 'Advanced',     sub: '3+ years' },
+];
+
+const DIET_PREFS = [
+  { key: 'vegetarian',     label: 'Vegetarian' },
+  { key: 'eggetarian',     label: 'Eggetarian' },
+  { key: 'non_vegetarian', label: 'Non-Veg' },
+  { key: 'vegan',          label: 'Vegan' },
+  { key: 'jain',           label: 'Jain' },
+];
+
+const LOSS_SPEEDS = [
+  { key: 'slow_cut',       label: 'Slow Cut',       sub: '−200 kcal/day' },
+  { key: 'moderate_cut',   label: 'Moderate Cut',   sub: '−400 kcal/day' },
+  { key: 'aggressive_cut', label: 'Aggressive Cut', sub: '−600 kcal/day' },
+];
+
+const GAIN_SPEEDS = [
+  { key: 'slow_bulk',       label: 'Slow Bulk',       sub: '+150 kcal/day' },
+  { key: 'lean_bulk',       label: 'Lean Bulk',       sub: '+250 kcal/day' },
+  { key: 'aggressive_bulk', label: 'Aggressive Bulk', sub: '+400 kcal/day' },
+];
+
+const LOSS_GOALS = new Set(['lose_weight', 'reduce_body_fat']);
+const GAIN_GOALS = new Set(['gain_muscle', 'gain_weight']);
+
+// ── Sub-components ─────────────────────────────────────────────────────────
 function StatBox({ label, value, unit, color }) {
   return (
     <View style={styles.statBox}>
@@ -35,19 +72,47 @@ function StatBox({ label, value, unit, color }) {
   );
 }
 
+function MacroCard({ label, value, unit, color }) {
+  return (
+    <View style={[styles.macroCard, { borderColor: color + '44' }]}>
+      <Text style={[styles.macroValue, { color }]}>{value ?? '—'}</Text>
+      <Text style={styles.macroUnit}>{unit}</Text>
+      <Text style={styles.macroLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function SectionLabel({ children }) {
+  return <Text style={styles.sectionLabel}>{children}</Text>;
+}
+
+function DetailRow({ icon, label, value, color = Colors.accentGold }) {
+  return (
+    <View style={styles.detailRow}>
+      <Ionicons name={icon} size={14} color={color} style={{ width: 20 }} />
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text style={styles.detailValue}>{value}</Text>
+    </View>
+  );
+}
+
+// ── Screen ─────────────────────────────────────────────────────────────────
 export default function ProfileScreen({ visible, onClose }) {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
-  const [profile, setProfile]       = useState(null);
-  const [loading, setLoading]       = useState(true);
-  const [evoHistory, setEvoHistory] = useState([]);
-  const [editing, setEditing]         = useState(false);
-  const [saving, setSaving]           = useState(false);
+  const [profile, setProfile]           = useState(null);
+  const [loading, setLoading]           = useState(true);
+  const [evoHistory, setEvoHistory]     = useState([]);
+  const [editing, setEditing]           = useState(false);
+  const [saving, setSaving]             = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [heightUnit, setHeightUnit] = useState('cm');
+  const [heightUnit, setHeightUnit]     = useState('cm');
 
   const [form, setForm] = useState({
-    age: '', weightKg: '', heightCm: '', feet: '', inches: '', healthGoal: '', waterGoalGlasses: '',
+    gender: '', age: '', weightKg: '', targetWeightKg: '',
+    heightCm: '', feet: '', inches: '',
+    activityLevel: '', healthGoal: '', weightChangeSpeed: '',
+    experienceLevel: '', dietaryPreference: '', waterGoalGlasses: '8',
   });
 
   useEffect(() => {
@@ -87,36 +152,48 @@ export default function ProfileScreen({ visible, onClose }) {
     const ftIn = storedCm ? cmToFtIn(storedCm) : { feet: '', inches: '' };
     setHeightUnit('cm');
     setForm({
-      age:              String(profile?.age ?? ''),
-      weightKg:         String(profile?.weightKg ?? ''),
-      heightCm:         String(storedCm),
-      feet:             ftIn.feet,
-      inches:           ftIn.inches,
-      healthGoal:       profile?.healthGoal ?? '',
-      waterGoalGlasses: String(profile?.waterGoalGlasses ?? '8'),
+      gender:            profile?.gender ?? '',
+      age:               String(profile?.age ?? ''),
+      weightKg:          String(profile?.weightKg ?? ''),
+      targetWeightKg:    String(profile?.targetWeightKg ?? ''),
+      heightCm:          String(storedCm),
+      feet:              ftIn.feet,
+      inches:            ftIn.inches,
+      activityLevel:     profile?.activityLevel ?? '',
+      healthGoal:        profile?.healthGoal ?? '',
+      weightChangeSpeed: profile?.weightChangeSpeed ?? '',
+      experienceLevel:   profile?.experienceLevel ?? '',
+      dietaryPreference: profile?.dietaryPreference ?? '',
+      waterGoalGlasses:  String(profile?.waterGoalGlasses ?? '8'),
     });
     setEditing(true);
   }
 
   async function saveEdit() {
     const heightCm = getHeightCm();
-    if (!form.age || !form.weightKg || !heightCm || !form.healthGoal) {
-      Alert.alert('Missing fields', 'Please fill in all fields.');
-      return;
-    }
-    if (isNaN(heightCm) || heightCm < 50) {
-      Alert.alert('Invalid height', 'Height must be at least 50 cm.');
-      return;
-    }
+    if (!form.gender)        { Alert.alert('Required', 'Please select a gender.');         return; }
+    if (!form.age || !form.weightKg || !heightCm) { Alert.alert('Required', 'Fill in age, weight, and height.'); return; }
+    if (isNaN(heightCm) || heightCm < 50) { Alert.alert('Invalid', 'Height must be at least 50 cm.'); return; }
+    if (!form.activityLevel) { Alert.alert('Required', 'Please select an activity level.'); return; }
+    if (!form.healthGoal)    { Alert.alert('Required', 'Please select a health goal.');    return; }
+
     setSaving(true);
     try {
-      const { data } = await client.patch('/profile', {
+      const payload = {
+        gender:           form.gender,
         age:              parseInt(form.age),
         weightKg:         parseFloat(form.weightKg),
         heightCm,
+        activityLevel:    form.activityLevel,
         healthGoal:       form.healthGoal,
         waterGoalGlasses: parseInt(form.waterGoalGlasses) || 8,
-      });
+      };
+      if (form.targetWeightKg)    payload.targetWeightKg    = parseFloat(form.targetWeightKg);
+      if (form.weightChangeSpeed) payload.weightChangeSpeed = form.weightChangeSpeed;
+      if (form.experienceLevel)   payload.experienceLevel   = form.experienceLevel;
+      if (form.dietaryPreference) payload.dietaryPreference = form.dietaryPreference;
+
+      const { data } = await client.patch('/profile', payload);
       setProfile(data);
       setEditing(false);
     } catch {
@@ -133,7 +210,16 @@ export default function ProfileScreen({ visible, onClose }) {
     ]);
   }
 
-  const goalColor = profile?.healthGoal ? GOAL_COLORS[profile.healthGoal] : Colors.accentGold;
+  const goalInfo          = profile?.healthGoal ? ALL_GOALS[profile.healthGoal] : null;
+  const showTargetWeight  = LOSS_GOALS.has(form.healthGoal) || GAIN_GOALS.has(form.healthGoal);
+  const showSpeed         = LOSS_GOALS.has(form.healthGoal) || GAIN_GOALS.has(form.healthGoal);
+  const speedOptions      = LOSS_GOALS.has(form.healthGoal) ? LOSS_SPEEDS : GAIN_SPEEDS;
+
+  const genderLabel = (g) => {
+    if (!g) return null;
+    if (g === 'prefer_not_to_say') return 'Prefer not to say';
+    return g.charAt(0).toUpperCase() + g.slice(1);
+  };
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -142,7 +228,7 @@ export default function ProfileScreen({ visible, onClose }) {
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>{editing ? t('editProfile') : t('profile')}</Text>
+          <Text style={styles.headerTitle}>{editing ? 'Edit Profile' : t('profile')}</Text>
           <View style={styles.headerRight}>
             {!editing && !loading && (
               <>
@@ -163,136 +249,189 @@ export default function ProfileScreen({ visible, onClose }) {
         {loading ? (
           <ActivityIndicator color={Colors.accentGold} style={{ marginTop: 60 }} />
         ) : editing ? (
-          // ── Edit Mode ──────────────────────────────────────────────────────
-          <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-            <Text style={styles.editSection}>Body Stats</Text>
 
-            <View style={styles.inputRow}>
+          /* ── EDIT MODE ──────────────────────────────────────────────────── */
+          <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+
+            <SectionLabel>Body Stats</SectionLabel>
+
+            <Text style={styles.inputLabel}>Gender</Text>
+            <View style={styles.chipRow}>
+              {[
+                { key: 'male',              label: 'Male' },
+                { key: 'female',            label: 'Female' },
+                { key: 'prefer_not_to_say', label: 'Prefer not to say' },
+              ].map(({ key, label }) => {
+                const sel = form.gender === key;
+                return (
+                  <TouchableOpacity key={key} style={[styles.chip, sel && styles.chipActive]} onPress={() => setForm(f => ({ ...f, gender: key }))}>
+                    <Text style={[styles.chipText, sel && styles.chipTextActive]}>{label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <View style={[styles.inputRow, { marginTop: 12 }]}>
               <View style={styles.inputHalf}>
                 <Text style={styles.inputLabel}>Age</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.age}
-                  onChangeText={v => setForm(f => ({ ...f, age: v }))}
-                  keyboardType="numeric"
-                  placeholder="e.g. 22"
-                  placeholderTextColor={Colors.textMuted}
-                />
+                <TextInput style={styles.input} value={form.age} onChangeText={v => setForm(f => ({ ...f, age: v }))} keyboardType="numeric" placeholder="e.g. 22" placeholderTextColor={Colors.textMuted} />
               </View>
               <View style={styles.inputHalf}>
                 <Text style={styles.inputLabel}>Weight (kg)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.weightKg}
-                  onChangeText={v => setForm(f => ({ ...f, weightKg: v }))}
-                  keyboardType="decimal-pad"
-                  placeholder="e.g. 70"
-                  placeholderTextColor={Colors.textMuted}
-                />
+                <TextInput style={styles.input} value={form.weightKg} onChangeText={v => setForm(f => ({ ...f, weightKg: v }))} keyboardType="decimal-pad" placeholder="e.g. 70" placeholderTextColor={Colors.textMuted} />
               </View>
             </View>
 
             <View style={styles.heightHeader}>
               <Text style={styles.inputLabel}>Height</Text>
               <View style={styles.unitToggle}>
-                <TouchableOpacity
-                  style={[styles.unitBtn, heightUnit === 'cm' && styles.unitBtnActive]}
-                  onPress={() => setHeightUnit('cm')}
-                >
+                <TouchableOpacity style={[styles.unitBtn, heightUnit === 'cm' && styles.unitBtnActive]} onPress={() => setHeightUnit('cm')}>
                   <Text style={[styles.unitBtnText, heightUnit === 'cm' && styles.unitBtnTextActive]}>cm</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.unitBtn, heightUnit === 'ft' && styles.unitBtnActive]}
-                  onPress={() => setHeightUnit('ft')}
-                >
+                <TouchableOpacity style={[styles.unitBtn, heightUnit === 'ft' && styles.unitBtnActive]} onPress={() => setHeightUnit('ft')}>
                   <Text style={[styles.unitBtnText, heightUnit === 'ft' && styles.unitBtnTextActive]}>ft / in</Text>
                 </TouchableOpacity>
               </View>
             </View>
-
             {heightUnit === 'cm' ? (
-              <TextInput
-                style={styles.input}
-                value={form.heightCm}
-                onChangeText={v => setForm(f => ({ ...f, heightCm: v }))}
-                keyboardType="decimal-pad"
-                placeholder="e.g. 175"
-                placeholderTextColor={Colors.textMuted}
-              />
+              <TextInput style={[styles.input, { marginBottom: 4 }]} value={form.heightCm} onChangeText={v => setForm(f => ({ ...f, heightCm: v }))} keyboardType="decimal-pad" placeholder="e.g. 175" placeholderTextColor={Colors.textMuted} />
             ) : (
               <View style={styles.ftRow}>
-                <TextInput
-                  style={[styles.input, styles.ftInput]}
-                  value={form.feet}
-                  onChangeText={v => setForm(f => ({ ...f, feet: v }))}
-                  keyboardType="numeric"
-                  placeholder="5"
-                  placeholderTextColor={Colors.textMuted}
-                />
+                <TextInput style={[styles.input, styles.ftInput]} value={form.feet} onChangeText={v => setForm(f => ({ ...f, feet: v }))} keyboardType="numeric" placeholder="5" placeholderTextColor={Colors.textMuted} />
                 <Text style={styles.ftLabel}>ft</Text>
-                <TextInput
-                  style={[styles.input, styles.ftInput]}
-                  value={form.inches}
-                  onChangeText={v => setForm(f => ({ ...f, inches: v }))}
-                  keyboardType="numeric"
-                  placeholder="9"
-                  placeholderTextColor={Colors.textMuted}
-                />
+                <TextInput style={[styles.input, styles.ftInput]} value={form.inches} onChangeText={v => setForm(f => ({ ...f, inches: v }))} keyboardType="numeric" placeholder="9" placeholderTextColor={Colors.textMuted} />
                 <Text style={styles.ftLabel}>in</Text>
               </View>
             )}
 
-            <View style={[styles.inputRow, { marginTop: 16 }]}>
-              <View style={styles.inputHalf}>
-                <Text style={styles.inputLabel}>Water Goal (glasses)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.waterGoalGlasses}
-                  onChangeText={v => setForm(f => ({ ...f, waterGoalGlasses: v }))}
-                  keyboardType="numeric"
-                  placeholder="e.g. 8"
-                  placeholderTextColor={Colors.textMuted}
-                />
-              </View>
-            </View>
+            {/* Activity Level */}
+            <SectionLabel>Activity Level</SectionLabel>
+            {ACTIVITY_LEVELS.map(({ key, label, sub }) => {
+              const sel = form.activityLevel === key;
+              return (
+                <TouchableOpacity key={key} style={[styles.optionCard, sel && styles.optionCardActive]} onPress={() => setForm(f => ({ ...f, activityLevel: key }))}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.optionLabel, sel && { color: Colors.accentGold }]}>{label}</Text>
+                    <Text style={styles.optionSub}>{sub}</Text>
+                  </View>
+                  {sel && <Ionicons name="checkmark-circle" size={20} color={Colors.accentGold} />}
+                </TouchableOpacity>
+              );
+            })}
 
-            <Text style={styles.editSection}>Health Goal</Text>
+            {/* Health Goal */}
+            <SectionLabel>Health Goal</SectionLabel>
             <View style={styles.goalGrid}>
-              {Object.entries(GOAL_KEYS).map(([key, labelKey]) => {
-              const label = t(labelKey);
-                const selected = form.healthGoal === key;
-                const color = GOAL_COLORS[key];
+              {Object.entries(ALL_GOALS).map(([key, { label, color }]) => {
+                const sel = form.healthGoal === key;
                 return (
                   <TouchableOpacity
                     key={key}
-                    style={[styles.goalOption, selected && { borderColor: color, backgroundColor: color + '22' }]}
-                    onPress={() => setForm(f => ({ ...f, healthGoal: key }))}
+                    style={[styles.goalOption, sel && { borderColor: color, backgroundColor: color + '22' }]}
+                    onPress={() => setForm(f => ({ ...f, healthGoal: key, weightChangeSpeed: '' }))}
                   >
-                    <Text style={[styles.goalOptionText, selected && { color }]}>{label}</Text>
+                    <View style={[styles.goalDotSmall, { backgroundColor: sel ? color : Colors.textMuted }]} />
+                    <Text style={[styles.goalOptionText, sel && { color }]}>{label}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
 
+            {/* Target Weight — only for gain/loss goals */}
+            {showTargetWeight && (
+              <>
+                <Text style={[styles.inputLabel, { marginTop: 4 }]}>
+                  Target Weight (kg) <Text style={{ color: Colors.textMuted, fontWeight: '400' }}>optional</Text>
+                </Text>
+                <TextInput
+                  style={[styles.input, { marginBottom: 4 }]}
+                  value={form.targetWeightKg}
+                  onChangeText={v => setForm(f => ({ ...f, targetWeightKg: v }))}
+                  keyboardType="decimal-pad"
+                  placeholder={LOSS_GOALS.has(form.healthGoal) ? 'e.g. 65' : 'e.g. 80'}
+                  placeholderTextColor={Colors.textMuted}
+                />
+              </>
+            )}
+
+            {/* Goal Pace — conditional on goal type */}
+            {showSpeed && (
+              <>
+                <SectionLabel>Goal Pace</SectionLabel>
+                {speedOptions.map(({ key, label, sub }) => {
+                  const sel = form.weightChangeSpeed === key;
+                  return (
+                    <TouchableOpacity key={key} style={[styles.optionCard, sel && styles.optionCardActive]} onPress={() => setForm(f => ({ ...f, weightChangeSpeed: key }))}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.optionLabel, sel && { color: Colors.accentGold }]}>{label}</Text>
+                        <Text style={styles.optionSub}>{sub}</Text>
+                      </View>
+                      {sel && <Ionicons name="checkmark-circle" size={20} color={Colors.accentGold} />}
+                    </TouchableOpacity>
+                  );
+                })}
+              </>
+            )}
+
+            {/* Preferences */}
+            <SectionLabel>Preferences</SectionLabel>
+
+            <Text style={styles.inputLabel}>Experience Level</Text>
+            <View style={styles.chipRow}>
+              {EXPERIENCE_LEVELS.map(({ key, label, sub }) => {
+                const sel = form.experienceLevel === key;
+                return (
+                  <TouchableOpacity key={key} style={[styles.chip, sel && styles.chipActive]} onPress={() => setForm(f => ({ ...f, experienceLevel: key }))}>
+                    <Text style={[styles.chipText, sel && styles.chipTextActive]}>{label}</Text>
+                    <Text style={[styles.chipSub, sel && { color: Colors.accentGold + 'AA' }]}>{sub}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Text style={[styles.inputLabel, { marginTop: 14 }]}>Dietary Preference</Text>
+            <View style={styles.chipRow}>
+              {DIET_PREFS.map(({ key, label }) => {
+                const sel = form.dietaryPreference === key;
+                return (
+                  <TouchableOpacity key={key} style={[styles.chip, sel && styles.chipActive]} onPress={() => setForm(f => ({ ...f, dietaryPreference: key }))}>
+                    <Text style={[styles.chipText, sel && styles.chipTextActive]}>{label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Text style={[styles.inputLabel, { marginTop: 16 }]}>Water Goal (glasses/day)</Text>
+            <TextInput
+              style={[styles.input, { marginBottom: 4 }]}
+              value={form.waterGoalGlasses}
+              onChangeText={v => setForm(f => ({ ...f, waterGoalGlasses: v }))}
+              keyboardType="numeric"
+              placeholder="e.g. 8"
+              placeholderTextColor={Colors.textMuted}
+            />
+
             <TouchableOpacity style={styles.saveBtn} onPress={saveEdit} disabled={saving} activeOpacity={0.8}>
               {saving
                 ? <ActivityIndicator color={Colors.background} />
-                : <Text style={styles.saveBtnText}>{t('save')}</Text>
+                : <Text style={styles.saveBtnText}>Save Changes</Text>
               }
             </TouchableOpacity>
-
             <View style={{ height: 40 }} />
           </ScrollView>
+
         ) : (
-          // ── View Mode ──────────────────────────────────────────────────────
+
+          /* ── VIEW MODE ──────────────────────────────────────────────────── */
           <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-            {/* Avatar + Name */}
+            {/* Avatar + Name + Stage */}
             <View style={styles.avatarSection}>
               <View style={styles.avatar}>
                 <Ionicons name="person" size={40} color={Colors.textSub} />
               </View>
               <Text style={styles.userName}>{profile?.name || user?.name}</Text>
+              <Text style={styles.userEmail}>{profile?.email || user?.email}</Text>
               <View style={[styles.rankBadge, { backgroundColor: Colors.accentPurple }]}>
                 <Text style={styles.rankText}>{profile?.evolutionStage || 'Spark'}</Text>
               </View>
@@ -310,42 +449,95 @@ export default function ProfileScreen({ visible, onClose }) {
               </View>
             </View>
 
-            {/* Health Stats */}
+            {/* Body Stats */}
             {profile?.weightKg && (
               <View style={styles.card}>
-                <Text style={styles.cardTitle}>{t('bodyStats')}</Text>
+                <Text style={styles.cardTitle}>Body Stats</Text>
+                {profile.gender && (
+                  <DetailRow icon="person-outline" label="Gender" value={genderLabel(profile.gender)} />
+                )}
                 <View style={styles.statsGrid}>
-                  <StatBox label={t('weight')} value={profile.weightKg} unit="kg" />
-                  <StatBox label={t('height')} value={profile.heightCm} unit="cm" />
-                  <StatBox label={t('age')}    value={profile.age}      unit="yrs" />
+                  <StatBox label="Weight" value={profile.weightKg} unit="kg" />
+                  <StatBox label="Height" value={profile.heightCm} unit="cm" />
+                  <StatBox label="Age"    value={profile.age}      unit="yrs" />
                   <StatBox label="BMI"    value={profile.bmi}      color={
-                    profile.bmi < 18.5 ? '#2E86AB'
-                    : profile.bmi < 25  ? '#2ECC71'
-                    : profile.bmi < 30  ? '#E67E22'
-                    : '#E74C3C'
+                    !profile.bmi ? undefined :
+                    profile.bmi < 18.5 ? '#2E86AB' :
+                    profile.bmi < 25   ? '#2ECC71' :
+                    profile.bmi < 30   ? '#E67E22' : '#E74C3C'
                   } />
                 </View>
                 {profile.bmiCategory && (
-                  <Text style={styles.bmiCategory}>BMI: {profile.bmiCategory}</Text>
+                  <Text style={styles.bmiCategory}>BMI Category: {profile.bmiCategory}</Text>
                 )}
                 {profile.tdee && (
                   <Text style={styles.tdeeText}>
-                    Estimated TDEE: <Text style={{ color: Colors.accentGold }}>{profile.tdee} kcal/day</Text>
+                    TDEE: <Text style={{ color: Colors.accentGold }}>{profile.tdee} kcal/day</Text>
                   </Text>
                 )}
               </View>
             )}
 
+            {/* Profile Details */}
+            {(profile?.activityLevel || profile?.experienceLevel || profile?.dietaryPreference || profile?.targetWeightKg || profile?.weightChangeSpeed) && (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Profile Details</Text>
+                {profile.activityLevel && (
+                  <DetailRow
+                    icon="flash-outline"
+                    label="Activity"
+                    value={ACTIVITY_LEVELS.find(a => a.key === profile.activityLevel)?.label ?? profile.activityLevel}
+                  />
+                )}
+                {profile.experienceLevel && (
+                  <DetailRow
+                    icon="barbell-outline"
+                    label="Experience"
+                    value={EXPERIENCE_LEVELS.find(e => e.key === profile.experienceLevel)?.label ?? profile.experienceLevel}
+                  />
+                )}
+                {profile.dietaryPreference && (
+                  <DetailRow
+                    icon="leaf-outline"
+                    label="Diet"
+                    value={DIET_PREFS.find(d => d.key === profile.dietaryPreference)?.label ?? profile.dietaryPreference}
+                  />
+                )}
+                {profile.targetWeightKg && (
+                  <DetailRow icon="flag-outline" label="Target" value={`${profile.targetWeightKg} kg`} />
+                )}
+                {profile.weightChangeSpeed && (
+                  <DetailRow
+                    icon="speedometer-outline"
+                    label="Pace"
+                    value={[...LOSS_SPEEDS, ...GAIN_SPEEDS].find(s => s.key === profile.weightChangeSpeed)?.label ?? profile.weightChangeSpeed}
+                  />
+                )}
+              </View>
+            )}
+
             {/* Health Goal */}
-            {profile?.healthGoal && (
-              <View style={[styles.card, { borderColor: goalColor + '44' }]}>
-                <Text style={styles.cardTitle}>{t('healthGoal')}</Text>
+            {profile?.healthGoal && goalInfo && (
+              <View style={[styles.card, { borderColor: goalInfo.color + '55' }]}>
+                <Text style={styles.cardTitle}>Health Goal</Text>
                 <View style={styles.goalRow}>
-                  <View style={[styles.goalDot, { backgroundColor: goalColor }]} />
-                  <Text style={[styles.goalText, { color: goalColor }]}>
-                    {t(GOAL_KEYS[profile.healthGoal])}
-                  </Text>
+                  <View style={[styles.goalDot, { backgroundColor: goalInfo.color }]} />
+                  <Text style={[styles.goalText, { color: goalInfo.color }]}>{goalInfo.label}</Text>
                 </View>
+              </View>
+            )}
+
+            {/* Macro Targets */}
+            {profile?.dailyCalorieGoal && (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Daily Macro Targets</Text>
+                <View style={styles.macroGrid}>
+                  <MacroCard label="Calories" value={profile.dailyCalorieGoal} unit="kcal" color="#E74C3C" />
+                  <MacroCard label="Protein"  value={profile.dailyProteinGoal} unit="g"    color="#E67E22" />
+                  <MacroCard label="Carbs"    value={profile.dailyCarbGoal}    unit="g"    color="#E2B714" />
+                  <MacroCard label="Fat"      value={profile.dailyFatGoal}     unit="g"    color="#2E86AB" />
+                </View>
+                <Text style={styles.macroNote}>Calculated from your BMR, activity, and goal</Text>
               </View>
             )}
 
@@ -380,14 +572,12 @@ export default function ProfileScreen({ visible, onClose }) {
               ) : (
                 evoHistory.map(entry => {
                   const date = new Date(entry.stagedUpAt);
-                  const label = `${date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+                  const label = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
                   return (
                     <View key={entry.id} style={styles.evoRow}>
                       <View style={styles.evoDot} />
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.evoStages}>
-                          {entry.fromStage} <Text style={styles.evoArrow}>→</Text> {entry.toStage}
-                        </Text>
+                        <Text style={styles.evoStages}>{entry.fromStage} <Text style={styles.evoArrow}>→</Text> {entry.toStage}</Text>
                         <Text style={styles.evoMeta}>{label} · {entry.epAtStageUp} EP</Text>
                       </View>
                     </View>
@@ -412,7 +602,6 @@ export default function ProfileScreen({ visible, onClose }) {
               <Ionicons name="log-out-outline" size={18} color="#E74C3C" />
               <Text style={styles.logoutText}>{t('logout')}</Text>
             </TouchableOpacity>
-
             <View style={{ height: 40 }} />
           </ScrollView>
         )}
@@ -425,74 +614,116 @@ export default function ProfileScreen({ visible, onClose }) {
   );
 }
 
+// ── Styles ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
+  safe:        { flex: 1, backgroundColor: Colors.background },
+  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.text },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
-  scroll: { flex: 1, paddingHorizontal: 20 },
+  scroll:      { flex: 1, paddingHorizontal: 20 },
 
+  // Avatar
   avatarSection: { alignItems: 'center', paddingVertical: 24 },
-  avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: Colors.card, borderWidth: 2, borderColor: Colors.accentPurple, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  userName: { fontSize: 22, fontWeight: '800', color: Colors.text, marginBottom: 8 },
+  avatar:    { width: 88, height: 88, borderRadius: 44, backgroundColor: Colors.card, borderWidth: 2, borderColor: Colors.accentPurple, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  userName:  { fontSize: 22, fontWeight: '800', color: Colors.text, marginBottom: 4 },
+  userEmail: { fontSize: 12, color: Colors.textMuted, marginBottom: 10 },
   rankBadge: { borderRadius: 10, paddingHorizontal: 14, paddingVertical: 5 },
-  rankText: { fontSize: 11, fontWeight: '800', color: Colors.text, letterSpacing: 1.5 },
+  rankText:  { fontSize: 11, fontWeight: '800', color: Colors.text, letterSpacing: 1.5 },
 
-  xpRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  xpCard: { flex: 1, backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: Colors.cardBorder, padding: 16, alignItems: 'center' },
+  // EP/Streak row
+  xpRow:   { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  xpCard:  { flex: 1, backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: Colors.cardBorder, padding: 16, alignItems: 'center' },
   xpValue: { fontSize: 24, fontWeight: '900', color: Colors.accentGold },
   xpLabel: { fontSize: 11, color: Colors.textSub, marginTop: 4 },
 
-  card: { backgroundColor: Colors.card, borderRadius: 16, borderWidth: 1, borderColor: Colors.cardBorder, padding: 16, marginBottom: 12 },
+  // Cards
+  card:      { backgroundColor: Colors.card, borderRadius: 16, borderWidth: 1, borderColor: Colors.cardBorder, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 13, fontWeight: '700', color: Colors.textSub, marginBottom: 14, textTransform: 'uppercase', letterSpacing: 0.8 },
 
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
-  statBox: { flex: 1, minWidth: '40%', backgroundColor: Colors.background, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, padding: 12, alignItems: 'center' },
+  // Stats grid
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 10, marginTop: 8 },
+  statBox:   { flex: 1, minWidth: '40%', backgroundColor: Colors.background, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, padding: 12, alignItems: 'center' },
   statValue: { fontSize: 22, fontWeight: '800', color: Colors.text },
-  statUnit: { fontSize: 11, color: Colors.textMuted, marginTop: 1 },
+  statUnit:  { fontSize: 11, color: Colors.textMuted, marginTop: 1 },
   statLabel: { fontSize: 11, color: Colors.textSub, marginTop: 4 },
-  bmiCategory: { fontSize: 13, color: Colors.textSub, textAlign: 'center' },
-  tdeeText: { fontSize: 13, color: Colors.textSub, marginTop: 6, textAlign: 'center' },
+  bmiCategory: { fontSize: 13, color: Colors.textSub, textAlign: 'center', marginTop: 2 },
+  tdeeText:    { fontSize: 13, color: Colors.textSub, marginTop: 6, textAlign: 'center' },
 
+  // Detail rows
+  detailRow:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  detailLabel: { fontSize: 13, color: Colors.textMuted, width: 72 },
+  detailValue: { fontSize: 13, fontWeight: '600', color: Colors.text, flex: 1 },
+
+  // Goal
   goalRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   goalDot: { width: 10, height: 10, borderRadius: 5 },
   goalText: { fontSize: 15, fontWeight: '700' },
 
-  evoEmpty: { fontSize: 13, color: Colors.textMuted, fontStyle: 'italic', textAlign: 'center', paddingVertical: 8 },
-  evoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
-  evoDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.accentGold, marginTop: 5 },
+  // Macro targets
+  macroGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 10 },
+  macroCard:     { flex: 1, minWidth: '40%', backgroundColor: Colors.background, borderRadius: 12, borderWidth: 1, padding: 12, alignItems: 'center', gap: 2 },
+  macroValue:    { fontSize: 20, fontWeight: '800' },
+  macroUnit:     { fontSize: 11, color: Colors.textMuted },
+  macroLabel:    { fontSize: 11, color: Colors.textSub, marginTop: 2 },
+  macroNote:     { fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: 4 },
+
+  // Attributes
+  attrRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  attrLabel:  { fontSize: 12, fontWeight: '600', color: Colors.textSub, width: 72 },
+  attrBarBg:  { flex: 1, height: 6, backgroundColor: Colors.background, borderRadius: 3, overflow: 'hidden' },
+  attrBarFill:{ height: 6, borderRadius: 3 },
+  attrValue:  { fontSize: 12, fontWeight: '700', width: 28, textAlign: 'right' },
+
+  // Evolution history
+  evoEmpty:  { fontSize: 13, color: Colors.textMuted, fontStyle: 'italic', textAlign: 'center', paddingVertical: 8 },
+  evoRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
+  evoDot:    { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.accentGold, marginTop: 5 },
   evoStages: { fontSize: 14, fontWeight: '700', color: Colors.text },
-  evoArrow: { color: Colors.accentGold },
-  evoMeta: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  evoArrow:  { color: Colors.accentGold },
+  evoMeta:   { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
 
-  attrRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  attrLabel: { fontSize: 12, fontWeight: '600', color: Colors.textSub, width: 72 },
-  attrBarBg: { flex: 1, height: 6, backgroundColor: Colors.background, borderRadius: 3, overflow: 'hidden' },
-  attrBarFill: { height: 6, borderRadius: 3 },
-  attrValue: { fontSize: 12, fontWeight: '700', width: 28, textAlign: 'right' },
-
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: '#E74C3C33', padding: 16, marginTop: 8 },
+  // Logout
+  logoutBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: '#E74C3C33', padding: 16, marginTop: 8 },
   logoutText: { fontSize: 15, fontWeight: '700', color: '#E74C3C' },
 
-  // Edit mode
-  editSection: { fontSize: 13, fontWeight: '700', color: Colors.textSub, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 20, marginBottom: 12 },
-  inputRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  inputHalf: { flex: 1 },
-  inputLabel: { fontSize: 12, color: Colors.textSub, marginBottom: 6, fontWeight: '600' },
-  input: { backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, color: Colors.text, fontSize: 15 },
-  goalGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
-  goalOption: { flex: 1, minWidth: '45%', backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, alignItems: 'center' },
-  goalOptionText: { fontSize: 13, fontWeight: '700', color: Colors.textSub },
-  saveBtn: { backgroundColor: Colors.accentGold, borderRadius: 14, padding: 16, alignItems: 'center', marginTop: 4 },
+  // Edit mode — shared
+  sectionLabel: { fontSize: 13, fontWeight: '700', color: Colors.textSub, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 22, marginBottom: 12 },
+  inputRow:     { flexDirection: 'row', gap: 12 },
+  inputHalf:    { flex: 1 },
+  inputLabel:   { fontSize: 12, color: Colors.textSub, marginBottom: 6, fontWeight: '600' },
+  input:        { backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, color: Colors.text, fontSize: 15, marginBottom: 4 },
+
+  // Chips
+  chipRow:       { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
+  chip:          { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: Colors.cardBorder, backgroundColor: Colors.card, alignItems: 'center' },
+  chipActive:    { borderColor: Colors.accentGold, backgroundColor: Colors.accentGold + '22' },
+  chipText:      { fontSize: 13, color: Colors.textSub, fontWeight: '600' },
+  chipTextActive:{ color: Colors.accentGold },
+  chipSub:       { fontSize: 10, color: Colors.textMuted, marginTop: 2 },
+
+  // Option cards (activity / pace)
+  optionCard:       { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, marginBottom: 8 },
+  optionCardActive: { borderColor: Colors.accentGold, backgroundColor: Colors.accentGold + '11' },
+  optionLabel:      { fontSize: 14, fontWeight: '700', color: Colors.text, marginBottom: 2 },
+  optionSub:        { fontSize: 12, color: Colors.textMuted },
+
+  // Goal grid (edit mode)
+  goalGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 8 },
+  goalOption:     { flex: 1, minWidth: '45%', backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, padding: 12, alignItems: 'center', gap: 6 },
+  goalDotSmall:   { width: 8, height: 8, borderRadius: 4 },
+  goalOptionText: { fontSize: 12, fontWeight: '700', color: Colors.textSub, textAlign: 'center' },
+
+  saveBtn:     { backgroundColor: Colors.accentGold, borderRadius: 14, padding: 16, alignItems: 'center', marginTop: 12 },
   saveBtnText: { fontSize: 15, fontWeight: '800', color: Colors.background },
 
-  heightHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  unitToggle: { flexDirection: 'row', backgroundColor: Colors.card, borderRadius: 8, borderWidth: 1, borderColor: Colors.cardBorder, overflow: 'hidden' },
-  unitBtn: { paddingHorizontal: 12, paddingVertical: 5 },
-  unitBtnActive: { backgroundColor: Colors.accentGold },
-  unitBtnText: { fontSize: 12, color: Colors.textMuted, fontWeight: '600' },
+  // Height toggle
+  heightHeader:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  unitToggle:        { flexDirection: 'row', backgroundColor: Colors.card, borderRadius: 8, borderWidth: 1, borderColor: Colors.cardBorder, overflow: 'hidden' },
+  unitBtn:           { paddingHorizontal: 12, paddingVertical: 5 },
+  unitBtnActive:     { backgroundColor: Colors.accentGold },
+  unitBtnText:       { fontSize: 12, color: Colors.textMuted, fontWeight: '600' },
   unitBtnTextActive: { color: Colors.background },
-  ftRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 18 },
-  ftInput: { flex: 1, marginBottom: 0 },
+  ftRow:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  ftInput: { flex: 1 },
   ftLabel: { fontSize: 15, color: Colors.textSub, fontWeight: '600' },
 });
