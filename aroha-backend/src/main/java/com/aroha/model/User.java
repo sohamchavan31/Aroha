@@ -38,14 +38,23 @@ public class User {
     private int streak;
 
     // ── Health profile (set during onboarding) ───────────────────────────────
+    private String gender;              // male | female | other
     private Integer age;
     private Double weightKg;
+    private Double targetWeightKg;
     private Double heightCm;
-
-    // lose_weight | gain_muscle | stay_fit | improve_flexibility
+    private String activityLevel;       // sedentary | lightly_active | moderately_active | very_active | athlete
     private String healthGoal;
-
+    private String weightChangeSpeed;   // slow_cut | moderate_cut | aggressive_cut | slow_bulk | lean_bulk | aggressive_bulk
+    private String experienceLevel;     // beginner | intermediate | advanced
+    private String dietaryPreference;   // vegetarian | eggetarian | non_vegetarian | vegan | jain
     private Integer waterGoalGlasses;
+
+    // ── Stored macro targets (computed on save, used by macro screen + AI) ──
+    private Integer dailyCalorieGoal;
+    private Integer dailyProteinGoal;
+    private Integer dailyCarbGoal;
+    private Integer dailyFatGoal;
 
     private Boolean profileComplete;
 

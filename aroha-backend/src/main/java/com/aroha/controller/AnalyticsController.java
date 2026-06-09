@@ -76,6 +76,18 @@ public class AnalyticsController {
                 ? Math.round((currentWeight - oldWeight) * 10.0) / 10.0
                 : 0.0;
 
+        // Goal progress towards target weight
+        Double startWeight  = user.getWeightKg();
+        Double targetWeight = user.getTargetWeightKg();
+        Integer goalProgressPct = null;
+        if (startWeight != null && targetWeight != null && currentWeight > 0) {
+            double range = targetWeight - startWeight;
+            if (Math.abs(range) > 0.01) {
+                double progress = (currentWeight - startWeight) / range;
+                goalProgressPct = (int) Math.round(Math.min(100, Math.max(0, progress * 100)));
+            }
+        }
+
         Map<String, Object> result = new HashMap<>();
         result.put("avgCalories7d",          Math.round(avgCal));
         result.put("avgProteinG7d",           Math.round(avgProt  * 10.0) / 10.0);
@@ -86,6 +98,9 @@ public class AnalyticsController {
         result.put("currentWeightKg",         currentWeight);
         result.put("weightChange30d",         weightChange30d);
         result.put("loggedDays7d",            dailyTotals.size());
+        result.put("targetWeightKg",          targetWeight);
+        result.put("startWeightKg",           startWeight);
+        result.put("goalProgressPct",         goalProgressPct);
         return ResponseEntity.ok(result);
     }
 }

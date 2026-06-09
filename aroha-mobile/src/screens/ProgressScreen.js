@@ -123,8 +123,14 @@ export default function ProgressScreen() {
   const deltaColor = delta < 0 ? Colors.success
     : delta > 0 ? Colors.rankS : Colors.textSub;
 
-  const currentW  = summary?.currentWeightKg       ?? 0;
-  const habitPct  = Math.round((summary?.habitCompletionRate7d ?? 0) * 100);
+  const currentW      = summary?.currentWeightKg       ?? 0;
+  const habitPct      = Math.round((summary?.habitCompletionRate7d ?? 0) * 100);
+  const targetW       = summary?.targetWeightKg        ?? null;
+  const startW        = summary?.startWeightKg         ?? null;
+  const goalProgress  = summary?.goalProgressPct       ?? null;
+  const remainingKg   = targetW != null && currentW > 0
+    ? Math.abs(targetW - currentW).toFixed(1)
+    : null;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -159,6 +165,39 @@ export default function ProgressScreen() {
                 </Text>
               </View>
             </View>
+
+            {/* ── goal progress card ── */}
+            {targetW != null && currentW > 0 && (
+              <View style={styles.goalCard}>
+                <View style={styles.goalCardHeader}>
+                  <Text style={styles.goalCardTitle}>Goal Progress</Text>
+                  <Text style={styles.goalCardPct}>{goalProgress ?? 0}%</Text>
+                </View>
+                <View style={styles.goalTrack}>
+                  <View style={[styles.goalFill, { width: `${Math.min(100, goalProgress ?? 0)}%` }]} />
+                </View>
+                <View style={styles.goalCardFooter}>
+                  <View style={styles.goalStat}>
+                    <Text style={styles.goalStatLbl}>Start</Text>
+                    <Text style={styles.goalStatVal}>{startW ?? currentW} kg</Text>
+                  </View>
+                  <View style={styles.goalStat}>
+                    <Text style={styles.goalStatLbl}>Current</Text>
+                    <Text style={[styles.goalStatVal, { color: Colors.accentGold }]}>{currentW} kg</Text>
+                  </View>
+                  <View style={styles.goalStat}>
+                    <Text style={styles.goalStatLbl}>Target</Text>
+                    <Text style={styles.goalStatVal}>{targetW} kg</Text>
+                  </View>
+                  {remainingKg && (
+                    <View style={styles.goalStat}>
+                      <Text style={styles.goalStatLbl}>Remaining</Text>
+                      <Text style={[styles.goalStatVal, { color: Colors.accentPurple }]}>{remainingKg} kg</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
 
             {/* ── weight line chart ── */}
             <View style={styles.section}>
@@ -344,4 +383,16 @@ const styles = StyleSheet.create({
   saveBtn:    { flex: 1, padding: 14, borderRadius: 12, backgroundColor: Colors.accentGold,
                 alignItems: 'center', justifyContent: 'center' },
   saveTxt:    { color: Colors.background, fontWeight: '700', fontSize: 15 },
+
+  goalCard:       { backgroundColor: Colors.card, borderRadius: 14, padding: 16, marginBottom: 16,
+                    borderWidth: 1, borderColor: Colors.cardBorder },
+  goalCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  goalCardTitle:  { fontSize: 14, fontWeight: '700', color: Colors.text },
+  goalCardPct:    { fontSize: 20, fontWeight: '800', color: Colors.accentGold },
+  goalTrack:      { height: 10, backgroundColor: Colors.background, borderRadius: 5, overflow: 'hidden', marginBottom: 14 },
+  goalFill:       { height: 10, borderRadius: 5, backgroundColor: Colors.accentGold },
+  goalCardFooter: { flexDirection: 'row', justifyContent: 'space-between' },
+  goalStat:       { alignItems: 'center' },
+  goalStatLbl:    { fontSize: 10, color: Colors.textMuted, marginBottom: 2 },
+  goalStatVal:    { fontSize: 14, fontWeight: '700', color: Colors.text },
 });
