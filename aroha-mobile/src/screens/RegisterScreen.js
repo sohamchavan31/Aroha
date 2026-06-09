@@ -34,7 +34,7 @@ export default function RegisterScreen({ navigation }) {
         email: email.trim(),
         password,
       });
-      await login(data.token, { name: data.name, evolutionStage: data.evolutionStage, evolutionPoints: data.evolutionPoints });
+      await login(data.token, { name: data.name, evolutionStage: data.evolutionStage, evolutionPoints: data.evolutionPoints, profileComplete: data.profileComplete });
     } catch (err) {
       const msg = err.response?.data?.message || 'Registration failed. Try again.';
       setError(msg);

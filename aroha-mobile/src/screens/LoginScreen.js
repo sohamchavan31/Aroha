@@ -25,7 +25,7 @@ export default function LoginScreen({ navigation }) {
     setLoading(true);
     try {
       const { data } = await client.post('/auth/login', { email: email.trim(), password });
-      await login(data.token, { name: data.name, evolutionStage: data.evolutionStage, evolutionPoints: data.evolutionPoints });
+      await login(data.token, { name: data.name, evolutionStage: data.evolutionStage, evolutionPoints: data.evolutionPoints, profileComplete: data.profileComplete });
     } catch (err) {
       const msg = err.response?.data?.message || 'Invalid email or password.';
       setError(msg);

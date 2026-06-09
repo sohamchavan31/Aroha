@@ -8,6 +8,7 @@ import {
   StatusBar,
   Modal,
   Animated,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -116,8 +117,11 @@ export default function HomeScreen() {
       if (data.stagedUp) {
         setStageUp({ oldStage: userStage, newStage: data.newStage });
       }
-    } catch {
+    } catch (err) {
       setMissions(ms => ms.map(m => m.id === id ? { ...m, completed: false } : m));
+      const status = err.response?.status;
+      const msg    = err.response?.data?.message || err.message || 'Network error';
+      Alert.alert('Mission Error', `${status ?? '?'}: ${msg}`);
     }
   }
 
