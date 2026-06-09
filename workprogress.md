@@ -7,13 +7,23 @@
 ---
 
 ## Current Status
-> Phase 12 COMPLETE — Health Attributes, Evolution History, Settings, Language Toggle.
-> Phase 10 COMPLETE — Flask AI (meal plan, chat, insights) + Spring Boot proxy + AiScreen modal.
-> Phase 6 session save COMPLETE — Workout session saved to backend, custom exercise mid-session.
-> Phase 5 partial COMPLETE — Serving size modal, custom food builder, 170+ Indian food DB.
-> Cloud DB COMPLETE — Migrated to Neon PostgreSQL (Singapore). Both office + home PC share one DB.
-> All open PRs merged to dev.
-> Next: Phase 8 (Analytics + Body Tracking) → Phase 9 (Notifications) → Auth upgrades
+> Phase 8 COMPLETE — Analytics, body tracking, weight log, progress screen, goal progress card.
+> Phase 8b COMPLETE — Personalised macro goals via Mifflin-St Jeor BMR + activity + goal pipeline.
+> Onboarding upgraded — 5 steps: gender/body stats → activity level → health goal → preferences → water.
+> MacrosScreen upgraded — quantity stepper for unit foods, recipe builder with ingredients.
+> All open PRs on dev.
+>
+> **Next 10 tasks (ordered):**
+> 1. Edit Profile Screen
+> 2. Meal Slots (Breakfast / Lunch / Dinner / Snacks)
+> 3. Notifications (Phase 9)
+> 4. Calories Burned → Net Calories
+> 5. Progressive Overload Tracking
+> 6. Body Measurements (chest/waist/hips/arms/thighs)
+> 7. Barcode Scanner
+> 8. Goal Date (targetDate + on-track/behind-schedule indicator)
+> 9. Progress Photos
+> 10. Google Login
 
 ---
 
@@ -49,11 +59,11 @@
 | Environment | Java 17 (Temurin), Android Studio, emulator (Pixel 7, API 34, x86_64) |
 | Multi-machine | Office PC + Home PC both running. Neon cloud DB shared across both. |
 | Mobile scaffold | Expo SDK 56, blank template, JavaScript |
-| Navigation | React Navigation v7, 5 tabs icons-only — Home / Macros / Workout / Habits / Planner |
+| Navigation | React Navigation v7, 6 tabs — Home / Macros / Workout / Habits / Planner / Progress |
 | Theme | src/constants/colors.js — dark palette (black, gold, purple) |
 | Home Screen | Stage badge (SP), greeting, EP display, daily missions, evolution progress bar, water widget, AI button |
-| Backend scaffold | Spring Boot 3.3, Java 17, Maven — web, security, JPA, JWT, H2 for tests |
-| User entity | User.java — email, bcrypt password, name, evolutionStage, evolutionPoints, streak |
+| Backend scaffold | Spring Boot 3.3, Java 17, Maven — web, security, JPA, JWT |
+| User entity | email, bcrypt password, name, evolutionStage, evolutionPoints, streak |
 | Auth endpoints | POST /api/auth/register + POST /api/auth/login — returns JWT |
 | JWT security | JwtUtil, JwtFilter, SecurityConfig — stateless Bearer token |
 | Backend CI | backend-ci.yml — mvn verify on push/PR |
@@ -67,7 +77,10 @@
 | Meal endpoints | GET /api/meals/search, /category/{cat}, /all, POST /api/meals/custom |
 | DailyLog entity | daily_logs — pre-calculated macros per entry |
 | Daily log endpoints | POST /api/logs, GET /api/logs/today, DELETE /api/logs/{id} |
-| MacrosScreen | Search, serving size modal, custom food builder, daily log, calorie ring |
+| MacrosScreen | Search, serving size modal (unit stepper + gram presets), recipe builder, daily log, calorie ring |
+| Serving unit stepper | Unit-based foods (katori, piece, cup, etc.) show − qty + stepper; grams auto-computed |
+| Recipe builder | Create recipe by searching ingredients, set qty per ingredient, live macro preview, servings divider |
+| Personalised macro goals | MacrosScreen loads dailyCalorieGoal/Protein/Carb/Fat from /profile instead of hardcoded values |
 | Exercise library | 34 exercises — strength, cardio, yoga, flexibility |
 | WorkoutScreen | Category tabs, log modal, session summary, AI Generate button |
 | AI Workout Generator | Duration → type → preview → live session timer with rest phases |
@@ -83,8 +96,15 @@
 | Water widget | Home screen counter, +/- buttons, progress bar, voice mic |
 | Hindi/Marathi voice | expo-speech — 5 regional reminder phrases |
 | WellnessModal | Sleep tab + Voice tab |
-| User profile fields | age, weightKg, heightCm, healthGoal, waterGoalGlasses, profileComplete |
-| OnboardingScreen | 3-step: body stats → health goal → water goal → Begin Your Evolution |
+| Onboarding — Phase 1 | 3-step: body stats → health goal → water goal |
+| Onboarding — Phase 2 | 5-step: gender/stats → activity level → 9 health goals → preferences → water |
+| Onboarding fields | gender, age, weightKg, targetWeightKg, heightCm, activityLevel, healthGoal, weightChangeSpeed, experienceLevel, dietaryPreference, waterGoalGlasses |
+| Personalised BMR/TDEE | Mifflin-St Jeor (gender-aware) × activity multiplier → stored TDEE |
+| Macro pipeline | TDEE + goal + bulk/cut speed → dailyCalorieGoal, dailyProteinGoal, dailyCarbGoal, dailyFatGoal (stored in DB) |
+| Bulk/Cut speeds | Slow/Moderate/Aggressive Cut (−200/−400/−600); Slow/Lean/Aggressive Bulk (+150/+250/+400) |
+| Experience level | Beginner / Intermediate / Advanced — stored for future AI workout personalisation |
+| Dietary preference | Vegetarian / Eggetarian / Non-Vegetarian / Vegan / Jain — stored for AI meal plans |
+| Target weight | targetWeightKg stored — used for goal progress % in ProgressScreen |
 | ProfileScreen | Stage, EP, BMI grid, TDEE, health goal, attributes, evolution history, settings |
 | Evolution Engine | Mission entity, daily generation, EP award, stage auto-advance, attributes (0–100) |
 | Live Missions | HomeScreen pulls missions from backend, completeMission API, stagedUp flag |
@@ -95,20 +115,129 @@
 | Flask AI service | app.py + routes: POST /ai/meal-plan, /ai/chat, /ai/insights — Ollama (llama3.2) |
 | AiScreen modal | 3-tab modal: Chat, Meal Plan, Insights — accessed via sparkle on HomeScreen |
 | Rebrand | Nira → Aroha — all folders, packages, UI strings, field names, storage keys |
+| WeightLog entity | weight_logs — upsert by date (one entry per day per user) |
+| WeightLogController | POST /api/weight-logs (upsert), GET /api/weight-logs/history?days=30 |
+| AnalyticsController | GET /api/analytics/summary — avg calories 7d, macro split, workouts this week, habit rate, weight, goal progress % |
+| Goal progress | goalProgressPct in analytics — (currentWeight − startWeight) / (targetWeight − startWeight) |
+| ProgressScreen | 6th tab — goal progress card, weight cards, 30-day line chart, this-week stats, 7-day macro split |
+| profileComplete fix | LoginScreen + RegisterScreen now pass profileComplete to login() — onboarding no longer repeats on re-login |
 
 ---
 
 ## What's Left (Ordered by Priority)
 
-### Auth Upgrades — QUEUED
-- [ ] Remove hardcoded STAGE badge from LoginScreen (user not logged in yet — don't show stage)
+### 1 — Edit Profile Screen (IMMEDIATE)
+Users can't correct mistakes. Existing users from old 3-step onboarding are missing gender/activityLevel — macro targets are wrong for them. Weight changes and macro targets go stale without this.
+- [ ] ProfileScreen view mode — replace limited edit modal with full Edit Profile screen
+- [ ] Editable fields: gender, age, weight, target weight, height, activity level, 9 health goals, bulk/cut speed, experience level, dietary preference, water goal
+- [ ] On save → PATCH /profile → recomputes and stores new macro targets in DB
+- [ ] Goal section shows all 9 goals (matching new onboarding), not the old 4
+
+---
+
+### 2 — Meal Slots (Breakfast / Lunch / Dinner / Snacks)
+Users think in meals, not in raw calorie numbers. "I had oats for breakfast" is how everyone logs food.
+- [ ] Add `mealSlot` field to DailyLog entity (BREAKFAST / LUNCH / DINNER / SNACK)
+- [ ] MacrosScreen — replace flat "Daily Food Log" with 4 expandable sections
+- [ ] Each section shows its own calorie/macro sub-total
+- [ ] Quick-add per slot (tap + on Breakfast section to log to Breakfast)
+- [ ] Default slot = BREAKFAST before noon, LUNCH 12–3 PM, DINNER 6 PM+, else SNACK
+
+---
+
+### 3 — Notifications (Phase 9)
+- [ ] expo-notifications — request permissions on first launch
+- [ ] Water reminder — configurable interval (every 1–2 hrs)
+- [ ] Meal reminder — breakfast/lunch/dinner nudges
+- [ ] Workout reminder — daily at user-set time
+- [ ] Mission reminder — "2 missions left today" at 8 PM
+- [ ] Step counter — expo-sensors Pedometer → EP reward (10k steps = 20 EP)
+- [ ] Wire SettingsScreen toggles to actual notification scheduling
+
+---
+
+### 4 — Calories Burned → Net Calories
+Already have workout sessions with duration + type. Use MET values to estimate burn.
+- [ ] Add calorie burn estimate to WorkoutSession (MET × weight × duration)
+- [ ] MacrosScreen / ProgressScreen — show Consumed / Burned / Net / Target row
+- [ ] Net calorie ring (consumed minus burned vs goal)
+- [ ] Example: Consumed 2400 − Burned 500 = Net 1900 vs Target 2200
+
+---
+
+### 5 — Progressive Overload Tracking
+For gym users this is more motivating than calorie counting. One of Aroha's strongest potential differentiators.
+- [ ] WorkoutSession sets store exercise name, weight (kg), reps, sets
+- [ ] PR detection — compare today's top set per exercise vs all-time best
+- [ ] "New PR" badge on WorkoutScreen when a record is beaten
+- [ ] Per-exercise history view — e.g. Bench Press: 60×8 → 65×8 (+5kg)
+- [ ] Progressive overload chart (weight over time per exercise)
+
+---
+
+### 6 — Body Measurements
+Easier to enter than body fat %, gives visible progress when scale weight stalls. Especially valuable for fat-loss users whose weight doesn't change but waist shrinks.
+- [ ] BodyMeasurements entity — chest, waist, hips, arms, thighs (cm), loggedDate
+- [ ] ProgressScreen — Measurements tab or card (last entry + change from first)
+- [ ] Add measurement entry modal (like weight log)
+- [ ] Trend chart per measurement (waist over 30 days etc.)
+
+---
+
+### 7 — Barcode Scanner
+- [ ] expo-camera → Open Food Facts API (Indian packaged foods)
+- [ ] Scan barcode → auto-fill meal search in MacrosScreen
+- [ ] Fallback to manual search if barcode not found
+
+---
+
+### 8 — Goal Date
+Creates urgency and retention. Shows whether user is on track or behind.
+- [ ] Add `targetDate` field to User entity (ISO date string)
+- [ ] Collect in onboarding Step 4 (optional, shown for gain/loss goals)
+- [ ] Edit Profile — add targetDate picker
+- [ ] ProgressScreen Goal Progress card shows:
+  - X kg remaining · Y days left
+  - Required pace: Zkg/week to hit goal
+  - "On Track ✅" or "Behind Schedule ⚠️" based on current pace
+- [ ] AnalyticsController returns `targetDate`, `daysRemaining`, `requiredWeeklyDelta`, `onTrack`
+
+---
+
+### 9 — Progress Photos
+High engagement — Day 1 / Day 30 / Day 60 comparisons keep users coming back.
+- [ ] Date-stamped photo capture (expo-image-picker)
+- [ ] Stored locally (AsyncStorage paths), AWS S3 when deployed
+- [ ] Milestone prompts: Day 1 / Day 30 / Day 60 / Day 90
+- [ ] Side-by-side comparison view
+
+---
+
+### 10 — Google Login
+- [ ] "Continue with Google" on LoginScreen
+- [ ] Google OAuth2 flow (expo-auth-session)
+- [ ] Backend verifies Google token, creates/fetches user, returns JWT
+
+---
+
+### AI Integration Upgrades — QUEUED
+Currently AI gets plain prompts ("create a meal plan"). It should use the stored profile context automatically.
+- [ ] Flask endpoints inject user profile into every prompt: gender, age, weight, targetWeightKg, healthGoal, activityLevel, experienceLevel, dailyCalorieGoal, dailyProteinGoal, dietaryPreference
+- [ ] Meal plan AI uses dietary preference (vegetarian/vegan/jain filters food types)
+- [ ] Workout AI uses experienceLevel (beginner gets 3×12, advanced gets 5×5 etc.)
+- [ ] Chat AI knows current macros for the day (contextual: "you've had 80g protein today, need 40g more")
+- [ ] Smart meal plan saved directly to macro tracker (one tap)
+
+---
+
+### Auth Upgrades — QUEUED (after Google Login)
+- [ ] Remove hardcoded STAGE badge from LoginScreen (user not logged in yet)
 - [ ] Post-login Evolution Reveal screen — cinematic animated stage reveal before Home loads
   - Dark background, stage name animates in with glow + particles, 2.5s, auto-dismisses
   - 7 MP4 videos (one per stage) generated via Kling AI — integrated via expo-video
   - Fallback: React Native Animated cinematic screen if no video yet
 - [ ] Google OAuth2 login — "Continue with Google" button on LoginScreen
 - [ ] Apple login — "Continue with Apple" button (required for iOS App Store)
-- [ ] Email + Password stays as third option
 - [ ] Welcome email on registration — via Resend or SendGrid free tier
 - [ ] Account deletion — GDPR requirement, deletes user + all cascaded data
 - [ ] JWT refresh tokens — longer sessions without re-login
@@ -125,14 +254,20 @@ Aroha logo
 
 ---
 
-### Phase 8 — Analytics & Body Tracking
-- [ ] Body weight log — daily weight entry, weight_logs table
-- [ ] Weight history graph — 7/30/90 day line chart
-- [ ] Body measurements — chest, waist, hips, arms (cm/inches toggle)
-- [ ] Analytics dashboard — calorie avg, macro pie, workout frequency, habit rate, EP per week
+### Phase 8 — Analytics & Body Tracking ✅ COMPLETE (2026-06-09)
+- [x] Body weight log — daily weight entry, weight_logs table (upsert by date)
+- [x] Weight history graph — 30-day bezier line chart (react-native-chart-kit)
+- [x] Analytics dashboard — avg calories 7d, macro split bars, workouts this week, habit rate %
+- [x] Weight change — current weight + 30-day delta card
+- [x] ProgressScreen — 6th tab (trending-up icon), stats cards, macro split horizontal bars
+- [x] Goal progress card — Start / Current / Target / Remaining kg + progress bar
+- [x] Personalised macro goals — BMR + TDEE + goal pipeline, stored in DB, loaded by MacrosScreen
+- [x] Target weight — collected in onboarding, drives goal progress %
+- [ ] Body measurements — chest, waist, hips, arms (future)
+- [ ] Body fat % tracking — e.g. 22% → 15% (users care more about this than weight)
+- [ ] Progress photos — date-stamped (Day 1 / Day 30 / Day 60 / Day 90) — HIGH engagement
 - [ ] PR tracker — auto-detect personal records per exercise
-- [ ] Workout volume chart — sets x reps per muscle group per week
-- [ ] Progress photos — date-stamped local storage
+- [ ] Workout volume chart — sets × reps per muscle group
 - [ ] Calories burned from workouts → net calorie budget
 
 ---
@@ -148,13 +283,25 @@ Aroha logo
 
 ---
 
+### Phase 15 — Onboarding UX Improvements
+- [ ] Smart Goal Wizard — replace "pick a goal" list with conversational questions:
+  - "What best describes you?" → guided to the right goal category
+  - Friendlier than a flat list of 9 options
+- [ ] Medical Restrictions screen (simple checkbox, for meal filtering only — no medical advice):
+  - Diabetes / High BP / Thyroid / None
+  - Store on User entity, pass to AI meal plan prompt
+- [ ] Onboarding progress save — if user exits mid-onboarding, resume where they left off
+- [ ] Show calculated macro targets on final summary step (API call before finish)
+
+---
+
 ### Phase 16 — Nutrition UX Upgrades
-- [ ] Meal slots — Breakfast / Lunch / Dinner / Snacks sections
+- [ ] Meal slots — Breakfast / Lunch / Dinner / Snacks sections in MacrosScreen
 - [ ] Barcode scanner — expo-camera → Open Food Facts API (Indian packaged foods)
 - [ ] Meal templates — save named combos, log all in one tap
-- [ ] Recipe builder — combine ingredients, log as single entry
 - [ ] Net calorie display — consumed minus burned
 - [ ] Macro values cross-verification against ICMR/NIN data
+- [ ] Dietary preference filtering — vegetarian users don't see non-veg foods in search
 
 ---
 
@@ -163,6 +310,7 @@ Aroha logo
 - [ ] AI assist inside builder — "suggest exercises for Pull day"
 - [ ] Gym machine exercises — bench press, lat pulldown, leg press, cable rows
 - [ ] Exercise library expansion → 100+ (currently 34)
+- [ ] Experience level used in AI workout generation (beginner vs advanced plans)
 - [ ] Muscle visualization per exercise
 - [ ] Exercise form guide (animated demo)
 - [ ] Weekly progress graph
@@ -258,6 +406,21 @@ Aroha logo
 - [ ] Wearable integration — Apple Health + Google Fit
 - [ ] Personalized EP multipliers based on consistency patterns
 - [ ] Smart meal plan saving — AI plan saved directly to macro tracker
+- [ ] AI meal plan respects dietary preference (vegetarian/vegan/jain filtering)
+- [ ] AI workout plan uses experienceLevel (beginner vs advanced split)
+
+---
+
+### Phase 23 — Body Composition & Progress Photos (Moved Up)
+> High engagement feature — people love Day 1 / Day 30 / Day 60 comparisons
+
+- [ ] Body fat % input + tracking — separate from weight (users care more about 22% → 15%)
+- [ ] Progress photos — date-stamped, stored locally (AWS S3 when deployed)
+  - Day 1 / Day 30 / Day 60 / Day 90 milestone prompts
+  - Side-by-side comparison view
+- [ ] Body measurements log — chest, waist, hips, arms, thighs
+- [ ] Measurement trend chart
+- [ ] Visual body composition dial (fat% vs muscle%)
 
 ---
 
@@ -320,7 +483,7 @@ Self-hosted PostgreSQL + MongoDB
 | 1 | Dev environment ready | Done |
 | 2 | React Native scaffold on emulator | Done |
 | 3 | Home screen — Evolution UI + missions | Done |
-| 4 | 5-tab navigation | Done |
+| 4 | 6-tab navigation | Done |
 | 5 | Spring Boot + JWT auth | Done |
 | 6 | Auth flow — login/register | Done |
 | 7 | Nutrition — 170+ Indian foods + macro tracker | Done |
@@ -328,24 +491,36 @@ Self-hosted PostgreSQL + MongoDB
 | 9 | Habit tracker — weekly grid, metrics, chart | Done |
 | 10 | Planner — time-blocked + to-do + carry forward | Done |
 | 11 | Reminders — water, sleep, Hindi/Marathi voice | Done |
-| 12 | Profile + onboarding — BMI, TDEE, health goal | Done |
+| 12 | Profile + onboarding v1 — BMI, TDEE, health goal | Done |
 | 13 | Rebrand Nira → Aroha | Done |
 | 14 | Evolution Engine — missions, EP, stages, attributes | Done |
 | 15 | Phase 12 — Health Attributes, History, Settings, i18n | Done |
 | 16 | Phase 10 — Flask AI + AiScreen modal | Done |
-| 17 | Phase 5 — Serving size modal, custom food, 170+ DB | Done |
+| 17 | Phase 5 — Serving size modal, recipe builder, 170+ DB | Done |
 | 18 | Phase 6 session save — workout saved, custom exercise | Done |
 | 19 | Cloud DB — Neon PostgreSQL, multi-machine setup | Done |
-| 20 | Auth upgrades — Google OAuth, Apple login, reveal screen | Pending |
-| 21 | Phase 8 — Analytics + Body Tracking | Pending |
-| 22 | Phase 9 — Real push notifications + step counter | Pending |
-| 23 | Phase 16 — Nutrition UX (meal slots + barcode) | Pending |
-| 24 | Phase 19 — Admin Panel Phase A | Pending |
-| 25 | Phase 20 — Security hardening | Pending |
-| 26 | Phase 21 — EC2 deployment + Play Store launch | Pending |
-| 27 | Phase 17 — Community features | Pending |
-| 28 | Phase 18 — AI smart features | Pending |
-| 29 | Phase 22 — Scale + Proxmox migration | Pending |
+| 20 | Phase 8 — Analytics + Body Tracking (weight log, dashboard, goal progress) | Done |
+| 21 | Onboarding v2 — gender, activity level, 9 goals, bulk/cut speed, experience, diet | Done |
+| 22 | Personalised macros — Mifflin-St Jeor BMR + TDEE + goal pipeline stored in DB | Done |
+| 23 | MacrosScreen — unit qty stepper + recipe builder with ingredients | Done |
+| 24 | Edit Profile screen — all new onboarding fields editable | Pending |
+| 25 | Meal slots — Breakfast / Lunch / Dinner / Snacks in MacrosScreen | Pending |
+| 26 | Phase 9 — Real push notifications + step counter | Pending |
+| 27 | Calories Burned → Net Calories (MET-based from workout sessions) | Pending |
+| 28 | Progressive Overload Tracking — PR detection, per-exercise history | Pending |
+| 29 | Body Measurements — chest, waist, hips, arms, thighs | Pending |
+| 30 | Barcode Scanner — Open Food Facts API | Pending |
+| 31 | Goal Date — targetDate + on-track/behind-schedule indicator | Pending |
+| 32 | Progress Photos — date-stamped Day 1/30/60/90 | Pending |
+| 33 | Google Login | Pending |
+| 34 | AI profile context — inject gender/goal/macros/diet into every prompt | Pending |
+| 35 | Phase 15 — Smart Goal Wizard + Medical Restrictions | Pending |
+| 36 | Phase 19 — Admin Panel Phase A | Pending |
+| 37 | Phase 20 — Security hardening | Pending |
+| 38 | Phase 21 — EC2 deployment + Play Store launch | Pending |
+| 39 | Phase 17 — Community features | Pending |
+| 40 | Phase 18 — AI smart features | Pending |
+| 41 | Phase 22 — Scale + Proxmox migration | Pending |
 
 ---
 
@@ -355,14 +530,26 @@ Self-hosted PostgreSQL + MongoDB
 
 | Priority | Feature | Status |
 |----------|---------|--------|
-| Critical | Body weight log + graph | Phase 8 |
-| Critical | Analytics dashboard | Phase 8 |
-| Critical | Real push notifications | Phase 9 |
-| Critical | Meal slots (Breakfast/Lunch/Dinner) | Phase 16 |
-| Critical | Barcode scanner | Phase 16 |
-| Important | PR tracker + workout volume | Phase 8 |
+| Critical | Body weight log + graph | ✅ Done |
+| Critical | Analytics dashboard | ✅ Done |
+| Critical | Personalised macro goals (BMR/TDEE) | ✅ Done |
+| Critical | Edit Profile screen | #1 Next |
+| Critical | Meal slots (Breakfast/Lunch/Dinner) | #2 Next |
+| Critical | Real push notifications | #3 Next |
+| Critical | Calories Burned → Net Calories | #4 Next |
+| Critical | Progressive Overload Tracking | #5 Next |
+| Critical | Barcode scanner | #7 Next |
+| Important | Goal Date + on-track indicator | #8 Next |
+| Important | Body measurements (waist/chest etc.) | #6 Next |
+| Important | Progress photos | #9 Next |
+| Important | Google Login | #10 Next |
+| Important | AI uses stored profile context | Queued |
 | Important | Step counter → EP reward | Phase 9 |
-| Important | Macro cross-verification (ICMR/NIN) | Phase 16 |
+| Important | Body fat % tracking | Phase 23 |
+| Important | Dietary preference meal filtering | Queued |
+| Important | Experience-based workout AI | Queued |
+| Future | Smart Goal Wizard | Phase 15 |
+| Future | Medical restrictions for meal filter | Phase 15 |
 | Future | Food photo recognition | Phase 18 |
 | Future | Wearable integration | Phase 18 |
 | Future | Community challenges | Phase 17 |
@@ -371,6 +558,9 @@ Self-hosted PostgreSQL + MongoDB
 - Evolution System (EP/stages/missions) — no competitor has this
 - Indian-first food DB (170+ regional items incl. Konkan)
 - Multi-language (EN/HI/MR)
+- Personalised macros from Mifflin-St Jeor + activity + goal pipeline
+- Bulk/Cut pace selector (lean bulk vs aggressive bulk etc.)
+- Dietary preference awareness (vegetarian/vegan/jain)
 - Integrated ecosystem in one dark-theme app
 
 ---
@@ -398,10 +588,14 @@ Aroha (wellness) + HealthBridge (medical) + IoT Layer
 | JavaScript not TypeScript | Less overhead for beginner. Add TS when stable. |
 | Flask AI microservice | Isolated. Swap models freely. |
 | Ollama | Zero API cost in dev. Full privacy. |
+| Mifflin-St Jeor over Harris-Benedict | More accurate (±10% vs ±15%). Gender-aware. |
+| Store macro targets in DB | Avoids recomputation on every request. AI endpoints can query directly. |
+| 5-step onboarding | Gender + activity level + goal + preferences (speed/experience/diet) + water — complete picture upfront. |
+| Recipe builder (not create food) | Users think in recipes, not raw macro numbers. Ingredient-based is more accurate and intuitive. |
 
 ---
 
-_Updated: 2026-06-08 — Cloud DB live. Auth upgrades planned. Long term infra + admin panel roadmap added._
+_Updated: 2026-06-09 — Priority order locked. New features registered: Goal Date, progressive overload, body measurements, net calories, meal slots, AI profile context._
 
 <!-- Session log -->
 <!-- 2026-05-28: Mobile scaffold + home screen + backend JWT done. -->
@@ -410,4 +604,6 @@ _Updated: 2026-06-08 — Cloud DB live. Auth upgrades planned. Long term infra +
 <!-- 2026-06-04: Full rebrand Nira → Aroha. Evolution System designed. -->
 <!-- 2026-06-05: All phases 10/11/12 complete. Flask AI, AiScreen, workout generator, serving size modal. -->
 <!-- 2026-06-07: Workout session save complete. All PRs merged. Competitive analysis done. -->
-<!-- 2026-06-08: Neon cloud PostgreSQL live (Singapore). Both office + home PC sharing one DB. Auth upgrades planned (Google OAuth, Apple login, post-login evolution reveal screen with MP4 per stage). Long term infra roadmap added — EC2 launch, admin panel phases A/B/C, Proxmox homelab year 2. -->
+<!-- 2026-06-08: Neon cloud PostgreSQL live (Singapore). Both office + home PC sharing one DB. Auth upgrades planned. -->
+<!-- 2026-06-09: Phase 8 complete — weight log, analytics dashboard, goal progress card. Onboarding v2 — 5 steps, gender, activity level, 9 goals, bulk/cut pace, experience level, dietary preference. Mifflin-St Jeor BMR pipeline. MacrosScreen — unit qty stepper, recipe builder from ingredients. profileComplete login fix. -->
+<!-- 2026-06-09: Priority order revised. Next 10 tasks locked: Edit Profile → Meal Slots → Notifications → Net Calories → Progressive Overload → Body Measurements → Barcode → Goal Date → Progress Photos → Google Login. Goal Date, progressive overload, body measurements, net calories, meal slots, AI profile context all registered as new features. -->

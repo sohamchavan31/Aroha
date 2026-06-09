@@ -9,17 +9,10 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/colors';
 import client from '../api/client';
 
-const DAILY_GOALS = { calories: 2000, protein: 50, carbs: 250, fat: 65 };
+const DEFAULT_GOALS = { calories: 2000, protein: 120, carbs: 250, fat: 65 };
 
 const CATEGORIES = ['dal', 'rice', 'roti', 'sabzi', 'snack', 'dairy', 'fruit', 'protein', 'beverage', 'konkan', 'other'];
 const SERVING_UNITS = ['katori', 'piece', 'glass', 'plate', 'tablespoon', 'slice', 'cup', 'scoop'];
-
-const EMPTY_CUSTOM = {
-  name: '', category: 'sabzi',
-  caloriesPer100g: '', proteinPer100g: '', carbsPer100g: '',
-  fatPer100g: '', fiberPer100g: '0',
-  servingUnit: 'katori', typicalServing: '100',
-};
 
 function MacroBar({ label, value, goal, color }) {
   const pct = Math.min((value / goal) * 100, 100);
@@ -54,6 +47,7 @@ function CustomField({ label, value, onChangeText, placeholder, keyboardType }) 
 }
 
 export default function MacrosScreen() {
+  const [goals, setGoals]           = useState(DEFAULT_GOALS);
   const [query, setQuery]           = useState('');
   const [results, setResults]       = useState([]);
   const [searching, setSearching]   = useState(false);
@@ -65,11 +59,19 @@ export default function MacrosScreen() {
   const [pendingMeal, setPendingMeal]   = useState(null);
   const [servingGrams, setServingGrams] = useState('');
   const [customQty, setCustomQty]       = useState(false);
+  const [pieceQty, setPieceQty]         = useState(1);
 
-  // Custom food builder
-  const [showBuilder, setShowBuilder]   = useState(false);
-  const [customForm, setCustomForm]     = useState(EMPTY_CUSTOM);
-  const [savingCustom, setSavingCustom] = useState(false);
+  // Recipe builder
+  const [showBuilder, setShowBuilder]             = useState(false);
+  const [savingCustom, setSavingCustom]           = useState(false);
+  const [recipeName, setRecipeName]               = useState('');
+  const [recipeCategory, setRecipeCategory]       = useState('other');
+  const [recipeServings, setRecipeServings]       = useState(1);
+  const [recipeIngredients, setRecipeIngredients] = useState([]);
+  const [recipeServingUnit, setRecipeServingUnit] = useState('katori');
+  const [recipeSearch, setRecipeSearch]           = useState('');
+  const [recipeResults, setRecipeResults]         = useState([]);
+  const [recipeSearching, setRecipeSearching]     = useState(false);
 
   const loadTodayLog = useCallback(async () => {
     try {
@@ -88,7 +90,19 @@ export default function MacrosScreen() {
     }
   }, []);
 
-  useEffect(() => { loadTodayLog(); }, [loadTodayLog]);
+  useEffect(() => {
+    loadTodayLog();
+    client.get('/profile').then(({ data }) => {
+      if (data.dailyCalorieGoal) {
+        setGoals({
+          calories: data.dailyCalorieGoal,
+          protein:  data.dailyProteinGoal,
+          carbs:    data.dailyCarbGoal,
+          fat:      data.dailyFatGoal,
+        });
+      }
+    }).catch(() => {});
+  }, [loadTodayLog]);
 
   async function search(text) {
     setQuery(text);
@@ -106,6 +120,7 @@ export default function MacrosScreen() {
 
   function openServingModal(meal) {
     setPendingMeal(meal);
+    setPieceQty(1);
     setServingGrams(String(meal.typicalServing));
     setCustomQty(false);
   }
@@ -138,39 +153,103 @@ export default function MacrosScreen() {
     }
   }
 
-  async function saveCustomFood() {
-    if (!customForm.name.trim()) {
-      Alert.alert('Name required', 'Please enter a food name.');
+  async function saveRecipe() {
+    if (!recipeName.trim()) {
+      Alert.alert('Name required', 'Please enter a recipe name.');
       return;
     }
-    if (!Number(customForm.caloriesPer100g)) {
-      Alert.alert('Calories required', 'Enter calories per 100g.');
+    if (recipeIngredients.length === 0) {
+      Alert.alert('No ingredients', 'Add at least one ingredient.');
       return;
     }
+    const totalG = recipeIngredients.reduce((s, i) => s + (Number(i.grams) || 0), 0);
+    if (totalG === 0) {
+      Alert.alert('Invalid', 'All ingredient grams are 0.');
+      return;
+    }
+    const totCal  = recipeIngredients.reduce((s, i) => s + (i.meal.caloriesPer100g * (Number(i.grams) || 0) / 100), 0);
+    const totProt = recipeIngredients.reduce((s, i) => s + (i.meal.proteinPer100g  * (Number(i.grams) || 0) / 100), 0);
+    const totCarb = recipeIngredients.reduce((s, i) => s + (i.meal.carbsPer100g    * (Number(i.grams) || 0) / 100), 0);
+    const totFat  = recipeIngredients.reduce((s, i) => s + (i.meal.fatPer100g      * (Number(i.grams) || 0) / 100), 0);
     setSavingCustom(true);
     try {
       await client.post('/meals/custom', {
-        name:            customForm.name.trim(),
-        category:        customForm.category,
-        caloriesPer100g: Number(customForm.caloriesPer100g) || 0,
-        proteinPer100g:  Number(customForm.proteinPer100g)  || 0,
-        carbsPer100g:    Number(customForm.carbsPer100g)    || 0,
-        fatPer100g:      Number(customForm.fatPer100g)      || 0,
-        fiberPer100g:    Number(customForm.fiberPer100g)    || 0,
-        servingUnit:     customForm.servingUnit,
-        typicalServing:  Number(customForm.typicalServing)  || 100,
+        name:            recipeName.trim(),
+        category:        recipeCategory,
+        caloriesPer100g: Math.round(totCal  / totalG * 100),
+        proteinPer100g:  Math.round(totProt / totalG * 1000) / 10,
+        carbsPer100g:    Math.round(totCarb / totalG * 1000) / 10,
+        fatPer100g:      Math.round(totFat  / totalG * 1000) / 10,
+        fiberPer100g:    0,
+        servingUnit:     recipeServingUnit,
+        typicalServing:  Math.max(1, Math.round(totalG / recipeServings)),
       });
-      setCustomForm(EMPTY_CUSTOM);
+      setRecipeName('');
+      setRecipeCategory('other');
+      setRecipeServings(1);
+      setRecipeServingUnit('katori');
+      setRecipeIngredients([]);
+      setRecipeSearch('');
+      setRecipeResults([]);
       setShowBuilder(false);
-      Alert.alert('Saved!', `"${customForm.name.trim()}" added to your foods.`);
+      Alert.alert('Saved!', `"${recipeName.trim()}" added to your recipes.`);
     } catch {
-      Alert.alert('Error', 'Could not save food. Try again.');
+      Alert.alert('Error', 'Could not save recipe. Try again.');
     } finally {
       setSavingCustom(false);
     }
   }
 
-  const caloriesPct = Math.round((totals.calories / DAILY_GOALS.calories) * 100);
+  async function searchRecipeIngredient(text) {
+    setRecipeSearch(text);
+    if (text.trim().length < 2) { setRecipeResults([]); return; }
+    setRecipeSearching(true);
+    try {
+      const { data } = await client.get(`/meals/search?q=${encodeURIComponent(text.trim())}`);
+      setRecipeResults(data);
+    } catch {
+      setRecipeResults([]);
+    } finally {
+      setRecipeSearching(false);
+    }
+  }
+
+  function addIngredient(meal) {
+    setRecipeIngredients(prev => [
+      ...prev,
+      { id: Date.now(), meal, qty: '1', grams: String(meal.typicalServing) },
+    ]);
+    setRecipeSearch('');
+    setRecipeResults([]);
+  }
+
+  function removeIngredient(id) {
+    setRecipeIngredients(prev => prev.filter(i => i.id !== id));
+  }
+
+  function updateIngredientQty(id, qty, typicalServing) {
+    const q = Number(qty) || 0;
+    setRecipeIngredients(prev => prev.map(i =>
+      i.id === id ? { ...i, qty, grams: String(Math.round(q * typicalServing)) } : i
+    ));
+  }
+
+  function updateIngredientGrams(id, grams) {
+    setRecipeIngredients(prev => prev.map(i => i.id === id ? { ...i, grams } : i));
+  }
+
+  const recipeTotalG = recipeIngredients.reduce((s, i) => s + (Number(i.grams) || 0), 0);
+  const recipeTotals = recipeIngredients.reduce((acc, i) => {
+    const g = Number(i.grams) || 0;
+    return {
+      cal:  acc.cal  + (i.meal.caloriesPer100g * g / 100),
+      prot: acc.prot + (i.meal.proteinPer100g  * g / 100),
+      carb: acc.carb + (i.meal.carbsPer100g    * g / 100),
+      fat:  acc.fat  + (i.meal.fatPer100g      * g / 100),
+    };
+  }, { cal: 0, prot: 0, carb: 0, fat: 0 });
+
+  const caloriesPct = Math.round((totals.calories / goals.calories) * 100);
 
   function previewMacros(grams) {
     if (!pendingMeal || !grams) return null;
@@ -186,6 +265,11 @@ export default function MacrosScreen() {
 
   const preview = previewMacros(servingGrams);
 
+  function isUnitFood(meal) {
+    const u = (meal?.servingUnit || '').toLowerCase();
+    return Boolean(u && u !== 'g' && u !== 'gram' && u !== 'grams' && u !== 'ml');
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
@@ -197,34 +281,78 @@ export default function MacrosScreen() {
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>{pendingMeal?.name}</Text>
             <Text style={styles.sheetUnit}>
-              Default: {pendingMeal?.typicalServing}g · unit: {pendingMeal?.servingUnit}
+              {isUnitFood(pendingMeal)
+                ? `${pendingMeal?.typicalServing}g per ${pendingMeal?.servingUnit}`
+                : `Default: ${pendingMeal?.typicalServing}g`}
             </Text>
 
-            <View style={styles.presetRow}>
-              {[0.5, 1, 1.5, 2].map(mult => {
-                const g = Math.round((pendingMeal?.typicalServing || 0) * mult);
-                const active = !customQty && Number(servingGrams) === g;
-                return (
+            {isUnitFood(pendingMeal) ? (
+              <View style={styles.stepperSection}>
+                <View style={styles.stepperRow}>
                   <TouchableOpacity
-                    key={mult}
-                    style={[styles.presetBtn, active && styles.presetBtnActive]}
-                    onPress={() => setPreset(mult)}
-                    activeOpacity={0.7}>
-                    <Text style={[styles.presetMult, active && styles.presetMultActive]}>
-                      {mult === 0.5 ? '½×' : mult === 1 ? '1×' : mult === 1.5 ? '1½×' : '2×'}
-                    </Text>
-                    <Text style={[styles.presetG, active && styles.presetGActive]}>{g}g</Text>
+                    style={styles.stepperBtn}
+                    onPress={() => {
+                      const next = Math.max(1, pieceQty - 1);
+                      setPieceQty(next);
+                      setServingGrams(String(Math.round((pendingMeal?.typicalServing || 0) * next)));
+                      setCustomQty(false);
+                    }}>
+                    <Ionicons name="remove" size={22} color={Colors.text} />
                   </TouchableOpacity>
-                );
-              })}
-              <TouchableOpacity
-                style={[styles.presetBtn, customQty && styles.presetBtnActive]}
-                onPress={() => { setCustomQty(true); setServingGrams(''); }}
-                activeOpacity={0.7}>
-                <Text style={[styles.presetMult, customQty && styles.presetMultActive]}>Custom</Text>
-                <Text style={[styles.presetG, customQty && styles.presetGActive]}>grams</Text>
-              </TouchableOpacity>
-            </View>
+                  <View style={styles.stepperCenter}>
+                    <Text style={styles.stepperNum}>{pieceQty}</Text>
+                    <Text style={styles.stepperUnitLbl}>{pendingMeal?.servingUnit}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.stepperBtn}
+                    onPress={() => {
+                      const next = pieceQty + 1;
+                      setPieceQty(next);
+                      setServingGrams(String(Math.round((pendingMeal?.typicalServing || 0) * next)));
+                      setCustomQty(false);
+                    }}>
+                    <Ionicons name="add" size={22} color={Colors.text} />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.stepperGrams}>
+                  ≈ {Math.round((pendingMeal?.typicalServing || 0) * pieceQty)}g total
+                </Text>
+                {!customQty && (
+                  <TouchableOpacity
+                    style={styles.customGramsLink}
+                    onPress={() => { setCustomQty(true); setServingGrams(''); }}
+                    activeOpacity={0.7}>
+                    <Text style={styles.customGramsLinkTxt}>Enter custom grams instead</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ) : (
+              <View style={styles.presetRow}>
+                {[0.5, 1, 1.5, 2].map(mult => {
+                  const g = Math.round((pendingMeal?.typicalServing || 0) * mult);
+                  const active = !customQty && Number(servingGrams) === g;
+                  return (
+                    <TouchableOpacity
+                      key={mult}
+                      style={[styles.presetBtn, active && styles.presetBtnActive]}
+                      onPress={() => setPreset(mult)}
+                      activeOpacity={0.7}>
+                      <Text style={[styles.presetMult, active && styles.presetMultActive]}>
+                        {mult === 0.5 ? '½×' : mult === 1 ? '1×' : mult === 1.5 ? '1½×' : '2×'}
+                      </Text>
+                      <Text style={[styles.presetG, active && styles.presetGActive]}>{g}g</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+                <TouchableOpacity
+                  style={[styles.presetBtn, customQty && styles.presetBtnActive]}
+                  onPress={() => { setCustomQty(true); setServingGrams(''); }}
+                  activeOpacity={0.7}>
+                  <Text style={[styles.presetMult, customQty && styles.presetMultActive]}>Custom</Text>
+                  <Text style={[styles.presetG, customQty && styles.presetGActive]}>grams</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             {customQty && (
               <TextInput
@@ -260,58 +388,159 @@ export default function MacrosScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* ── Custom Food Builder Modal ── */}
+      {/* ── Recipe Builder Modal ── */}
       <Modal visible={showBuilder} transparent animationType="slide" onRequestClose={() => setShowBuilder(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={styles.builderSheet}>
             <View style={styles.sheetHandle} />
             <View style={styles.builderHeader}>
-              <Text style={styles.builderTitle}>Create Food</Text>
+              <Text style={styles.builderTitle}>Create Recipe</Text>
               <TouchableOpacity onPress={() => setShowBuilder(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                 <Ionicons name="close" size={22} color={Colors.textSub} />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <CustomField label="Food Name *" value={customForm.name} onChangeText={v => setCustomForm(f => ({ ...f, name: v }))} placeholder="e.g. Mom's Dal" />
-              <CustomField label="Calories / 100g" value={customForm.caloriesPer100g} onChangeText={v => setCustomForm(f => ({ ...f, caloriesPer100g: v }))} placeholder="e.g. 120" keyboardType="numeric" />
-              <CustomField label="Protein / 100g (g)" value={customForm.proteinPer100g} onChangeText={v => setCustomForm(f => ({ ...f, proteinPer100g: v }))} placeholder="e.g. 8" keyboardType="numeric" />
-              <CustomField label="Carbs / 100g (g)" value={customForm.carbsPer100g} onChangeText={v => setCustomForm(f => ({ ...f, carbsPer100g: v }))} placeholder="e.g. 20" keyboardType="numeric" />
-              <CustomField label="Fat / 100g (g)" value={customForm.fatPer100g} onChangeText={v => setCustomForm(f => ({ ...f, fatPer100g: v }))} placeholder="e.g. 2" keyboardType="numeric" />
-              <CustomField label="Typical Serving (g)" value={customForm.typicalServing} onChangeText={v => setCustomForm(f => ({ ...f, typicalServing: v }))} placeholder="e.g. 150" keyboardType="numeric" />
+              <CustomField
+                label="Recipe Name *"
+                value={recipeName}
+                onChangeText={setRecipeName}
+                placeholder="e.g. Mom's Dal Tadka"
+              />
 
-              <Text style={styles.sectionLabel}>Category</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-                {CATEGORIES.map(cat => (
+              {/* Servings stepper */}
+              <View style={styles.servingsRow}>
+                <Text style={styles.customFieldLabel}>Makes</Text>
+                <View style={styles.servingsStepper}>
                   <TouchableOpacity
-                    key={cat}
-                    style={[styles.chip, customForm.category === cat && styles.chipActive]}
-                    onPress={() => setCustomForm(f => ({ ...f, category: cat }))}>
-                    <Text style={[styles.chipText, customForm.category === cat && styles.chipTextActive]}>{cat}</Text>
+                    style={styles.servingsBtn}
+                    onPress={() => setRecipeServings(s => Math.max(1, s - 1))}>
+                    <Ionicons name="remove" size={16} color={Colors.text} />
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
+                  <Text style={styles.servingsNum}>{recipeServings}</Text>
+                  <TouchableOpacity
+                    style={styles.servingsBtn}
+                    onPress={() => setRecipeServings(s => s + 1)}>
+                    <Ionicons name="add" size={16} color={Colors.text} />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.servingsLabel}>serving{recipeServings !== 1 ? 's' : ''}</Text>
+              </View>
 
               <Text style={styles.sectionLabel}>Serving Unit</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
                 {SERVING_UNITS.map(unit => (
                   <TouchableOpacity
                     key={unit}
-                    style={[styles.chip, customForm.servingUnit === unit && styles.chipActive]}
-                    onPress={() => setCustomForm(f => ({ ...f, servingUnit: unit }))}>
-                    <Text style={[styles.chipText, customForm.servingUnit === unit && styles.chipTextActive]}>{unit}</Text>
+                    style={[styles.chip, recipeServingUnit === unit && styles.chipActive]}
+                    onPress={() => setRecipeServingUnit(unit)}>
+                    <Text style={[styles.chipText, recipeServingUnit === unit && styles.chipTextActive]}>{unit}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
 
+              <Text style={styles.sectionLabel}>Category</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+                {CATEGORIES.map(cat => (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[styles.chip, recipeCategory === cat && styles.chipActive]}
+                    onPress={() => setRecipeCategory(cat)}>
+                    <Text style={[styles.chipText, recipeCategory === cat && styles.chipTextActive]}>{cat}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {/* Ingredient search */}
+              <Text style={styles.sectionLabel}>Ingredients</Text>
+              <View style={styles.ingSearchRow}>
+                <Ionicons name="search-outline" size={16} color={Colors.textMuted} style={{ marginRight: 8 }} />
+                <TextInput
+                  style={styles.ingSearchInput}
+                  placeholder="Search dal, rice, egg..."
+                  placeholderTextColor={Colors.textMuted}
+                  value={recipeSearch}
+                  onChangeText={searchRecipeIngredient}
+                  autoCorrect={false}
+                />
+                {recipeSearching && <ActivityIndicator size="small" color={Colors.accentGold} />}
+              </View>
+
+              {recipeResults.length > 0 && (
+                <View style={styles.ingResultsList}>
+                  {recipeResults.map(meal => (
+                    <TouchableOpacity
+                      key={meal.id}
+                      style={styles.ingResultRow}
+                      onPress={() => addIngredient(meal)}
+                      activeOpacity={0.7}>
+                      <Text style={styles.ingResultName} numberOfLines={1}>{meal.name}</Text>
+                      <Text style={styles.ingResultMeta}>{meal.caloriesPer100g} kcal/100g</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {/* Ingredient list */}
+              {recipeIngredients.length > 0 && (
+                <View style={styles.ingList}>
+                  {recipeIngredients.map(item => (
+                    <View key={item.id} style={styles.ingRow}>
+                      <Text style={styles.ingName} numberOfLines={1}>{item.meal.name}</Text>
+                      {isUnitFood(item.meal) ? (
+                        <>
+                          <TextInput
+                            style={styles.ingQtyInput}
+                            keyboardType="numeric"
+                            value={item.qty}
+                            onChangeText={v => updateIngredientQty(item.id, v, item.meal.typicalServing)}
+                          />
+                          <Text style={styles.ingUnitLbl}>{item.meal.servingUnit}</Text>
+                        </>
+                      ) : (
+                        <>
+                          <TextInput
+                            style={styles.ingGramsInput}
+                            keyboardType="numeric"
+                            value={item.grams}
+                            onChangeText={v => updateIngredientGrams(item.id, v)}
+                          />
+                          <Text style={styles.ingGramsUnit}>g</Text>
+                        </>
+                      )}
+                      <TouchableOpacity
+                        onPress={() => removeIngredient(item.id)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                        <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Totals preview */}
+              {recipeIngredients.length > 0 && recipeTotalG > 0 && (
+                <View style={styles.recipeTotalsBox}>
+                  <Text style={styles.recipeTotalsTitle}>Total · {Math.round(recipeTotalG)}g</Text>
+                  <Text style={styles.recipeTotalsMacros}>
+                    {Math.round(recipeTotals.cal)} kcal · P {Math.round(recipeTotals.prot)}g · C {Math.round(recipeTotals.carb)}g · F {Math.round(recipeTotals.fat)}g
+                  </Text>
+                  {recipeServings > 1 && (
+                    <Text style={styles.recipeTotalsServing}>
+                      Per serving ({Math.round(recipeTotalG / recipeServings)}g): {Math.round(recipeTotals.cal / recipeServings)} kcal · P {Math.round(recipeTotals.prot / recipeServings)}g · C {Math.round(recipeTotals.carb / recipeServings)}g · F {Math.round(recipeTotals.fat / recipeServings)}g
+                    </Text>
+                  )}
+                </View>
+              )}
+
               <TouchableOpacity
                 style={[styles.saveBtn, savingCustom && { opacity: 0.6 }]}
-                onPress={saveCustomFood}
+                onPress={saveRecipe}
                 disabled={savingCustom}
                 activeOpacity={0.8}>
                 {savingCustom
                   ? <ActivityIndicator color={Colors.background} size="small" />
-                  : <Text style={styles.saveBtnText}>Save Food</Text>}
+                  : <Text style={styles.saveBtnText}>Save Recipe</Text>}
               </TouchableOpacity>
               <View style={{ height: 40 }} />
             </ScrollView>
@@ -329,7 +558,7 @@ export default function MacrosScreen() {
               <Text style={styles.title}>Macro Tracker</Text>
               <View style={styles.calorieBadge}>
                 <Text style={styles.calorieValue}>{Math.round(totals.calories)}</Text>
-                <Text style={styles.calorieLabel}>/ {DAILY_GOALS.calories} kcal</Text>
+                <Text style={styles.calorieLabel}>/ {goals.calories} kcal</Text>
               </View>
             </View>
 
@@ -340,9 +569,9 @@ export default function MacrosScreen() {
                   <Text style={styles.calRingLabel}>of goal</Text>
                 </View>
                 <View style={styles.macroBarList}>
-                  <MacroBar label="Protein" value={Math.round(totals.protein)} goal={DAILY_GOALS.protein} color={Colors.accentPurple} />
-                  <MacroBar label="Carbs"   value={Math.round(totals.carbs)}   goal={DAILY_GOALS.carbs}   color={Colors.accentGold} />
-                  <MacroBar label="Fat"     value={Math.round(totals.fat)}     goal={DAILY_GOALS.fat}     color="#E67E22" />
+                  <MacroBar label="Protein" value={Math.round(totals.protein)} goal={goals.protein} color={Colors.accentPurple} />
+                  <MacroBar label="Carbs"   value={Math.round(totals.carbs)}   goal={goals.carbs}   color={Colors.accentGold} />
+                  <MacroBar label="Fat"     value={Math.round(totals.fat)}     goal={goals.fat}     color="#E67E22" />
                 </View>
               </View>
             </View>
@@ -369,7 +598,7 @@ export default function MacrosScreen() {
                 <Ionicons name="add-circle-outline" size={22} color={Colors.accentGold} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.searchHint}>Tap + to create your own food</Text>
+            <Text style={styles.searchHint}>Tap + to create a recipe from ingredients</Text>
 
             {searching && <ActivityIndicator color={Colors.accentGold} style={{ marginVertical: 12 }} />}
             {results.length > 0 && (
@@ -511,8 +740,19 @@ const styles = StyleSheet.create({
   addBtnDisabled: { opacity: 0.4 },
   addBtnText: { fontSize: 15, fontWeight: '700', color: Colors.background },
 
-  // ── Custom Food Builder ──
-  builderSheet: { backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '90%' },
+  // ── Quantity Stepper ──
+  stepperSection: { alignItems: 'center', marginBottom: 20 },
+  stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 32, marginBottom: 8 },
+  stepperBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.cardBorder, alignItems: 'center', justifyContent: 'center' },
+  stepperCenter: { alignItems: 'center', minWidth: 80 },
+  stepperNum: { fontSize: 42, fontWeight: '800', color: Colors.text, lineHeight: 48 },
+  stepperUnitLbl: { fontSize: 13, color: Colors.textSub, marginTop: 2, textTransform: 'capitalize' },
+  stepperGrams: { fontSize: 13, color: Colors.textMuted, marginBottom: 10 },
+  customGramsLink: { paddingVertical: 6 },
+  customGramsLinkTxt: { fontSize: 13, color: Colors.accentGold, textDecorationLine: 'underline' },
+
+  // ── Recipe Builder ──
+  builderSheet: { backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '92%' },
   builderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   builderTitle: { fontSize: 18, fontWeight: '700', color: Colors.text },
 
@@ -520,12 +760,39 @@ const styles = StyleSheet.create({
   customFieldLabel: { fontSize: 12, color: Colors.textSub, fontWeight: '600', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
   customFieldInput: { backgroundColor: Colors.background, borderRadius: 10, borderWidth: 1, borderColor: Colors.cardBorder, color: Colors.text, fontSize: 15, paddingHorizontal: 14, paddingVertical: 10 },
 
+  servingsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 10 },
+  servingsStepper: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.background, borderRadius: 8, borderWidth: 1, borderColor: Colors.cardBorder, overflow: 'hidden' },
+  servingsBtn: { paddingHorizontal: 12, paddingVertical: 8 },
+  servingsNum: { fontSize: 16, fontWeight: '700', color: Colors.text, paddingHorizontal: 10, minWidth: 32, textAlign: 'center' },
+  servingsLabel: { fontSize: 14, color: Colors.textSub },
+
   sectionLabel: { fontSize: 12, color: Colors.textSub, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10, marginTop: 4 },
   chipScroll: { marginBottom: 16 },
   chip: { backgroundColor: Colors.background, borderRadius: 20, borderWidth: 1, borderColor: Colors.cardBorder, paddingHorizontal: 14, paddingVertical: 7, marginRight: 8 },
   chipActive: { backgroundColor: Colors.accentGold + '22', borderColor: Colors.accentGold },
   chipText: { fontSize: 13, color: Colors.textSub, fontWeight: '500' },
   chipTextActive: { color: Colors.accentGold, fontWeight: '700' },
+
+  ingSearchRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.background, borderRadius: 10, borderWidth: 1, borderColor: Colors.cardBorder, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8 },
+  ingSearchInput: { flex: 1, color: Colors.text, fontSize: 14 },
+
+  ingResultsList: { backgroundColor: Colors.background, borderRadius: 10, borderWidth: 1, borderColor: Colors.cardBorder, marginBottom: 10, overflow: 'hidden' },
+  ingResultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.cardBorder },
+  ingResultName: { fontSize: 14, color: Colors.text, fontWeight: '500', flex: 1, marginRight: 8 },
+  ingResultMeta: { fontSize: 12, color: Colors.textMuted },
+
+  ingList: { marginBottom: 10 },
+  ingRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.background, borderRadius: 10, borderWidth: 1, borderColor: Colors.cardBorder, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 6, gap: 8 },
+  ingName: { flex: 1, fontSize: 14, color: Colors.text },
+  ingGramsInput: { width: 54, backgroundColor: Colors.card, borderRadius: 8, borderWidth: 1, borderColor: Colors.cardBorder, color: Colors.text, fontSize: 14, fontWeight: '600', textAlign: 'center', paddingVertical: 6 },
+  ingGramsUnit: { fontSize: 13, color: Colors.textMuted },
+  ingQtyInput: { width: 44, backgroundColor: Colors.card, borderRadius: 8, borderWidth: 1, borderColor: Colors.accentGold + '88', color: Colors.text, fontSize: 14, fontWeight: '700', textAlign: 'center', paddingVertical: 6 },
+  ingUnitLbl: { fontSize: 13, color: Colors.accentGold, fontWeight: '600', minWidth: 52 },
+
+  recipeTotalsBox: { backgroundColor: Colors.accentGold + '18', borderRadius: 12, borderWidth: 1, borderColor: Colors.accentGold + '44', padding: 14, marginBottom: 16 },
+  recipeTotalsTitle: { fontSize: 12, fontWeight: '700', color: Colors.accentGold, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+  recipeTotalsMacros: { fontSize: 15, color: Colors.text, fontWeight: '600' },
+  recipeTotalsServing: { fontSize: 12, color: Colors.textSub, marginTop: 6 },
 
   saveBtn: { backgroundColor: Colors.accentGold, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
   saveBtnText: { fontSize: 16, fontWeight: '700', color: Colors.background },
