@@ -32,6 +32,9 @@ public class WorkoutSession {
     @Column(columnDefinition = "TEXT")
     private String exerciseNames;
 
+    // estimated via MET formula: MET * weightKg * hours
+    private double caloriesBurned;
+
     @Column(nullable = false)
     private LocalDateTime completedAt;
 }

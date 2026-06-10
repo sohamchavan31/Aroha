@@ -9,4 +9,5 @@ import java.util.List;
 public interface WorkoutSessionRepository extends JpaRepository<WorkoutSession, Long> {
     List<WorkoutSession> findTop5ByUserIdOrderByCompletedAtDesc(Long userId);
     long countByUserIdAndCompletedAtAfter(Long userId, LocalDateTime after);
+    List<WorkoutSession> findByUserIdAndCompletedAtBetween(Long userId, LocalDateTime start, LocalDateTime end);
 }

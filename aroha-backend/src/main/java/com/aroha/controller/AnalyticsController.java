@@ -3,6 +3,7 @@ package com.aroha.controller;
 import com.aroha.model.DailyLog;
 import com.aroha.model.HabitLog;
 import com.aroha.model.User;
+import com.aroha.model.WorkoutSession;
 import com.aroha.repository.DailyLogRepository;
 import com.aroha.repository.HabitLogRepository;
 import com.aroha.repository.HabitRepository;
@@ -57,6 +58,11 @@ public class AnalyticsController {
         long workoutsThisWeek = workoutSessionRepository
                 .countByUserIdAndCompletedAtAfter(user.getId(), weekStart);
 
+        // Calories burned this week (Monday → now)
+        double caloriesBurnedWeek = workoutSessionRepository
+                .findByUserIdAndCompletedAtBetween(user.getId(), weekStart, today.plusDays(1).atStartOfDay())
+                .stream().mapToDouble(WorkoutSession::getCaloriesBurned).sum();
+
         // Habit completion rate — last 7 days
         long totalHabits = habitRepository.countByUserId(user.getId());
         List<HabitLog> habitLogs7d = habitLogRepository
@@ -94,6 +100,7 @@ public class AnalyticsController {
         result.put("avgCarbsG7d",             Math.round(avgCarbs * 10.0) / 10.0);
         result.put("avgFatG7d",               Math.round(avgFat   * 10.0) / 10.0);
         result.put("workoutsThisWeek",        workoutsThisWeek);
+        result.put("caloriesBurnedWeek",      Math.round(caloriesBurnedWeek));
         result.put("habitCompletionRate7d",   Math.round(habitRate * 100.0) / 100.0);
         result.put("currentWeightKg",         currentWeight);
         result.put("weightChange30d",         weightChange30d);

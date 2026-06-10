@@ -72,7 +72,7 @@ export default function MacrosScreen() {
   const [results, setResults]       = useState([]);
   const [searching, setSearching]   = useState(false);
   const [log, setLog]               = useState([]);
-  const [totals, setTotals]         = useState({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+  const [totals, setTotals]         = useState({ calories: 0, protein: 0, carbs: 0, fat: 0, burned: 0, net: 0 });
   const [loadingLog, setLoadingLog] = useState(true);
   const [collapsed, setCollapsed]   = useState({ BREAKFAST: false, LUNCH: false, DINNER: false, SNACK: false });
 
@@ -100,10 +100,12 @@ export default function MacrosScreen() {
       const { data } = await client.get('/logs/today');
       setLog(data.entries || []);
       setTotals({
-        calories: data.totalCalories || 0,
-        protein:  data.totalProtein  || 0,
-        carbs:    data.totalCarbs    || 0,
-        fat:      data.totalFat      || 0,
+        calories: data.totalCalories  || 0,
+        protein:  data.totalProtein   || 0,
+        carbs:    data.totalCarbs     || 0,
+        fat:      data.totalFat       || 0,
+        burned:   data.caloriesBurned || 0,
+        net:      data.netCalories    ?? (data.totalCalories || 0),
       });
     } catch {
       // silently fail
@@ -558,6 +560,25 @@ export default function MacrosScreen() {
               <MacroBar label="Fat"     value={Math.round(totals.fat)}     goal={goals.fat}     color="#E67E22" />
             </View>
           </View>
+
+          {totals.burned > 0 && (
+            <View style={styles.netCalRow}>
+              <View style={styles.netCalItem}>
+                <Text style={styles.netCalLabel}>Consumed</Text>
+                <Text style={styles.netCalValue}>{Math.round(totals.calories)}</Text>
+              </View>
+              <Ionicons name="remove" size={14} color={Colors.textMuted} />
+              <View style={styles.netCalItem}>
+                <Text style={styles.netCalLabel}>Burned</Text>
+                <Text style={[styles.netCalValue, { color: Colors.success }]}>{Math.round(totals.burned)}</Text>
+              </View>
+              <Ionicons name="arrow-forward" size={14} color={Colors.textMuted} />
+              <View style={styles.netCalItem}>
+                <Text style={styles.netCalLabel}>Net</Text>
+                <Text style={[styles.netCalValue, { color: Colors.accentGold }]}>{Math.round(totals.net)}</Text>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Search */}
@@ -700,6 +721,11 @@ const styles = StyleSheet.create({
   macroGoal:    { color: Colors.textMuted },
   macroTrack:   { height: 5, backgroundColor: Colors.cardBorder, borderRadius: 3, overflow: 'hidden' },
   macroFill:    { height: '100%', borderRadius: 3 },
+
+  netCalRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: Colors.cardBorder },
+  netCalItem:   { alignItems: 'center' },
+  netCalLabel:  { fontSize: 10, color: Colors.textSub, marginBottom: 2 },
+  netCalValue:  { fontSize: 15, fontWeight: '800', color: Colors.text },
 
   searchRow:    { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 4 },
   searchIcon:   { marginRight: 8 },

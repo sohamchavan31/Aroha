@@ -4,8 +4,10 @@ import com.aroha.dto.DailyLogRequest;
 import com.aroha.model.DailyLog;
 import com.aroha.model.Meal;
 import com.aroha.model.User;
+import com.aroha.model.WorkoutSession;
 import com.aroha.repository.DailyLogRepository;
 import com.aroha.repository.MealRepository;
+import com.aroha.repository.WorkoutSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ public class DailyLogService {
 
     private final DailyLogRepository dailyLogRepository;
     private final MealRepository mealRepository;
+    private final WorkoutSessionRepository workoutSessionRepository;
 
     public DailyLog addEntry(User user, DailyLogRequest request) {
         Meal meal = mealRepository.findById(request.getMealId())
@@ -55,12 +58,19 @@ public class DailyLogService {
         double totalCarbs    = entries.stream().mapToDouble(DailyLog::getCarbs).sum();
         double totalFat      = entries.stream().mapToDouble(DailyLog::getFat).sum();
 
+        List<WorkoutSession> sessionsToday = workoutSessionRepository.findByUserIdAndCompletedAtBetween(
+                user.getId(), today.atStartOfDay(), today.plusDays(1).atStartOfDay());
+        double caloriesBurned = sessionsToday.stream().mapToDouble(WorkoutSession::getCaloriesBurned).sum();
+        double netCalories = totalCalories - caloriesBurned;
+
         Map<String, Object> response = new HashMap<>();
         response.put("entries", entries);
-        response.put("totalCalories", Math.round(totalCalories * 10.0) / 10.0);
-        response.put("totalProtein",  Math.round(totalProtein  * 10.0) / 10.0);
-        response.put("totalCarbs",    Math.round(totalCarbs    * 10.0) / 10.0);
-        response.put("totalFat",      Math.round(totalFat      * 10.0) / 10.0);
+        response.put("totalCalories",  Math.round(totalCalories  * 10.0) / 10.0);
+        response.put("totalProtein",   Math.round(totalProtein   * 10.0) / 10.0);
+        response.put("totalCarbs",     Math.round(totalCarbs     * 10.0) / 10.0);
+        response.put("totalFat",       Math.round(totalFat       * 10.0) / 10.0);
+        response.put("caloriesBurned", Math.round(caloriesBurned * 10.0) / 10.0);
+        response.put("netCalories",    Math.round(netCalories    * 10.0) / 10.0);
         return response;
     }
 
