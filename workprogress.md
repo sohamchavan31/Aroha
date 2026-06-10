@@ -7,17 +7,15 @@
 ---
 
 ## Current Status
-> Phase 8 COMPLETE — Analytics, body tracking, weight log, progress screen, goal progress card.
-> Phase 8b COMPLETE — Personalised macro goals via Mifflin-St Jeor BMR + activity + goal pipeline.
-> Onboarding upgraded — 5 steps: gender/body stats → activity level → health goal → preferences → water.
-> MacrosScreen upgraded — quantity stepper for unit foods, recipe builder with ingredients.
-> All open PRs on dev.
+> Phase 8 + 8b COMPLETE. Edit Profile, Meal Slots, Notifications, and Net Calories all shipped (2026-06-10).
 >
-> **Next 10 tasks (ordered):**
-> 1. Edit Profile Screen
-> 2. Meal Slots (Breakfast / Lunch / Dinner / Snacks)
-> 3. Notifications (Phase 9)
-> 4. Calories Burned → Net Calories
+> **Completed:**
+> ✅ Edit Profile Screen — all onboarding fields editable, macros recomputed on save
+> ✅ Meal Slots — Breakfast / Lunch / Dinner / Snack sections with calorie subtotals + slot picker in modal
+> ✅ Notifications — water (2h), meals (8am/1pm/7pm), workout (6:30pm), missions (8pm); wired to SettingsScreen toggles
+> ✅ Calories Burned → Net Calories — MET-based burn estimate per workout session, Consumed/Burned/Net row in MacrosScreen, weekly burned stat in ProgressScreen
+>
+> **Next 6 tasks (resuming next session):**
 > 5. Progressive Overload Tracking
 > 6. Body Measurements (chest/waist/hips/arms/thighs)
 > 7. Barcode Scanner
@@ -121,47 +119,49 @@
 | Goal progress | goalProgressPct in analytics — (currentWeight − startWeight) / (targetWeight − startWeight) |
 | ProgressScreen | 6th tab — goal progress card, weight cards, 30-day line chart, this-week stats, 7-day macro split |
 | profileComplete fix | LoginScreen + RegisterScreen now pass profileComplete to login() — onboarding no longer repeats on re-login |
+| Edit Profile Screen | All onboarding fields editable post-onboarding; Profile Details + Macro Targets cards in view mode |
+| Meal Slots | Breakfast / Lunch / Dinner / Snack sections in MacrosScreen with calorie subtotals; slot picker in serving modal |
+| Notifications | Water (2h interval), meals (8am/1pm/7pm), workout (6:30pm), missions (8pm); wired to SettingsScreen toggles |
 
 ---
 
 ## What's Left (Ordered by Priority)
 
-### 1 — Edit Profile Screen (IMMEDIATE)
-Users can't correct mistakes. Existing users from old 3-step onboarding are missing gender/activityLevel — macro targets are wrong for them. Weight changes and macro targets go stale without this.
-- [ ] ProfileScreen view mode — replace limited edit modal with full Edit Profile screen
-- [ ] Editable fields: gender, age, weight, target weight, height, activity level, 9 health goals, bulk/cut speed, experience level, dietary preference, water goal
-- [ ] On save → PATCH /profile → recomputes and stores new macro targets in DB
-- [ ] Goal section shows all 9 goals (matching new onboarding), not the old 4
+### 1 — Edit Profile Screen ✅ DONE (2026-06-09)
+- [x] ProfileScreen view mode — Profile Details card + Macro Targets card
+- [x] Editable fields: gender, age, weight, target weight, height, activity level, 9 health goals, bulk/cut speed, experience level, dietary preference, water goal
+- [x] On save → PATCH /profile → recomputes and stores new macro targets in DB
+- [x] All 9 goals shown with color dots
 
 ---
 
-### 2 — Meal Slots (Breakfast / Lunch / Dinner / Snacks)
-Users think in meals, not in raw calorie numbers. "I had oats for breakfast" is how everyone logs food.
-- [ ] Add `mealSlot` field to DailyLog entity (BREAKFAST / LUNCH / DINNER / SNACK)
-- [ ] MacrosScreen — replace flat "Daily Food Log" with 4 expandable sections
-- [ ] Each section shows its own calorie/macro sub-total
-- [ ] Quick-add per slot (tap + on Breakfast section to log to Breakfast)
-- [ ] Default slot = BREAKFAST before noon, LUNCH 12–3 PM, DINNER 6 PM+, else SNACK
+### 2 — Meal Slots ✅ DONE (2026-06-09)
+- [x] `mealSlot` field added to DailyLog entity (nullable, backward compat)
+- [x] MacrosScreen — 4 collapsible sections (Breakfast / Lunch / Dinner / Snack)
+- [x] Each section shows calorie subtotal + entry count badge
+- [x] Slot picker in serving modal (4 chips); auto-selects by time of day
+- [x] "Add to Lunch" button label reflects chosen slot
 
 ---
 
-### 3 — Notifications (Phase 9)
-- [ ] expo-notifications — request permissions on first launch
-- [ ] Water reminder — configurable interval (every 1–2 hrs)
-- [ ] Meal reminder — breakfast/lunch/dinner nudges
-- [ ] Workout reminder — daily at user-set time
-- [ ] Mission reminder — "2 missions left today" at 8 PM
-- [ ] Step counter — expo-sensors Pedometer → EP reward (10k steps = 20 EP)
-- [ ] Wire SettingsScreen toggles to actual notification scheduling
+### 3 — Notifications ✅ DONE (2026-06-09)
+- [x] expo-notifications permissions requested on login (App.js)
+- [x] Water reminder — TIME_INTERVAL every 2 hours
+- [x] Meal reminders — DAILY at 8am, 1pm, 7pm
+- [x] Workout reminder — DAILY at 6:30pm
+- [x] Mission reminder — DAILY at 8pm
+- [x] SettingsScreen — meal + workout toggles added with time sub-labels
+- [x] All toggles immediately reschedule/cancel their notification
+- [ ] Step counter — expo-sensors Pedometer → EP reward (future)
 
 ---
 
-### 4 — Calories Burned → Net Calories
+### 4 — Calories Burned → Net Calories ✅ DONE (2026-06-10)
 Already have workout sessions with duration + type. Use MET values to estimate burn.
-- [ ] Add calorie burn estimate to WorkoutSession (MET × weight × duration)
-- [ ] MacrosScreen / ProgressScreen — show Consumed / Burned / Net / Target row
-- [ ] Net calorie ring (consumed minus burned vs goal)
-- [ ] Example: Consumed 2400 − Burned 500 = Net 1900 vs Target 2200
+- [x] Add calorie burn estimate to WorkoutSession (MET × weight × duration) — `caloriesBurned` field, computed in `WorkoutGeneratorController.saveSession` via MET table per workoutType
+- [x] MacrosScreen / ProgressScreen — show Consumed / Burned / Net / Target row — `/logs/today` returns `caloriesBurned` + `netCalories`, displayed in MacroCard
+- [x] Net calorie row added below the calorie ring (Consumed → Burned → Net), shown when a workout was logged today
+- [x] ProgressScreen — weekly "Burned" stat card via `/analytics/summary` `caloriesBurnedWeek`
 
 ---
 
@@ -503,10 +503,10 @@ Self-hosted PostgreSQL + MongoDB
 | 21 | Onboarding v2 — gender, activity level, 9 goals, bulk/cut speed, experience, diet | Done |
 | 22 | Personalised macros — Mifflin-St Jeor BMR + TDEE + goal pipeline stored in DB | Done |
 | 23 | MacrosScreen — unit qty stepper + recipe builder with ingredients | Done |
-| 24 | Edit Profile screen — all new onboarding fields editable | Pending |
-| 25 | Meal slots — Breakfast / Lunch / Dinner / Snacks in MacrosScreen | Pending |
-| 26 | Phase 9 — Real push notifications + step counter | Pending |
-| 27 | Calories Burned → Net Calories (MET-based from workout sessions) | Pending |
+| 24 | Edit Profile screen — all new onboarding fields editable | Done |
+| 25 | Meal slots — Breakfast / Lunch / Dinner / Snacks in MacrosScreen | Done |
+| 26 | Notifications — water/meal/workout/mission wired to SettingsScreen | Done |
+| 27 | Calories Burned → Net Calories (MET-based from workout sessions) | Done |
 | 28 | Progressive Overload Tracking — PR detection, per-exercise history | Pending |
 | 29 | Body Measurements — chest, waist, hips, arms, thighs | Pending |
 | 30 | Barcode Scanner — Open Food Facts API | Pending |
@@ -533,10 +533,10 @@ Self-hosted PostgreSQL + MongoDB
 | Critical | Body weight log + graph | ✅ Done |
 | Critical | Analytics dashboard | ✅ Done |
 | Critical | Personalised macro goals (BMR/TDEE) | ✅ Done |
-| Critical | Edit Profile screen | #1 Next |
-| Critical | Meal slots (Breakfast/Lunch/Dinner) | #2 Next |
-| Critical | Real push notifications | #3 Next |
-| Critical | Calories Burned → Net Calories | #4 Next |
+| Critical | Edit Profile screen | ✅ Done |
+| Critical | Meal slots (Breakfast/Lunch/Dinner) | ✅ Done |
+| Critical | Real push notifications | ✅ Done |
+| Critical | Calories Burned → Net Calories | ✅ Done |
 | Critical | Progressive Overload Tracking | #5 Next |
 | Critical | Barcode scanner | #7 Next |
 | Important | Goal Date + on-track indicator | #8 Next |
@@ -595,7 +595,7 @@ Aroha (wellness) + HealthBridge (medical) + IoT Layer
 
 ---
 
-_Updated: 2026-06-09 — Priority order locked. New features registered: Goal Date, progressive overload, body measurements, net calories, meal slots, AI profile context._
+_Updated: 2026-06-10 — Edit Profile, Meal Slots, Notifications, Net Calories complete. Resuming next session with #5 Progressive Overload Tracking._
 
 <!-- Session log -->
 <!-- 2026-05-28: Mobile scaffold + home screen + backend JWT done. -->
@@ -605,5 +605,7 @@ _Updated: 2026-06-09 — Priority order locked. New features registered: Goal Da
 <!-- 2026-06-05: All phases 10/11/12 complete. Flask AI, AiScreen, workout generator, serving size modal. -->
 <!-- 2026-06-07: Workout session save complete. All PRs merged. Competitive analysis done. -->
 <!-- 2026-06-08: Neon cloud PostgreSQL live (Singapore). Both office + home PC sharing one DB. Auth upgrades planned. -->
+<!-- 2026-06-10: Net Calories (WorkoutSession.caloriesBurned via MET formula, /logs/today returns caloriesBurned + netCalories, MacrosScreen Consumed/Burned/Net row, ProgressScreen weekly Burned stat via /analytics/summary caloriesBurnedWeek). Resuming next session at #5 Progressive Overload Tracking. -->
 <!-- 2026-06-09: Phase 8 complete — weight log, analytics dashboard, goal progress card. Onboarding v2 — 5 steps, gender, activity level, 9 goals, bulk/cut pace, experience level, dietary preference. Mifflin-St Jeor BMR pipeline. MacrosScreen — unit qty stepper, recipe builder from ingredients. profileComplete login fix. -->
 <!-- 2026-06-09: Priority order revised. Next 10 tasks locked: Edit Profile → Meal Slots → Notifications → Net Calories → Progressive Overload → Body Measurements → Barcode → Goal Date → Progress Photos → Google Login. Goal Date, progressive overload, body measurements, net calories, meal slots, AI profile context all registered as new features. -->
+<!-- 2026-06-09: Edit Profile (ProfileScreen full rewrite — view + edit, all onboarding fields), Meal Slots (DailyLog.mealSlot, 4 collapsible sections in MacrosScreen, slot picker in modal), Notifications (notifications.js utility, water/meals/workout/missions scheduled, SettingsScreen wired). Resuming tomorrow at #4 Calories Burned / Net Calories. -->

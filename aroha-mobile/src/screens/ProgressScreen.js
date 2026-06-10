@@ -256,6 +256,13 @@ export default function ProgressScreen() {
                   color={Colors.rankA}
                 />
                 <StatCard
+                  label="Burned"
+                  value={summary?.caloriesBurnedWeek ?? 0}
+                  unit="kcal"
+                  icon="bonfire-outline"
+                  color={Colors.success}
+                />
+                <StatCard
                   label="Habit Rate"
                   value={`${habitPct}%`}
                   icon="checkmark-circle-outline"
