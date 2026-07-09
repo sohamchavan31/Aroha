@@ -9,7 +9,20 @@ import Colors from '../constants/colors';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import SettingsScreen from './SettingsScreen';
+import LegalScreen from './LegalScreen';
+import AvatarPickerScreen from './AvatarPickerScreen';
+import Avatar from '../components/Avatar';
+import AnimatedPressable from '../components/AnimatedPressable';
 import { useLanguage } from '../context/LanguageContext';
+import { useScreenshotProtection } from '../utils/screenshotProtection';
+import AppInfo from '../constants/appInfo';
+
+const FOOTER_LINKS = [
+  { key: 'privacy', icon: 'shield-checkmark-outline', label: 'Privacy Policy' },
+  { key: 'terms',   icon: 'document-text-outline',    label: 'Terms & Conditions' },
+  { key: 'rate',    icon: 'star-outline',              label: 'Rate App' },
+  { key: 'about',   icon: 'information-circle-outline', label: 'About Us' },
+];
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const ALL_GOALS = {
@@ -106,6 +119,8 @@ export default function ProfileScreen({ visible, onClose }) {
   const [editing, setEditing]           = useState(false);
   const [saving, setSaving]             = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [legalType, setLegalType]       = useState(null);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [heightUnit, setHeightUnit]     = useState('cm');
 
   const [form, setForm] = useState({
@@ -114,6 +129,8 @@ export default function ProfileScreen({ visible, onClose }) {
     activityLevel: '', healthGoal: '', weightChangeSpeed: '',
     experienceLevel: '', dietaryPreference: '', waterGoalGlasses: '8',
   });
+
+  useScreenshotProtection(visible);
 
   useEffect(() => {
     if (visible) loadProfile();
@@ -200,6 +217,18 @@ export default function ProfileScreen({ visible, onClose }) {
       Alert.alert('Error', 'Could not save profile.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function selectAvatar(avatarKey) {
+    const prevAvatarKey = profile?.avatarKey;
+    setProfile(p => ({ ...p, avatarKey }));
+    setShowAvatarPicker(false);
+    try {
+      await client.patch('/profile/avatar', { avatarKey });
+    } catch {
+      setProfile(p => ({ ...p, avatarKey: prevAvatarKey }));
+      Alert.alert('Error', 'Could not save avatar.');
     }
   }
 
@@ -427,9 +456,12 @@ export default function ProfileScreen({ visible, onClose }) {
 
             {/* Avatar + Name + Stage */}
             <View style={styles.avatarSection}>
-              <View style={styles.avatar}>
-                <Ionicons name="person" size={40} color={Colors.textSub} />
-              </View>
+              <AnimatedPressable onPress={() => setShowAvatarPicker(true)} scaleTo={0.94}>
+                <Avatar avatarKey={profile?.avatarKey} size={88} />
+                <View style={styles.avatarEditBadge}>
+                  <Ionicons name="camera" size={13} color={Colors.background} />
+                </View>
+              </AnimatedPressable>
               <Text style={styles.userName}>{profile?.name || user?.name}</Text>
               <Text style={styles.userEmail}>{profile?.email || user?.email}</Text>
               <View style={[styles.rankBadge, { backgroundColor: Colors.accentPurple }]}>
@@ -602,6 +634,38 @@ export default function ProfileScreen({ visible, onClose }) {
               <Ionicons name="log-out-outline" size={18} color="#E74C3C" />
               <Text style={styles.logoutText}>{t('logout')}</Text>
             </TouchableOpacity>
+
+            {/* Brand footer */}
+            <View style={styles.brandFooter}>
+              <Text style={styles.brandWordmark}>AROHA</Text>
+              <Text style={styles.brandVersion}>{AppInfo.displayVersion}</Text>
+            </View>
+
+            <View style={styles.footerLinks}>
+              {FOOTER_LINKS.map(link => {
+                const disabled = link.key === 'rate';
+                return (
+                  <TouchableOpacity
+                    key={link.key}
+                    style={[styles.footerLinkRow, disabled && styles.footerLinkRowDisabled]}
+                    onPress={() => !disabled && setLegalType(link.key)}
+                    disabled={disabled}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name={link.icon} size={18} color={disabled ? Colors.textMuted : Colors.textSub} />
+                    <Text style={[styles.footerLinkText, disabled && styles.footerLinkTextDisabled]}>
+                      {link.label}
+                    </Text>
+                    {disabled ? (
+                      <Text style={styles.footerLinkBadge}>Coming soon</Text>
+                    ) : (
+                      <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
             <View style={{ height: 40 }} />
           </ScrollView>
         )}
@@ -610,6 +674,15 @@ export default function ProfileScreen({ visible, onClose }) {
       <Modal visible={showSettings} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowSettings(false)}>
         <SettingsScreen visible={showSettings} onClose={() => setShowSettings(false)} />
       </Modal>
+
+      <LegalScreen visible={!!legalType} type={legalType} onClose={() => setLegalType(null)} />
+
+      <AvatarPickerScreen
+        visible={showAvatarPicker}
+        selectedKey={profile?.avatarKey}
+        onClose={() => setShowAvatarPicker(false)}
+        onSelect={selectAvatar}
+      />
     </Modal>
   );
 }
@@ -624,8 +697,14 @@ const styles = StyleSheet.create({
 
   // Avatar
   avatarSection: { alignItems: 'center', paddingVertical: 24 },
-  avatar:    { width: 88, height: 88, borderRadius: 44, backgroundColor: Colors.card, borderWidth: 2, borderColor: Colors.accentPurple, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  userName:  { fontSize: 22, fontWeight: '800', color: Colors.text, marginBottom: 4 },
+  avatarEditBadge: {
+    position: 'absolute', bottom: 0, right: -2,
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: Colors.accentGold,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: Colors.background,
+  },
+  userName:  { fontSize: 22, fontWeight: '800', color: Colors.text, marginTop: 12, marginBottom: 4 },
   userEmail: { fontSize: 12, color: Colors.textMuted, marginBottom: 10 },
   rankBadge: { borderRadius: 10, paddingHorizontal: 14, paddingVertical: 5 },
   rankText:  { fontSize: 11, fontWeight: '800', color: Colors.text, letterSpacing: 1.5 },
@@ -685,6 +764,21 @@ const styles = StyleSheet.create({
   // Logout
   logoutBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: '#E74C3C33', padding: 16, marginTop: 8 },
   logoutText: { fontSize: 15, fontWeight: '700', color: '#E74C3C' },
+
+  // Brand footer
+  brandFooter:   { alignItems: 'center', marginTop: 32, marginBottom: 8 },
+  brandWordmark: { fontSize: 16, fontWeight: '900', letterSpacing: 3, color: Colors.accentGold },
+  brandVersion:  { fontSize: 11, color: Colors.textMuted, marginTop: 6 },
+
+  footerLinks: { marginTop: 12 },
+  footerLinkRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
+  },
+  footerLinkRowDisabled: { opacity: 0.6 },
+  footerLinkText:         { flex: 1, fontSize: 14, color: Colors.textSub, fontWeight: '500' },
+  footerLinkTextDisabled: { color: Colors.textMuted },
+  footerLinkBadge:        { fontSize: 10, color: Colors.textMuted, fontStyle: 'italic' },
 
   // Edit mode — shared
   sectionLabel: { fontSize: 13, fontWeight: '700', color: Colors.textSub, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 22, marginBottom: 12 },
