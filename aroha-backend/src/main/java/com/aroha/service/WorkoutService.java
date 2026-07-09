@@ -27,6 +27,22 @@ public class WorkoutService {
         Exercise exercise = exerciseRepository.findById(request.getExerciseId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
 
+        List<WorkoutLog> history = workoutLogRepository
+                .findByUserIdAndExerciseIdOrderByLogDateAscLoggedAtAsc(user.getId(), exercise.getId());
+
+        boolean newPR = false;
+        if (!history.isEmpty()) {
+            if (request.getWeightKg() > 0) {
+                double prevBestWeight = history.stream().mapToDouble(WorkoutLog::getWeightKg).max().orElse(0);
+                newPR = request.getWeightKg() > prevBestWeight;
+            } else {
+                int prevBestReps = history.stream()
+                        .filter(h -> h.getWeightKg() == 0)
+                        .mapToInt(WorkoutLog::getReps).max().orElse(0);
+                newPR = request.getReps() > prevBestReps;
+            }
+        }
+
         WorkoutLog log = WorkoutLog.builder()
                 .userId(user.getId())
                 .exerciseId(exercise.getId())
@@ -38,7 +54,25 @@ public class WorkoutService {
                 .logDate(LocalDate.now())
                 .build();
 
-        return workoutLogRepository.save(log);
+        WorkoutLog saved = workoutLogRepository.save(log);
+        saved.setNewPR(newPR);
+        return saved;
+    }
+
+    public Map<String, Object> getExerciseHistory(User user, Long exerciseId) {
+        List<WorkoutLog> entries = workoutLogRepository
+                .findByUserIdAndExerciseIdOrderByLogDateAscLoggedAtAsc(user.getId(), exerciseId);
+
+        double bestWeightKg = entries.stream().mapToDouble(WorkoutLog::getWeightKg).max().orElse(0);
+        int bestReps = entries.stream()
+                .filter(e -> e.getWeightKg() == 0)
+                .mapToInt(WorkoutLog::getReps).max().orElse(0);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("entries", entries);
+        response.put("bestWeightKg", bestWeightKg);
+        response.put("bestReps", bestReps);
+        return response;
     }
 
     public Map<String, Object> getTodayWorkout(User user) {
