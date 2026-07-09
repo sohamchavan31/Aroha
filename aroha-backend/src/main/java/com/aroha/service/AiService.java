@@ -13,6 +13,9 @@ public class AiService {
     @Value("${aroha.ai.url:http://localhost:5000}")
     private String aiUrl;
 
+    @Value("${aroha.ai.internal-key:}")
+    private String internalKey;
+
     private final RestClient http = RestClient.create();
 
     public Map<?, ?> getMealPlan(Map<String, Object> body) {
@@ -31,6 +34,7 @@ public class AiService {
         return http.post()
                 .uri(aiUrl + path)
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("X-Internal-Key", internalKey)
                 .body(body)
                 .retrieve()
                 .body(Map.class);
