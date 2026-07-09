@@ -4,6 +4,7 @@ import com.aroha.dto.CustomMealRequest;
 import com.aroha.model.Meal;
 import com.aroha.model.User;
 import com.aroha.repository.MealRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,7 +44,7 @@ public class MealController {
     @PostMapping("/custom")
     public ResponseEntity<Meal> createCustom(
             @AuthenticationPrincipal User user,
-            @RequestBody CustomMealRequest req) {
+            @Valid @RequestBody CustomMealRequest req) {
         Meal meal = Meal.builder()
                 .name(req.getName())
                 .category(req.getCategory() != null ? req.getCategory() : "custom")

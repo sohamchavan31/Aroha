@@ -4,9 +4,11 @@ import com.aroha.model.User;
 import com.aroha.model.WeightLog;
 import com.aroha.repository.WeightLogRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,7 +25,14 @@ public class WeightLogController {
     public ResponseEntity<WeightLog> logWeight(
             @AuthenticationPrincipal User user,
             @RequestBody Map<String, Object> body) {
-        double kg = ((Number) body.get("weightKg")).doubleValue();
+        Object weightKgValue = body.get("weightKg");
+        if (!(weightKgValue instanceof Number)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "weightKg is required");
+        }
+        double kg = ((Number) weightKgValue).doubleValue();
+        if (kg <= 0 || kg > 500) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "weightKg must be between 0 and 500");
+        }
         LocalDate today = LocalDate.now();
         WeightLog log = weightLogRepository.findByUserIdAndLoggedDate(user.getId(), today)
                 .map(existing -> {

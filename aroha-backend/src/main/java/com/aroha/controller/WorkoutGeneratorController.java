@@ -7,6 +7,7 @@ import com.aroha.model.User;
 import com.aroha.model.WorkoutSession;
 import com.aroha.repository.WorkoutSessionRepository;
 import com.aroha.service.WorkoutGeneratorService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,14 +41,14 @@ public class WorkoutGeneratorController {
     private final WorkoutSessionRepository workoutSessionRepository;
 
     @PostMapping("/generate")
-    public ResponseEntity<WorkoutPlanResponse> generate(@RequestBody WorkoutPlanRequest request) {
+    public ResponseEntity<WorkoutPlanResponse> generate(@Valid @RequestBody WorkoutPlanRequest request) {
         return ResponseEntity.ok(workoutGeneratorService.generate(request));
     }
 
     @PostMapping("/sessions")
     public ResponseEntity<WorkoutSession> saveSession(
             @AuthenticationPrincipal User user,
-            @RequestBody WorkoutSessionRequest req) {
+            @Valid @RequestBody WorkoutSessionRequest req) {
         double met = MET_VALUES.getOrDefault(req.getWorkoutType(), DEFAULT_MET);
         double weightKg = user.getWeightKg() != null ? user.getWeightKg() : DEFAULT_WEIGHT_KG;
         double hours = req.getActualSeconds() / 3600.0;

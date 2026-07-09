@@ -6,9 +6,11 @@ import com.aroha.model.WaterLog;
 import com.aroha.repository.SleepLogRepository;
 import com.aroha.repository.WaterLogRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -104,9 +106,22 @@ public class WellnessController {
             @AuthenticationPrincipal User user,
             @RequestBody Map<String, Object> body) {
 
-        String sleepTime    = (String) body.get("sleepTime");
-        String wakeTime     = (String) body.get("wakeTime");
-        int qualityRating   = (int) body.get("qualityRating");
+        Object sleepTimeValue = body.get("sleepTime");
+        Object wakeTimeValue  = body.get("wakeTime");
+        Object qualityValue   = body.get("qualityRating");
+
+        if (!(sleepTimeValue instanceof String) || !(wakeTimeValue instanceof String)
+                || !(qualityValue instanceof Number)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "sleepTime, wakeTime and qualityRating are required");
+        }
+
+        String sleepTime  = (String) sleepTimeValue;
+        String wakeTime   = (String) wakeTimeValue;
+        int qualityRating = ((Number) qualityValue).intValue();
+
+        if (qualityRating < 1 || qualityRating > 5) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "qualityRating must be between 1 and 5");
+        }
 
         double duration = calcDuration(sleepTime, wakeTime);
 

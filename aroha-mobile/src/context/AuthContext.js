@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 const AuthContext = createContext(null);
 
@@ -12,7 +13,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     async function loadStoredAuth() {
       try {
-        const storedToken = await AsyncStorage.getItem('aroha_token');
+        const storedToken = await SecureStore.getItemAsync('aroha_token');
         const storedUser  = await AsyncStorage.getItem('aroha_user');
         if (storedToken && storedUser) {
           setToken(storedToken);
@@ -28,14 +29,14 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function login(tokenValue, userData) {
-    await AsyncStorage.setItem('aroha_token', tokenValue);
+    await SecureStore.setItemAsync('aroha_token', tokenValue);
     await AsyncStorage.setItem('aroha_user', JSON.stringify(userData));
     setToken(tokenValue);
     setUser(userData);
   }
 
   async function logout() {
-    await AsyncStorage.removeItem('aroha_token');
+    await SecureStore.deleteItemAsync('aroha_token');
     await AsyncStorage.removeItem('aroha_user');
     setToken(null);
     setUser(null);
