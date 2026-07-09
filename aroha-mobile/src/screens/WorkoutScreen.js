@@ -1,13 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, FlatList,
-  StyleSheet, StatusBar, ActivityIndicator, Alert, Modal, TextInput,
+  StyleSheet, StatusBar, ActivityIndicator, Alert, Modal, TextInput, Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LineChart } from 'react-native-chart-kit';
 import Colors from '../constants/colors';
 import client from '../api/client';
 import WorkoutGeneratorScreen from './WorkoutGeneratorScreen';
+
+const SCREEN_W = Dimensions.get('window').width;
+
+function fmtDate(dateStr) {
+  const [, m, d] = dateStr.split('-');
+  return `${parseInt(m)}/${parseInt(d)}`;
+}
 
 const CATEGORIES = [
   { key: 'all',         label: 'All',         icon: 'grid-outline' },
@@ -87,6 +95,117 @@ function LogModal({ exercise, visible, onClose, onSave }) {
   );
 }
 
+function HistoryModal({ exercise, visible, onClose }) {
+  const [loading, setLoading] = useState(true);
+  const [history, setHistory] = useState(null);
+
+  useEffect(() => {
+    if (visible && exercise) {
+      setLoading(true);
+      setHistory(null);
+      client.get(`/workouts/history/${exercise.id}`)
+        .then(({ data }) => setHistory(data))
+        .catch(() => setHistory({ entries: [], bestWeightKg: 0, bestReps: 0 }))
+        .finally(() => setLoading(false));
+    }
+  }, [visible, exercise]);
+
+  const entries = history?.entries || [];
+  const isWeighted = entries.some(e => e.weightKg > 0) || (history?.bestWeightKg || 0) > 0;
+  const hasChart = entries.length >= 2;
+
+  let chartData = null;
+  if (hasChart) {
+    const step = Math.max(1, Math.floor(entries.length / 6));
+    const labels = entries.map((e, i) =>
+      i % step === 0 || i === entries.length - 1 ? fmtDate(e.logDate) : '');
+    chartData = {
+      labels,
+      datasets: [{ data: entries.map(e => isWeighted ? e.weightKg : e.reps) }],
+    };
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalCard, { maxHeight: '85%' }]}>
+          <Text style={styles.modalTitle}>{exercise?.name}</Text>
+          <Text style={styles.modalSub}>
+            {isWeighted ? `Best: ${history?.bestWeightKg ?? 0}kg` : `Best: ${history?.bestReps ?? 0} reps`}
+          </Text>
+
+          {loading ? (
+            <ActivityIndicator color={Colors.accentGold} style={{ marginVertical: 30 }} />
+          ) : entries.length === 0 ? (
+            <Text style={styles.emptyText}>No history yet for this exercise.</Text>
+          ) : (
+            <FlatList
+              data={[...entries].reverse()}
+              keyExtractor={e => String(e.id)}
+              ListHeaderComponent={
+                hasChart ? (
+                  <LineChart
+                    data={chartData}
+                    width={SCREEN_W - 80}
+                    height={160}
+                    chartConfig={{
+                      backgroundColor:        Colors.card,
+                      backgroundGradientFrom: Colors.card,
+                      backgroundGradientTo:   Colors.card,
+                      color:                  () => Colors.accentGold,
+                      labelColor:             () => Colors.textSub,
+                      propsForDots: { r: '3', strokeWidth: '2', stroke: Colors.accentGold },
+                      propsForBackgroundLines: { stroke: Colors.cardBorder, strokeDasharray: '' },
+                      decimalPlaces: isWeighted ? 1 : 0,
+                    }}
+                    bezier
+                    withInnerLines={false}
+                    withOuterLines={false}
+                    style={{ borderRadius: 10, marginBottom: 16 }}
+                  />
+                ) : null
+              }
+              renderItem={({ item, index }) => {
+                const reversed = [...entries].reverse();
+                const prev = reversed[index + 1];
+                let delta = null;
+                if (prev) {
+                  if (isWeighted) {
+                    const diff = item.weightKg - prev.weightKg;
+                    if (diff !== 0) delta = `${diff > 0 ? '+' : ''}${diff}kg`;
+                  } else {
+                    const diff = item.reps - prev.reps;
+                    if (diff !== 0) delta = `${diff > 0 ? '+' : ''}${diff} reps`;
+                  }
+                }
+                return (
+                  <View style={styles.logRow}>
+                    <View style={styles.logInfo}>
+                      <Text style={styles.logName}>
+                        {item.sets} × {item.reps}{item.weightKg > 0 ? ` × ${item.weightKg}kg` : ''}
+                      </Text>
+                      <Text style={styles.logMeta}>{fmtDate(item.logDate)}</Text>
+                    </View>
+                    {delta && (
+                      <Text style={[styles.deltaText, { color: delta.startsWith('+') ? Colors.success : Colors.textMuted }]}>
+                        {delta}
+                      </Text>
+                    )}
+                  </View>
+                );
+              }}
+            />
+          )}
+
+          <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
+            <Text style={styles.cancelBtnText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 export default function WorkoutScreen() {
   const [exercises, setExercises]       = useState([]);
   const [filtered, setFiltered]         = useState([]);
@@ -97,6 +216,8 @@ export default function WorkoutScreen() {
   const [selected, setSelected]           = useState(null);
   const [modalVisible, setModalVisible]   = useState(false);
   const [showGenerator, setShowGenerator] = useState(false);
+  const [historyExercise, setHistoryExercise] = useState(null);
+  const [historyVisible, setHistoryVisible]   = useState(false);
 
   const loadExercises = useCallback(async () => {
     try {
@@ -137,11 +258,19 @@ export default function WorkoutScreen() {
     setModalVisible(true);
   }
 
+  function openHistory(exercise) {
+    setHistoryExercise(exercise);
+    setHistoryVisible(true);
+  }
+
   async function saveLog({ sets, reps, weightKg }) {
     setModalVisible(false);
     try {
-      await client.post('/workouts/log', { exerciseId: selected.id, sets, reps, weightKg });
+      const { data } = await client.post('/workouts/log', { exerciseId: selected.id, sets, reps, weightKg });
       loadTodayLog();
+      if (data.newPR) {
+        Alert.alert('🏆 New PR!', `New personal record for ${selected.name}!`);
+      }
     } catch {
       Alert.alert('Error', 'Could not save log.');
     }
@@ -225,6 +354,9 @@ export default function WorkoutScreen() {
             </View>
             <View style={styles.exerciseRight}>
               <Text style={styles.exerciseDefault}>{item.defaultSets}×{item.defaultReps}</Text>
+              <TouchableOpacity onPress={() => openHistory(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="stats-chart-outline" size={20} color={Colors.textSub} />
+              </TouchableOpacity>
               <Ionicons name="add-circle-outline" size={22} color={Colors.accentGold} />
             </View>
           </TouchableOpacity>
@@ -263,6 +395,12 @@ export default function WorkoutScreen() {
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onSave={saveLog}
+      />
+
+      <HistoryModal
+        exercise={historyExercise}
+        visible={historyVisible}
+        onClose={() => setHistoryVisible(false)}
       />
 
       <Modal visible={showGenerator} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowGenerator(false)}>
@@ -306,6 +444,7 @@ const styles = StyleSheet.create({
   logInfo: { flex: 1 },
   logName: { fontSize: 14, color: Colors.text, fontWeight: '500' },
   logMeta: { fontSize: 12, color: Colors.textSub, marginTop: 2 },
+  deltaText: { fontSize: 13, fontWeight: '700' },
 
   emptyText: { textAlign: 'center', color: Colors.textMuted, fontSize: 13, marginTop: 20 },
 

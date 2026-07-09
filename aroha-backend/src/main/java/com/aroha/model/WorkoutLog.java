@@ -43,4 +43,9 @@ public class WorkoutLog {
 
     @CreationTimestamp
     private LocalDateTime loggedAt;
+
+    // true if this entry beats the user's previous best for this exercise — not persisted
+    @Transient
+    @Builder.Default
+    private boolean newPR = false;
 }

@@ -46,6 +46,13 @@ public class WorkoutController {
         return ResponseEntity.ok(workoutService.getTodayWorkout(user));
     }
 
+    @GetMapping("/history/{exerciseId}")
+    public ResponseEntity<Map<String, Object>> exerciseHistory(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long exerciseId) {
+        return ResponseEntity.ok(workoutService.getExerciseHistory(user, exerciseId));
+    }
+
     @DeleteMapping("/log/{id}")
     public ResponseEntity<Void> deleteEntry(
             @AuthenticationPrincipal User user,
