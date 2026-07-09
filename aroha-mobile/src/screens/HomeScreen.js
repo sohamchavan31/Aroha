@@ -19,6 +19,10 @@ import WellnessModal from '../components/WellnessModal';
 import ProfileScreen from './ProfileScreen';
 import AiScreen from './AiScreen';
 import { useLanguage } from '../context/LanguageContext';
+import { SkeletonMissionCard, SkeletonStatCard } from '../components/Skeleton';
+import FadeInView from '../components/FadeInView';
+import AnimatedPressable from '../components/AnimatedPressable';
+import AnimatedCounter from '../components/AnimatedCounter';
 
 function getTodayDate() {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -152,52 +156,60 @@ export default function HomeScreen() {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
         {/* Header */}
-        <View style={styles.header}>
+        <FadeInView index={0} style={styles.header}>
           <View>
             <Text style={styles.greeting}>Ohayo, Warrior</Text>
             <Text style={styles.date}>{getTodayDate()}</Text>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.aiBtn}
               onPress={() => setShowAi(true)}
-              activeOpacity={0.8}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons name="sparkles" size={18} color={Colors.accentGold} />
-            </TouchableOpacity>
-          <TouchableOpacity
+            </AnimatedPressable>
+          <AnimatedPressable
             style={[styles.stageBadge, { backgroundColor: stageColor + '22', borderColor: stageColor }]}
             onPress={() => setShowProfile(true)}
-            activeOpacity={0.8}
           >
             <Text style={[styles.stageLabel, { color: stageColor }]}>STAGE</Text>
             <Text style={[styles.stageText, { color: stageColor }]}>{userStage}</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
           </View>
-        </View>
+        </FadeInView>
 
         {/* Streak + EP Row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>🔥</Text>
-            <Text style={styles.statValue}>{streak}</Text>
-            <Text style={styles.statLabel}>{t('streak')}</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>⚡</Text>
-            <Text style={styles.statValue}>{userEP}</Text>
-            <Text style={styles.statLabel}>Total {t('ep')}</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>🎯</Text>
-            <Text style={styles.statValue}>{completedCount}/{missions.length}</Text>
-            <Text style={styles.statLabel}>Missions Done</Text>
-          </View>
-        </View>
+        <FadeInView index={1} style={styles.statsRow}>
+          {missionsLoading ? (
+            <>
+              <SkeletonStatCard />
+              <SkeletonStatCard />
+              <SkeletonStatCard />
+            </>
+          ) : (
+            <>
+              <View style={styles.statCard}>
+                <Text style={styles.statIcon}>🔥</Text>
+                <Text style={styles.statValue}>{streak}</Text>
+                <Text style={styles.statLabel}>{t('streak')}</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statIcon}>⚡</Text>
+                <AnimatedCounter value={userEP} style={styles.statValue} />
+                <Text style={styles.statLabel}>Total {t('ep')}</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statIcon}>🎯</Text>
+                <Text style={styles.statValue}>{completedCount}/{missions.length}</Text>
+                <Text style={styles.statLabel}>Missions Done</Text>
+              </View>
+            </>
+          )}
+        </FadeInView>
 
         {/* Water Tracker */}
-        <View style={styles.waterCard}>
+        <FadeInView index={2} style={styles.waterCard}>
           <View style={styles.waterHeader}>
             <View style={styles.waterTitleRow}>
               <Ionicons name="water" size={16} color="#2E86AB" />
@@ -214,64 +226,69 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.waterBody}>
-            <TouchableOpacity onPress={removeGlass} style={styles.waterCtrlBtn} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
+            <AnimatedPressable onPress={removeGlass} style={styles.waterCtrlBtn} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
               <Ionicons name="remove" size={20} color={Colors.textSub} />
-            </TouchableOpacity>
+            </AnimatedPressable>
             <View style={styles.waterCounterBlock}>
               <Text style={styles.waterGlasses}>{water.glasses}</Text>
               <Text style={styles.waterGoalText}>/ {water.dailyGoal} glasses</Text>
             </View>
-            <TouchableOpacity onPress={addGlass} style={[styles.waterCtrlBtn, styles.waterAddBtn]} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
+            <AnimatedPressable onPress={addGlass} style={[styles.waterCtrlBtn, styles.waterAddBtn]} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
               <Ionicons name="add" size={20} color={Colors.background} />
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
 
           <View style={styles.waterTrack}>
             <View style={[styles.waterFill, { width: `${Math.min((water.glasses / water.dailyGoal) * 100, 100)}%` }]} />
           </View>
           <Text style={styles.waterHint}>Goal set in Profile · Long press − to reset</Text>
-        </View>
+        </FadeInView>
 
         {/* Daily Missions Section */}
-        <View style={styles.section}>
+        <FadeInView index={3} style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t('dailyMissions')}</Text>
             <View style={styles.epBadge}>
               <Text style={styles.epBadgeText}>
-                +{missions.reduce((s, m) => s + m.epReward, 0)} EP
+                +<AnimatedCounter value={missions.filter(m => m.completed).reduce((s, m) => s + m.epReward, 0)} style={styles.epBadgeText} /> / {missions.reduce((s, m) => s + m.epReward, 0)} EP
               </Text>
             </View>
           </View>
 
           {missionsLoading ? (
-            <Text style={styles.loadingText}>{t('dailyMissions')}...</Text>
-          ) : missions.map(mission => (
-            <TouchableOpacity
-              key={mission.id}
-              style={[styles.missionCard, mission.completed && styles.missionCardDone]}
-              onPress={() => !mission.completed && completeMission(mission.id)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.missionLeft}>
-                <View style={[styles.missionCheck, mission.completed && styles.missionCheckDone]}>
-                  {mission.completed && <Ionicons name="checkmark" size={14} color={Colors.background} />}
+            <>
+              <SkeletonMissionCard />
+              <SkeletonMissionCard />
+              <SkeletonMissionCard />
+            </>
+          ) : missions.map((mission, i) => (
+            <FadeInView key={mission.id} index={i}>
+              <AnimatedPressable
+                style={[styles.missionCard, mission.completed && styles.missionCardDone]}
+                onPress={() => !mission.completed && completeMission(mission.id)}
+                scaleTo={0.98}
+              >
+                <View style={styles.missionLeft}>
+                  <View style={[styles.missionCheck, mission.completed && styles.missionCheckDone]}>
+                    {mission.completed && <Ionicons name="checkmark" size={14} color={Colors.background} />}
+                  </View>
+                  <View style={styles.missionCategoryDot}>
+                    <Text style={styles.missionCategoryText}>{mission.category[0]}</Text>
+                  </View>
+                  <Text style={[styles.missionTitle, mission.completed && styles.missionTitleDone]}>
+                    {mission.title}
+                  </Text>
                 </View>
-                <View style={styles.missionCategoryDot}>
-                  <Text style={styles.missionCategoryText}>{mission.category[0]}</Text>
-                </View>
-                <Text style={[styles.missionTitle, mission.completed && styles.missionTitleDone]}>
-                  {mission.title}
+                <Text style={[styles.missionEP, mission.completed && styles.missionEPDone]}>
+                  +{mission.epReward} EP
                 </Text>
-              </View>
-              <Text style={[styles.missionEP, mission.completed && styles.missionEPDone]}>
-                +{mission.epReward} EP
-              </Text>
-            </TouchableOpacity>
+              </AnimatedPressable>
+            </FadeInView>
           ))}
-        </View>
+        </FadeInView>
 
         {/* Evolution Progress Section */}
-        <View style={styles.section}>
+        <FadeInView index={4} style={styles.section}>
           <Text style={styles.sectionTitle}>{t('evolutionProgress')}</Text>
           <View style={styles.evolutionCard}>
             <View style={styles.stageRow}>
@@ -298,7 +315,7 @@ export default function HomeScreen() {
             </View>
             <Text style={styles.stageMotivation}>Your next stage awaits. Keep evolving.</Text>
           </View>
-        </View>
+        </FadeInView>
 
         <View style={styles.bottomPad} />
       </ScrollView>
@@ -387,7 +404,6 @@ const styles = StyleSheet.create({
   sectionTitle:  { fontSize: 17, fontWeight: '700', color: Colors.text, letterSpacing: 0.3, marginBottom: 14 },
   epBadge:       { backgroundColor: 'rgba(226, 183, 20, 0.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(226, 183, 20, 0.3)', marginBottom: 14 },
   epBadgeText:   { fontSize: 12, color: Colors.accentGold, fontWeight: '700' },
-  loadingText:   { color: Colors.textMuted, fontSize: 14, textAlign: 'center', paddingVertical: 20 },
 
   // Mission cards
   missionCard: {

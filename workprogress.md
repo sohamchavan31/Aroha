@@ -7,21 +7,30 @@
 ---
 
 ## Current Status
-> Phase 8 + 8b COMPLETE. Edit Profile, Meal Slots, Notifications, and Net Calories all shipped (2026-06-10).
+> Phase 8 + 8b COMPLETE. Edit Profile, Meal Slots, Notifications, Net Calories, and Progressive Overload Tracking all shipped (2026-06-11). UI polish pass started on feat/progressive-overload branch (2026-07-08).
 >
 > **Completed:**
 > ✅ Edit Profile Screen — all onboarding fields editable, macros recomputed on save
 > ✅ Meal Slots — Breakfast / Lunch / Dinner / Snack sections with calorie subtotals + slot picker in modal
 > ✅ Notifications — water (2h), meals (8am/1pm/7pm), workout (6:30pm), missions (8pm); wired to SettingsScreen toggles
 > ✅ Calories Burned → Net Calories — MET-based burn estimate per workout session, Consumed/Burned/Net row in MacrosScreen, weekly burned stat in ProgressScreen
+> ✅ Progressive Overload Tracking — PR detection on log, "New PR!" alert, per-exercise history modal with progression chart + delta list
+> ✅ UI animation foundation — Skeleton loading states, staggered fade-in, press-scale feedback, animated number counters; applied to HomeScreen
+> ✅ Screenshot protection (Profile screen), account footer (brand/version/legal placeholders), custom EAS dev client build working on physical device
+> ✅ Bottom tab bar no longer overlaps Android's system nav buttons (safe-area-aware height)
 >
-> **Next 6 tasks (resuming next session):**
-> 5. Progressive Overload Tracking
+> **Next 5 backlog tasks (unchanged):**
 > 6. Body Measurements (chest/waist/hips/arms/thighs)
 > 7. Barcode Scanner
 > 8. Goal Date (targetDate + on-track/behind-schedule indicator)
 > 9. Progress Photos
 > 10. Google Login
+>
+> **New asks queued from UI polish session (2026-07-08):**
+> - Profile picture upload + preset avatar picker (Netflix-style avatar grid)
+> - Light/Dark mode toggle (app is currently dark-only, hardcoded in app.json)
+> - Continue rolling animation foundation to WorkoutScreen / ProgressScreen / PlannerScreen
+> - Replace `assets/icon.png` — current file has visible construction guides baked in, will ship as-is to Play Store/home screen otherwise
 
 ---
 
@@ -122,6 +131,12 @@
 | Edit Profile Screen | All onboarding fields editable post-onboarding; Profile Details + Macro Targets cards in view mode |
 | Meal Slots | Breakfast / Lunch / Dinner / Snack sections in MacrosScreen with calorie subtotals; slot picker in serving modal |
 | Notifications | Water (2h interval), meals (8am/1pm/7pm), workout (6:30pm), missions (8pm); wired to SettingsScreen toggles |
+| UI animation foundation | theme.js tokens (spacing/radius/shadow/motion), Skeleton loading placeholders, FadeInView staggered entrance, AnimatedPressable press-scale, AnimatedCounter number ticker — applied to HomeScreen |
+| Screenshot protection | expo-screen-capture — Android FLAG_SECURE black-out + iOS screenshot-detected warning, wired to ProfileScreen only (sensitive-screens scope) |
+| Account footer | Brand wordmark + version/build number (constants/appInfo.js), Privacy/Terms/About placeholder screens (LegalScreen.js), Rate App disabled until store listing exists |
+| Dev client workflow | expo-dev-client + EAS cloud build (development profile) — custom APK installed on physical device, replaces Expo Go for testing native modules |
+| client.js dynamic API host | Derives backend URL from Constants.expoConfig.hostUri in dev instead of hardcoded 10.0.2.2 (emulator-only) — works on physical device over Wi-Fi/Ethernet |
+| Tab bar safe-area fix | AppNavigator tabBarStyle height/paddingBottom now include useSafeAreaInsets().bottom — no longer overlaps Android 3-button nav |
 
 ---
 
@@ -165,13 +180,13 @@ Already have workout sessions with duration + type. Use MET values to estimate b
 
 ---
 
-### 5 — Progressive Overload Tracking
+### 5 — Progressive Overload Tracking ✅ DONE (2026-06-11)
 For gym users this is more motivating than calorie counting. One of Aroha's strongest potential differentiators.
-- [ ] WorkoutSession sets store exercise name, weight (kg), reps, sets
-- [ ] PR detection — compare today's top set per exercise vs all-time best
-- [ ] "New PR" badge on WorkoutScreen when a record is beaten
-- [ ] Per-exercise history view — e.g. Bench Press: 60×8 → 65×8 (+5kg)
-- [ ] Progressive overload chart (weight over time per exercise)
+- [x] WorkoutLog already stores exercise name, weight (kg), reps, sets
+- [x] PR detection — compares logged set vs all-time best for that exercise (max weight for weighted, max reps for bodyweight); first-ever log is never a PR
+- [x] "New PR" alert on WorkoutScreen when a record is beaten
+- [x] Per-exercise history view — `GET /workouts/history/{exerciseId}` + history modal with delta list (e.g. 60×8 → 65×8 (+5kg))
+- [x] Progressive overload chart (weight/reps over time per exercise) via react-native-chart-kit LineChart
 
 ---
 
@@ -507,7 +522,7 @@ Self-hosted PostgreSQL + MongoDB
 | 25 | Meal slots — Breakfast / Lunch / Dinner / Snacks in MacrosScreen | Done |
 | 26 | Notifications — water/meal/workout/mission wired to SettingsScreen | Done |
 | 27 | Calories Burned → Net Calories (MET-based from workout sessions) | Done |
-| 28 | Progressive Overload Tracking — PR detection, per-exercise history | Pending |
+| 28 | Progressive Overload Tracking — PR detection, per-exercise history | Done |
 | 29 | Body Measurements — chest, waist, hips, arms, thighs | Pending |
 | 30 | Barcode Scanner — Open Food Facts API | Pending |
 | 31 | Goal Date — targetDate + on-track/behind-schedule indicator | Pending |
@@ -537,7 +552,7 @@ Self-hosted PostgreSQL + MongoDB
 | Critical | Meal slots (Breakfast/Lunch/Dinner) | ✅ Done |
 | Critical | Real push notifications | ✅ Done |
 | Critical | Calories Burned → Net Calories | ✅ Done |
-| Critical | Progressive Overload Tracking | #5 Next |
+| Critical | Progressive Overload Tracking | ✅ Done |
 | Critical | Barcode scanner | #7 Next |
 | Important | Goal Date + on-track indicator | #8 Next |
 | Important | Body measurements (waist/chest etc.) | #6 Next |
@@ -595,9 +610,10 @@ Aroha (wellness) + HealthBridge (medical) + IoT Layer
 
 ---
 
-_Updated: 2026-06-10 — Edit Profile, Meal Slots, Notifications, Net Calories complete. Resuming next session with #5 Progressive Overload Tracking._
+_Updated: 2026-07-08 — UI animation foundation (Skeleton/FadeInView/AnimatedPressable/AnimatedCounter) applied to HomeScreen; screenshot protection + account footer added to ProfileScreen; dev-client/EAS build workflow established; tab bar safe-area fix; client.js dynamic host fix. New backlog: avatar system, light/dark mode, icon.png replacement. Resuming next with #6 Body Measurements + new UI asks._
 
 <!-- Session log -->
+<!-- 2026-07-08: UI polish pass on feat/progressive-overload — animation foundation (theme tokens, Skeleton, FadeInView, AnimatedPressable, AnimatedCounter) applied to HomeScreen; expo-screen-capture screenshot protection on ProfileScreen (sensitive-screens-only scope, iOS detect-only per Apple limitation); account footer (brand/version, placeholder Privacy/Terms/About screens, disabled Rate App); fixed AppNavigator tab bar overlapping Android system nav buttons; fixed client.js hardcoded 10.0.2.2 (emulator-only) to derive host dynamically via expo-constants; set up expo-dev-client + EAS cloud build so native modules can be tested on a physical device. Found assets/icon.png has construction guides baked into the shipped file. New asks queued: avatar/profile picture system, Google Sign-In, light/dark mode toggle. -->
 <!-- 2026-05-28: Mobile scaffold + home screen + backend JWT done. -->
 <!-- 2026-05-29: Auth, nutrition, workout, habits, planner, reminders, profile all built. -->
 <!-- 2026-06-02: Phase 12 complete. Home PC setup done. -->
@@ -606,6 +622,7 @@ _Updated: 2026-06-10 — Edit Profile, Meal Slots, Notifications, Net Calories c
 <!-- 2026-06-07: Workout session save complete. All PRs merged. Competitive analysis done. -->
 <!-- 2026-06-08: Neon cloud PostgreSQL live (Singapore). Both office + home PC sharing one DB. Auth upgrades planned. -->
 <!-- 2026-06-10: Net Calories (WorkoutSession.caloriesBurned via MET formula, /logs/today returns caloriesBurned + netCalories, MacrosScreen Consumed/Burned/Net row, ProgressScreen weekly Burned stat via /analytics/summary caloriesBurnedWeek). Resuming next session at #5 Progressive Overload Tracking. -->
+<!-- 2026-06-11: Progressive Overload Tracking (WorkoutLog.newPR transient field + PR detection in WorkoutService.logExercise, GET /workouts/history/{exerciseId}, WorkoutScreen "New PR!" alert + history modal with LineChart progression + delta list). Resuming next session at #6 Body Measurements. -->
 <!-- 2026-06-09: Phase 8 complete — weight log, analytics dashboard, goal progress card. Onboarding v2 — 5 steps, gender, activity level, 9 goals, bulk/cut pace, experience level, dietary preference. Mifflin-St Jeor BMR pipeline. MacrosScreen — unit qty stepper, recipe builder from ingredients. profileComplete login fix. -->
 <!-- 2026-06-09: Priority order revised. Next 10 tasks locked: Edit Profile → Meal Slots → Notifications → Net Calories → Progressive Overload → Body Measurements → Barcode → Goal Date → Progress Photos → Google Login. Goal Date, progressive overload, body measurements, net calories, meal slots, AI profile context all registered as new features. -->
 <!-- 2026-06-09: Edit Profile (ProfileScreen full rewrite — view + edit, all onboarding fields), Meal Slots (DailyLog.mealSlot, 4 collapsible sections in MacrosScreen, slot picker in modal), Notifications (notifications.js utility, water/meals/workout/missions scheduled, SettingsScreen wired). Resuming tomorrow at #4 Calories Burned / Net Calories. -->

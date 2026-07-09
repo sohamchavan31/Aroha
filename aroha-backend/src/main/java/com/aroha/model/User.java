@@ -58,6 +58,9 @@ public class User {
 
     private Boolean profileComplete;
 
+    // Key into the mobile app's preset avatar list (e.g. "flame-gold"); null = default
+    private String avatarKey;
+
     // ── Health Attributes (0–100) ────────────────────────────────────────────
     @Column(columnDefinition = "integer default 0")
     private int strengthAttr;

@@ -1,5 +1,6 @@
 package com.aroha.controller;
 
+import com.aroha.dto.AvatarRequest;
 import com.aroha.dto.ProfileRequest;
 import com.aroha.model.User;
 import com.aroha.repository.UserRepository;
@@ -45,6 +46,16 @@ public class ProfileController {
         // Compute and persist macro targets
         computeAndStoreMacros(user);
 
+        userRepository.save(user);
+        return ResponseEntity.ok(buildProfile(user));
+    }
+
+    @PatchMapping("/avatar")
+    public ResponseEntity<Map<String, Object>> updateAvatar(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody AvatarRequest request) {
+
+        user.setAvatarKey(request.getAvatarKey());
         userRepository.save(user);
         return ResponseEntity.ok(buildProfile(user));
     }
@@ -124,6 +135,7 @@ public class ProfileController {
         p.put("evolutionPoints",  user.getEvolutionPoints());
         p.put("streak",           user.getStreak());
         p.put("profileComplete",  user.getProfileComplete());
+        p.put("avatarKey",        user.getAvatarKey());
         p.put("gender",           user.getGender());
         p.put("age",              user.getAge());
         p.put("weightKg",         user.getWeightKg());
