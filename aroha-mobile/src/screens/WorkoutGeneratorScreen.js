@@ -1,38 +1,50 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  StatusBar, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, Platform,
-} from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, ScrollView, StyleSheet, StatusBar, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Colors from '../constants/colors';
+import Svg from 'react-native-svg';
 import client from '../api/client';
+import Card from '../components/ui/Card';
+import Chip from '../components/ui/Chip';
+import Sheet from '../components/ui/Sheet';
+import Field from '../components/ui/Field';
+import Stepper from '../components/ui/Stepper';
+import SegmentBar from '../components/ui/SegmentBar';
+import IconButton from '../components/ui/IconButton';
+import PrimaryButton from '../components/ui/PrimaryButton';
+import AnimatedPressable from '../components/AnimatedPressable';
+import FadeInView from '../components/FadeInView';
+import { Ring } from '../components/ui/ProgressRing';
+import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
+import { tap, press, success, warn } from '../utils/haptics';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const DURATIONS = [
-  { label: '30 min', value: 30 },
-  { label: '45 min', value: 45 },
-  { label: '1 hr',   value: 60 },
-  { label: '1.5 hr', value: 90 },
-  { label: '2 hr',   value: 120 },
+  { label: '30', unit: 'min', value: 30 },
+  { label: '45', unit: 'min', value: 45 },
+  { label: '1',  unit: 'hr',  value: 60 },
+  { label: '1.5', unit: 'hr', value: 90 },
+  { label: '2',  unit: 'hr',  value: 120 },
 ];
 
 const WORKOUT_TYPES = [
-  { key: 'PUSH',      label: 'Push',       icon: 'barbell-outline',      desc: 'Chest · Shoulders · Triceps' },
-  { key: 'PULL',      label: 'Pull',       icon: 'body-outline',         desc: 'Back · Biceps' },
-  { key: 'LEGS',      label: 'Legs',       icon: 'footsteps-outline',    desc: 'Quads · Hamstrings · Glutes' },
-  { key: 'CARDIO',    label: 'Cardio',     icon: 'heart-outline',        desc: 'HIIT · Steady State' },
-  { key: 'FULL_BODY', label: 'Full Body',  icon: 'flash-outline',        desc: 'All muscle groups' },
-  { key: 'CROSSFIT',  label: 'Crossfit',   icon: 'flame-outline',        desc: 'Strength + Cardio' },
-  { key: 'YOGA',      label: 'Yoga',       icon: 'leaf-outline',         desc: 'Flexibility · Mindfulness' },
-  { key: 'CORE',      label: 'Core',       icon: 'shield-outline',       desc: 'Abs · Obliques · Lower back' },
+  { key: 'PUSH',      label: 'Push',      icon: 'barbell-outline',   desc: 'Chest · Shoulders · Triceps' },
+  { key: 'PULL',      label: 'Pull',      icon: 'body-outline',      desc: 'Back · Biceps' },
+  { key: 'LEGS',      label: 'Legs',      icon: 'footsteps-outline', desc: 'Quads · Hamstrings · Glutes' },
+  { key: 'CARDIO',    label: 'Cardio',    icon: 'heart-outline',     desc: 'HIIT · Steady state' },
+  { key: 'FULL_BODY', label: 'Full body', icon: 'flash-outline',     desc: 'All muscle groups' },
+  { key: 'CROSSFIT',  label: 'Crossfit',  icon: 'flame-outline',     desc: 'Strength + cardio' },
+  { key: 'YOGA',      label: 'Yoga',      icon: 'leaf-outline',      desc: 'Flexibility · Mindfulness' },
+  { key: 'CORE',      label: 'Core',      icon: 'shield-outline',    desc: 'Abs · Obliques · Lower back' },
 ];
 
 const MUSCLE_COLOR = {
-  chest: '#E74C3C', shoulders: '#E74C3C', arms: '#E67E22',
-  back: '#2E86AB',  legs: '#27AE60',      core: '#7B2FBE',
-  cardio: '#FF6B35', full_body: Colors.accentGold, custom: Colors.accentPurple,
+  chest: Palette.fat, shoulders: Palette.fat, arms: Palette.kcal,
+  back: Palette.water, legs: Palette.carbs, core: Palette.protein,
+  cardio: Palette.danger, full_body: Palette.textSub, custom: Palette.violet,
 };
+
+const BETWEEN_EXERCISES_REST = 30;
 
 function fmt(seconds) {
   const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -40,322 +52,334 @@ function fmt(seconds) {
   return `${m}:${s}`;
 }
 
-// ── Session Screen ────────────────────────────────────────────────────────────
-function SessionScreen({ initialExercises, onFinish }) {
-  const [exerciseList, setExerciseList] = useState(initialExercises);
-  const [exIdx, setExIdx]               = useState(0);
-  const [setNum, setSetNum]             = useState(1);
-  const [phase, setPhase]               = useState('work');
-  const [restLeft, setRestLeft]         = useState(0);
-  const [totalSecs, setTotalSecs]       = useState(0);
+function typeLabel(key) {
+  return WORKOUT_TYPES.find(t => t.key === key)?.label || (key || '').replace('_', ' ').toLowerCase();
+}
 
-  // Custom exercise modal
-  const [showAddEx, setShowAddEx]       = useState(false);
-  const [customName, setCustomName]     = useState('');
-  const [customSets, setCustomSets]     = useState('3');
-  const [customReps, setCustomReps]     = useState('10');
+// ── Live session ──────────────────────────────────────────────────────────────
+function SessionScreen({ plan, plannedMinutes, onExit }) {
+  const [exercises, setExercises] = useState(plan.exercises);
+  const [exIdx, setExIdx]         = useState(0);
+  const [setNum, setSetNum]       = useState(1);
+  const [phase, setPhase]         = useState('work'); // work | rest | done
+  const [restLeft, setRestLeft]   = useState(0);
+  const [restTotal, setRestTotal] = useState(0);
+  const [elapsed, setElapsed]     = useState(0);
+  const [doneSets, setDoneSets]   = useState(0);
 
-  const timerRef = useRef(null);
-  const ex = exerciseList[exIdx];
+  const [showAdd, setShowAdd]     = useState(false);
+  const [customName, setCustomName] = useState('');
+  const [customSets, setCustomSets] = useState(3);
+  const [customReps, setCustomReps] = useState(10);
 
-  const tick = useCallback(() => {
-    setTotalSecs(t => t + 1);
-    setRestLeft(r => {
-      if (r <= 1) { setPhase('work'); return 0; }
-      return r - 1;
-    });
-  }, []);
+  const [save, setSave] = useState({ status: 'idle', kcal: null }); // idle | saving | saved | error
+
+  const ex = exercises[exIdx];
+  const totalSets = exercises.reduce((s, e) => s + (e.sets || 0), 0);
+  const nextEx = exercises[exIdx + 1];
+
+  // One clock: elapsed time, and the rest countdown while resting.
+  useEffect(() => {
+    if (phase === 'done') return undefined;
+    const id = setInterval(() => {
+      setElapsed(t => t + 1);
+      setRestLeft(r => (r > 0 ? r - 1 : 0));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [phase]);
 
   useEffect(() => {
-    timerRef.current = setInterval(tick, 1000);
-    return () => clearInterval(timerRef.current);
-  }, [tick]);
+    if (phase === 'rest' && restLeft === 0) {
+      press();
+      setPhase('work');
+    }
+  }, [phase, restLeft]);
+
+  function startRest(seconds) {
+    setRestTotal(seconds);
+    setRestLeft(seconds);
+    setPhase(seconds > 0 ? 'rest' : 'work');
+  }
 
   function markSetDone() {
+    tap();
+    setDoneSets(d => d + 1);
     if (setNum < ex.sets) {
       setSetNum(s => s + 1);
-      setPhase('rest');
-      setRestLeft(ex.restSeconds);
-    } else if (exIdx < exerciseList.length - 1) {
+      startRest(ex.restSeconds || 60);
+    } else if (exIdx < exercises.length - 1) {
       setExIdx(i => i + 1);
       setSetNum(1);
-      setPhase('rest');
-      setRestLeft(30);
+      startRest(BETWEEN_EXERCISES_REST);
     } else {
-      clearInterval(timerRef.current);
+      success();
       setPhase('done');
     }
   }
 
-  function skipRest() {
-    setRestLeft(0);
-    setPhase('work');
-  }
-
   function addCustomExercise() {
     if (!customName.trim()) return;
-    const newEx = {
-      id: Date.now(),
+    tap();
+    setExercises(list => [...list, {
+      id: `custom-${Date.now()}`,
       name: customName.trim(),
-      sets: parseInt(customSets) || 3,
-      reps: parseInt(customReps) || 10,
+      sets: customSets,
+      reps: customReps,
       restSeconds: 60,
       muscleGroup: 'custom',
       isCustom: true,
-    };
-    setExerciseList(list => [...list, newEx]);
-    setCustomName('');
-    setCustomSets('3');
-    setCustomReps('10');
-    setShowAddEx(false);
+    }]);
+    setCustomName(''); setCustomSets(3); setCustomReps(10);
+    setShowAdd(false);
   }
 
-  // ── Done screen ──
+  // Save as soon as the last set is done
+  async function saveSession() {
+    setSave({ status: 'saving', kcal: null });
+    try {
+      const { data } = await client.post('/workout/sessions', {
+        workoutType:        plan.workoutType,
+        plannedMinutes,
+        actualSeconds:      elapsed,
+        exercisesCompleted: exercises.length,
+        totalSets:          doneSets,
+        exerciseNames:      exercises.map(e => e.name),
+      });
+      setSave({ status: 'saved', kcal: data?.caloriesBurned ?? null });
+    } catch {
+      warn();
+      setSave({ status: 'error', kcal: null });
+    }
+  }
+
+  useEffect(() => {
+    if (phase === 'done' && save.status === 'idle') saveSession();
+  }, [phase]);
+
+  function confirmExit() {
+    if (phase === 'done') { onExit(save.status === 'saved'); return; }
+    Alert.alert('End this workout?', "Your progress in this session won't be saved.", [
+      { text: 'Keep going', style: 'cancel' },
+      { text: 'End workout', style: 'destructive', onPress: () => onExit(false) },
+    ]);
+  }
+
+  // ── Done ──
   if (phase === 'done') {
-    const totalSetsCompleted = exerciseList.reduce((sum, e) => sum + e.sets, 0);
-    const mins = Math.floor(totalSecs / 60);
     return (
-      <View style={styles.doneScreen}>
-        <Text style={styles.doneIcon}>🏆</Text>
-        <Text style={styles.doneTitle}>Session Complete!</Text>
+      <ScrollView contentContainerStyle={styles.doneWrap} showsVerticalScrollIndicator={false}>
+        <FadeInView index={0} style={styles.doneHead}>
+          <View style={styles.doneIcon}>
+            <Ionicons name="checkmark" size={30} color={Palette.onIvory} />
+          </View>
+          <Text style={styles.doneTitle}>Session complete</Text>
+          <Text style={styles.doneSub}>{typeLabel(plan.workoutType)} · {exercises.length} exercises</Text>
+        </FadeInView>
 
-        <View style={styles.doneStatsRow}>
-          <View style={styles.doneStat}>
-            <Text style={styles.doneStatValue}>{fmt(totalSecs)}</Text>
-            <Text style={styles.doneStatLabel}>Total Time</Text>
-          </View>
-          <View style={styles.doneStatDivider} />
-          <View style={styles.doneStat}>
-            <Text style={styles.doneStatValue}>{exerciseList.length}</Text>
-            <Text style={styles.doneStatLabel}>Exercises</Text>
-          </View>
-          <View style={styles.doneStatDivider} />
-          <View style={styles.doneStat}>
-            <Text style={styles.doneStatValue}>{totalSetsCompleted}</Text>
-            <Text style={styles.doneStatLabel}>Total Sets</Text>
-          </View>
-        </View>
+        <FadeInView index={1} style={styles.doneStats}>
+          <DoneStat label="Time" value={fmt(elapsed)} />
+          <DoneStat label="Sets" value={String(doneSets)} />
+          <DoneStat
+            label="Burned"
+            value={save.status === 'saved' && save.kcal != null ? `${Math.round(save.kcal)}` : '–'}
+            unit="kcal"
+            color={save.status === 'saved' ? Palette.success : undefined}
+          />
+        </FadeInView>
 
-        <View style={styles.doneExList}>
-          {exerciseList.map((e, i) => (
-            <View key={e.id} style={styles.doneExRow}>
-              <Text style={styles.doneExNum}>{i + 1}</Text>
-              <Text style={styles.doneExName}>{e.name}</Text>
-              <Text style={styles.doneExSets}>{e.sets}×{e.reps}</Text>
+        <FadeInView index={2}>
+          <Card style={styles.doneList}>
+            {exercises.map((e, i) => (
+              <View key={e.id} style={[styles.doneRow, i > 0 && styles.divider]}>
+                <Text style={styles.doneNum}>{i + 1}</Text>
+                <Text style={styles.doneName} numberOfLines={1}>{e.name}</Text>
+                <Text style={styles.doneSets}>{e.sets} × {e.reps}</Text>
+              </View>
+            ))}
+          </Card>
+        </FadeInView>
+
+        <View style={styles.saveState}>
+          {save.status === 'saving' && (
+            <View style={styles.saveRow}>
+              <ActivityIndicator size="small" color={Palette.textSub} />
+              <Text style={styles.saveText}>Saving your session…</Text>
             </View>
-          ))}
+          )}
+          {save.status === 'saved' && (
+            <View style={styles.saveRow}>
+              <Ionicons name="cloud-done-outline" size={16} color={Palette.success} />
+              <Text style={styles.saveText}>Saved to your history</Text>
+            </View>
+          )}
+          {save.status === 'error' && (
+            <View style={styles.saveRow}>
+              <Ionicons name="cloud-offline-outline" size={16} color={Palette.danger} />
+              <Text style={styles.saveText}>Couldn't save. </Text>
+              <AnimatedPressable onPress={() => { tap(); saveSession(); }}>
+                <Text style={styles.retry}>Try again</Text>
+              </AnimatedPressable>
+            </View>
+          )}
         </View>
 
-        <TouchableOpacity
-          style={styles.doneBtn}
-          onPress={() => onFinish({
-            totalSecs,
-            exercisesCompleted: exerciseList.length,
-            totalSets: totalSetsCompleted,
-            exerciseNames: exerciseList.map(e => e.name),
-          })}
-          activeOpacity={0.8}>
-          <Text style={styles.doneBtnText}>Finish & Save</Text>
-        </TouchableOpacity>
-      </View>
+        <PrimaryButton
+          title="Done"
+          icon="checkmark"
+          onPress={() => {
+            if (save.status === 'saving') return;
+            if (save.status === 'error') {
+              Alert.alert('Leave without saving?', 'This session is not saved yet.', [
+                { text: 'Stay', style: 'cancel' },
+                { text: 'Leave', style: 'destructive', onPress: () => onExit(false) },
+              ]);
+              return;
+            }
+            onExit(save.status === 'saved');
+          }}
+          style={save.status === 'saving' && styles.disabled}
+        />
+      </ScrollView>
     );
   }
 
-  const progress = ((exIdx * (ex?.sets || 1) + setNum - 1) /
-    (exerciseList.length * (ex?.sets || 1))) * 100;
-  const muscleColor = MUSCLE_COLOR[ex?.muscleGroup] || Colors.accentGold;
+  // ── Working / resting ──
+  const muscle = ex?.muscleGroup || '';
+  const color = MUSCLE_COLOR[muscle] || Palette.textSub;
+  const resting = phase === 'rest';
 
   return (
-    <View style={{ flex: 1 }}>
-      {/* Add custom exercise modal */}
-      <Modal visible={showAddEx} transparent animationType="slide" onRequestClose={() => setShowAddEx(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.addExOverlay}>
-          <View style={styles.addExSheet}>
-            <View style={styles.addExHeader}>
-              <Text style={styles.addExTitle}>Add Exercise</Text>
-              <TouchableOpacity onPress={() => setShowAddEx(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Ionicons name="close" size={22} color={Colors.textSub} />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.addExLabel}>Exercise Name</Text>
-            <TextInput
-              style={styles.addExInput}
-              value={customName}
-              onChangeText={setCustomName}
-              placeholder="e.g. Dumbbell Curl"
-              placeholderTextColor={Colors.textMuted}
-              autoFocus
-              autoCorrect={false}
-            />
-
-            <View style={styles.addExRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.addExLabel}>Sets</Text>
-                <TextInput
-                  style={styles.addExNumInput}
-                  value={customSets}
-                  onChangeText={setCustomSets}
-                  keyboardType="numeric"
-                  selectTextOnFocus
-                />
-              </View>
-              <View style={{ width: 16 }} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.addExLabel}>Reps</Text>
-                <TextInput
-                  style={styles.addExNumInput}
-                  value={customReps}
-                  onChangeText={setCustomReps}
-                  keyboardType="numeric"
-                  selectTextOnFocus
-                />
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.addExSaveBtn, !customName.trim() && { opacity: 0.4 }]}
-              onPress={addCustomExercise}
-              disabled={!customName.trim()}
-              activeOpacity={0.8}>
-              <Text style={styles.addExSaveBtnText}>Add to Session</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-
-      {/* Progress bar */}
-      <View style={styles.sessionProgressTrack}>
-        <View style={[styles.sessionProgressFill, { width: `${Math.min(progress, 100)}%` }]} />
+    <View style={styles.flex}>
+      <View style={styles.sessionTop}>
+        <IconButton name="close" onPress={confirmExit} accessibilityLabel="End workout" />
+        <View style={styles.sessionTopCenter}>
+          <Text style={styles.label}>{typeLabel(plan.workoutType)}</Text>
+          <Text style={styles.elapsed}>{fmt(elapsed)}</Text>
+        </View>
+        <IconButton name="add" onPress={() => setShowAdd(true)} accessibilityLabel="Add an exercise" />
       </View>
 
-      <Text style={styles.sessionExerciseCount}>
-        Exercise {exIdx + 1} of {exerciseList.length}
-        {exerciseList.some(e => e.isCustom) && ' (+custom)'}
-      </Text>
+      <View style={styles.progressWrap}>
+        <SegmentBar progress={totalSets ? doneSets / totalSets : 0} segments={Math.min(Math.max(totalSets, 1), 24)} color={Palette.text} height={4} />
+        <Text style={styles.progressText}>Exercise {exIdx + 1} of {exercises.length} · {doneSets}/{totalSets} sets</Text>
+      </View>
 
-      {/* Main content */}
       <View style={styles.sessionMain}>
-        <View style={[styles.sessionCategoryChip, { backgroundColor: muscleColor + '22' }]}>
-          <Text style={[styles.sessionCategoryText, { color: muscleColor }]}>
-            {ex?.muscleGroup?.toUpperCase()}
-          </Text>
-        </View>
+        <Text style={[styles.muscle, { color }]}>{muscle.replace('_', ' ').toUpperCase()}</Text>
+        <Text style={styles.exName}>{ex?.name}</Text>
 
-        <Text style={styles.sessionExName}>{ex?.name}</Text>
-        <Text style={styles.sessionSetInfo}>{ex?.sets} sets × {ex?.reps} reps</Text>
-
-        <View style={styles.sessionSetIndicator}>
+        <View style={styles.dots}>
           {Array.from({ length: ex?.sets || 1 }).map((_, i) => (
             <View
               key={i}
-              style={[
-                styles.sessionSetDot,
-                i < setNum - 1 && styles.sessionSetDotDone,
-                i === setNum - 1 && styles.sessionSetDotActive,
-              ]}
+              style={[styles.dot, i < setNum - 1 && styles.dotDone, i === setNum - 1 && !resting && styles.dotActive]}
             />
           ))}
         </View>
-        <Text style={styles.sessionCurrentSet}>Set {setNum} of {ex?.sets}</Text>
 
-        {phase === 'rest' ? (
-          <View style={styles.restBlock}>
-            <Text style={styles.restLabel}>Rest</Text>
-            <Text style={styles.restCountdown}>{fmt(restLeft)}</Text>
-            <TouchableOpacity onPress={skipRest} style={styles.skipBtn} activeOpacity={0.7}>
-              <Text style={styles.skipBtnText}>Skip Rest</Text>
-            </TouchableOpacity>
+        {resting ? (
+          <View style={styles.restWrap}>
+            <View style={styles.ring}>
+              <Svg width={180} height={180} style={StyleSheet.absoluteFill}>
+                <Ring cx={90} cy={90} r={82} stroke={8} progress={restTotal ? restLeft / restTotal : 0} color={Palette.water} />
+              </Svg>
+              <Text style={styles.label}>Rest</Text>
+              <Text style={styles.restTime}>{fmt(restLeft)}</Text>
+            </View>
+            <Chip label="Skip rest" onPress={() => setRestLeft(0)} />
           </View>
         ) : (
-          <View style={styles.workBlock}>
-            <Text style={styles.workLabel}>GO!</Text>
+          <View style={styles.workWrap}>
+            <Text style={styles.label}>Set {setNum} of {ex?.sets}</Text>
+            <Text style={styles.target}>{ex?.reps}<Text style={styles.targetUnit}> reps</Text></Text>
           </View>
         )}
       </View>
 
-      {/* Bottom controls */}
       <View style={styles.sessionBottom}>
-        <Text style={styles.sessionTimer}>{fmt(totalSecs)}</Text>
-        <TouchableOpacity
-          style={styles.addExBtn}
-          onPress={() => setShowAddEx(true)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Ionicons name="add-circle-outline" size={24} color={Colors.textSub} />
-        </TouchableOpacity>
-        {phase === 'work' && (
-          <TouchableOpacity style={styles.markDoneBtn} onPress={markSetDone} activeOpacity={0.8}>
-            <Ionicons name="checkmark-circle" size={22} color={Colors.background} />
-            <Text style={styles.markDoneBtnText}>Set Done</Text>
-          </TouchableOpacity>
-        )}
+        <Text style={styles.nextUp} numberOfLines={1}>
+          {resting
+            ? (setNum === 1 ? `Up next: ${ex?.name}` : `Next: set ${setNum} of ${ex?.name}`)
+            : nextEx ? `After this: ${nextEx.name}` : 'Last exercise'}
+        </Text>
+        <PrimaryButton
+          title={resting ? 'Start next set' : setNum === ex?.sets && !nextEx ? 'Finish workout' : 'Set done'}
+          subtitle={resting ? 'Skip the rest of your break' : `${ex?.reps} reps · set ${setNum}/${ex?.sets}`}
+          icon={resting ? 'play' : 'checkmark'}
+          onPress={resting ? () => setRestLeft(0) : markSetDone}
+        />
       </View>
+
+      <Sheet visible={showAdd} onClose={() => setShowAdd(false)} title="Add an exercise" subtitle="It's added to the end of this session" showClose>
+        <View style={styles.addBody}>
+          <Field label="Exercise name" value={customName} onChangeText={setCustomName} placeholder="e.g. Dumbbell curl" autoFocus />
+          <View style={styles.addSteppers}>
+            <Stepper label="Sets" value={customSets} onChange={setCustomSets} min={1} max={10} />
+            <Stepper label="Reps" value={customReps} onChange={setCustomReps} min={1} max={100} />
+          </View>
+          <PrimaryButton title="Add to session" icon="add" onPress={addCustomExercise} style={!customName.trim() && styles.disabled} />
+        </View>
+      </Sheet>
     </View>
   );
 }
 
-// ── Main Screen ───────────────────────────────────────────────────────────────
+function DoneStat({ label, value, unit, color }) {
+  return (
+    <View style={styles.doneStat}>
+      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.doneStatValue, color && { color }]}>
+        {value}{!!unit && <Text style={styles.doneStatUnit}> {unit}</Text>}
+      </Text>
+    </View>
+  );
+}
+
+// ── Generator flow ────────────────────────────────────────────────────────────
 export default function WorkoutGeneratorScreen({ visible, onClose }) {
-  const [step, setStep]                   = useState(1);
-  const [duration, setDuration]           = useState(null);
-  const [workoutType, setWorkoutType]     = useState(null);
-  const [plan, setPlan]                   = useState(null);
-  const [loading, setLoading]             = useState(false);
+  const [step, setStep]               = useState(1);
+  const [duration, setDuration]       = useState(null);
+  const [workoutType, setWorkoutType] = useState(null);
+  const [plan, setPlan]               = useState(null);
+  const [isSample, setIsSample]       = useState(false);
+  const [loading, setLoading]         = useState(false);
   const [sessionActive, setSessionActive] = useState(false);
-  const [saving, setSaving]               = useState(false);
+  const scrollRef = useRef(null);
 
   function reset() {
-    setStep(1);
-    setDuration(null);
-    setWorkoutType(null);
-    setPlan(null);
-    setSessionActive(false);
-    setSaving(false);
+    setStep(1); setDuration(null); setWorkoutType(null);
+    setPlan(null); setIsSample(false); setSessionActive(false);
+  }
+
+  function close() {
+    reset();
+    onClose();
   }
 
   async function generate() {
     setLoading(true);
     try {
-      const { data } = await client.post('/workout/generate', {
-        durationMinutes: duration,
-        workoutType,
-      });
+      const { data } = await client.post('/workout/generate', { durationMinutes: duration, workoutType });
       setPlan(data);
-      setStep(3);
+      setIsSample(false);
     } catch {
+      // Offline fallback so the flow still works; clearly labelled as a sample.
       setPlan({
         workoutType,
         requestedMinutes: duration,
-        estimatedMinutes: duration - 2,
+        estimatedMinutes: Math.max(duration - 2, 10),
         exercises: [
-          { id: 1, name: 'Push-ups',          sets: 4, reps: 10, restSeconds: 90, muscleGroup: 'chest',     estimatedSeconds: 390 },
-          { id: 2, name: 'Pike Push-ups',      sets: 4, reps: 10, restSeconds: 90, muscleGroup: 'shoulders', estimatedSeconds: 390 },
-          { id: 3, name: 'Diamond Push-ups',   sets: 3, reps: 10, restSeconds: 90, muscleGroup: 'arms',      estimatedSeconds: 300 },
-          { id: 4, name: 'Dips',               sets: 3, reps: 12, restSeconds: 90, muscleGroup: 'arms',      estimatedSeconds: 306 },
+          { id: 1, name: 'Push-ups',         sets: 4, reps: 10, restSeconds: 90, muscleGroup: 'chest' },
+          { id: 2, name: 'Pike push-ups',    sets: 4, reps: 10, restSeconds: 90, muscleGroup: 'shoulders' },
+          { id: 3, name: 'Diamond push-ups', sets: 3, reps: 10, restSeconds: 90, muscleGroup: 'arms' },
+          { id: 4, name: 'Dips',             sets: 3, reps: 12, restSeconds: 90, muscleGroup: 'arms' },
         ],
       });
-      setStep(3);
+      setIsSample(true);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleSessionFinish(sessionData) {
-    setSaving(true);
-    try {
-      await client.post('/workout/sessions', {
-        workoutType:         plan.workoutType,
-        plannedMinutes:      duration,
-        actualSeconds:       sessionData.totalSecs,
-        exercisesCompleted:  sessionData.exercisesCompleted,
-        totalSets:           sessionData.totalSets,
-        exerciseNames:       sessionData.exerciseNames,
-      });
-    } catch {
-      // fail silently — session is already done, don't block the user
-    } finally {
-      reset();
-      onClose();
+      setStep(3);
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
     }
   }
 
@@ -364,250 +388,208 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
   if (sessionActive && plan) {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Session</Text>
-          <TouchableOpacity onPress={() => { reset(); onClose(); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="close" size={24} color={Colors.textSub} />
-          </TouchableOpacity>
-        </View>
-        {saving
-          ? <View style={styles.savingOverlay}><ActivityIndicator color={Colors.accentGold} size="large" /><Text style={styles.savingText}>Saving session…</Text></View>
-          : <SessionScreen initialExercises={plan.exercises} onFinish={handleSessionFinish} />
-        }
+        <StatusBar barStyle="light-content" backgroundColor={Palette.ink} />
+        <SessionScreen plan={plan} plannedMinutes={duration} onExit={close} />
       </SafeAreaView>
     );
   }
 
+  const titles = { 1: 'How long do you have?', 2: 'What are you training?', 3: typeLabel(plan?.workoutType) };
+
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={Palette.ink} />
 
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          {step > 1 && (
-            <TouchableOpacity onPress={() => setStep(s => s - 1)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={{ marginRight: 12 }}>
-              <Ionicons name="chevron-back" size={22} color={Colors.textSub} />
-            </TouchableOpacity>
-          )}
-          <Text style={styles.headerTitle}>
-            {step === 1 ? 'Duration' : step === 2 ? 'Workout Type' : 'Your Workout'}
-          </Text>
+        {step > 1
+          ? <IconButton name="chevron-back" onPress={() => setStep(s => s - 1)} accessibilityLabel="Back" />
+          : <View style={styles.headerSpacer} />}
+        <View style={styles.headerCenter}>
+          <SegmentBar progress={step / 3} segments={3} color={Palette.text} height={4} style={styles.steps} />
+          <Text style={styles.stepText}>Step {step} of 3</Text>
         </View>
-        <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="close" size={24} color={Colors.textSub} />
-        </TouchableOpacity>
+        <IconButton name="close" onPress={close} accessibilityLabel="Close" />
       </View>
 
-      <View style={styles.stepRow}>
-        {[1, 2, 3].map(s => (
-          <View key={s} style={[styles.stepDot, step >= s && styles.stepDotActive]} />
-        ))}
-      </View>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <Text style={styles.title}>{titles[step]}</Text>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-
-        {/* ── Step 1: Duration ── */}
         {step === 1 && (
-          <View>
-            <Text style={styles.stepHint}>How long do you have?</Text>
-            <View style={styles.durationGrid}>
-              {DURATIONS.map(d => (
-                <TouchableOpacity
-                  key={d.value}
-                  style={[styles.durationBtn, duration === d.value && styles.durationBtnActive]}
-                  onPress={() => setDuration(d.value)}
-                  activeOpacity={0.7}>
-                  <Text style={[styles.durationBtnText, duration === d.value && styles.durationBtnTextActive]}>
-                    {d.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+          <>
+            <Text style={styles.hint}>Aroha builds a plan that fits your time.</Text>
+            <View style={styles.durations}>
+              {DURATIONS.map(d => {
+                const sel = duration === d.value;
+                return (
+                  <AnimatedPressable
+                    key={d.value}
+                    containerStyle={styles.durationSlot}
+                    style={[styles.option, styles.duration, sel && styles.optionOn]}
+                    scaleTo={0.95}
+                    onPress={() => { tap(); setDuration(d.value); }}
+                    accessibilityState={{ selected: sel }}
+                  >
+                    <Text style={[styles.durationNum, sel && styles.optionTextOn]}>{d.label}</Text>
+                    <Text style={styles.durationUnit}>{d.unit}</Text>
+                  </AnimatedPressable>
+                );
+              })}
             </View>
-            <TouchableOpacity
-              style={[styles.nextBtn, !duration && styles.nextBtnDisabled]}
-              onPress={() => duration && setStep(2)}
-              disabled={!duration}
-              activeOpacity={0.8}>
-              <Text style={styles.nextBtnText}>Next →</Text>
-            </TouchableOpacity>
-          </View>
+            <PrimaryButton title="Next" onPress={() => setStep(2)} style={!duration && styles.disabled} containerStyle={!duration && styles.noTouch} />
+          </>
         )}
 
-        {/* ── Step 2: Workout Type ── */}
         {step === 2 && (
-          <View>
-            <Text style={styles.stepHint}>What are you training today?</Text>
-            <View style={styles.typeGrid}>
-              {WORKOUT_TYPES.map(t => (
-                <TouchableOpacity
-                  key={t.key}
-                  style={[styles.typeCard, workoutType === t.key && styles.typeCardActive]}
-                  onPress={() => setWorkoutType(t.key)}
-                  activeOpacity={0.7}>
-                  <Ionicons name={t.icon} size={24} color={workoutType === t.key ? Colors.accentGold : Colors.textSub} />
-                  <Text style={[styles.typeCardLabel, workoutType === t.key && styles.typeCardLabelActive]}>{t.label}</Text>
-                  <Text style={styles.typeCardDesc}>{t.desc}</Text>
-                </TouchableOpacity>
-              ))}
+          <>
+            <Text style={styles.hint}>{duration} minutes. Pick a focus.</Text>
+            <View style={styles.types}>
+              {WORKOUT_TYPES.map(t => {
+                const sel = workoutType === t.key;
+                return (
+                  <AnimatedPressable
+                    key={t.key}
+                    containerStyle={styles.typeSlot}
+                    style={[styles.option, styles.type, sel && styles.optionOn]}
+                    scaleTo={0.96}
+                    onPress={() => { tap(); setWorkoutType(t.key); }}
+                    accessibilityState={{ selected: sel }}
+                  >
+                    <Ionicons name={t.icon} size={22} color={sel ? Palette.text : Palette.textSub} />
+                    <Text style={[styles.typeLabel, sel && styles.optionTextOn]}>{t.label}</Text>
+                    <Text style={styles.typeDesc}>{t.desc}</Text>
+                  </AnimatedPressable>
+                );
+              })}
             </View>
-            <TouchableOpacity
-              style={[styles.nextBtn, (!workoutType || loading) && styles.nextBtnDisabled]}
-              onPress={generate}
-              disabled={!workoutType || loading}
-              activeOpacity={0.8}>
-              {loading
-                ? <ActivityIndicator color={Colors.background} />
-                : <Text style={styles.nextBtnText}>Generate Workout ✦</Text>
-              }
-            </TouchableOpacity>
-          </View>
+            {loading ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color={Palette.textSub} />
+                <Text style={styles.hint}>Building your workout…</Text>
+              </View>
+            ) : (
+              <PrimaryButton title="Generate workout" icon="flash" onPress={generate} style={!workoutType && styles.disabled} containerStyle={!workoutType && styles.noTouch} />
+            )}
+          </>
         )}
 
-        {/* ── Step 3: Preview ── */}
         {step === 3 && plan && (
-          <View>
-            <View style={styles.planHeader}>
-              <Text style={styles.planTitle}>{plan.workoutType.replace('_', ' ')}</Text>
-              <Text style={styles.planMeta}>~{plan.estimatedMinutes} min · {plan.exercises.length} exercises</Text>
-            </View>
-
-            {plan.exercises.map((ex, idx) => {
-              const color = MUSCLE_COLOR[ex.muscleGroup] || Colors.accentGold;
-              return (
-                <View key={ex.id} style={styles.previewCard}>
-                  <View style={styles.previewNum}>
-                    <Text style={styles.previewNumText}>{idx + 1}</Text>
+          <>
+            <Text style={styles.hint}>~{plan.estimatedMinutes} min · {plan.exercises.length} exercises · {plan.exercises.reduce((s, e) => s + e.sets, 0)} sets</Text>
+            {isSample && (
+              <View style={styles.sample}>
+                <Ionicons name="cloud-offline-outline" size={15} color={Palette.kcal} />
+                <Text style={styles.sampleText}>Couldn't reach the server, so this is a sample plan.</Text>
+              </View>
+            )}
+            <Card style={styles.planCard}>
+              {plan.exercises.map((e, i) => {
+                const c = MUSCLE_COLOR[e.muscleGroup] || Palette.textSub;
+                return (
+                  <View key={e.id} style={[styles.planRow, i > 0 && styles.divider]}>
+                    <Text style={styles.planNum}>{i + 1}</Text>
+                    <View style={styles.planInfo}>
+                      <Text style={styles.planName} numberOfLines={1}>{e.name}</Text>
+                      <Text style={styles.planMeta}>{e.sets} × {e.reps} · {e.restSeconds}s rest</Text>
+                    </View>
+                    <Text style={[styles.planMuscle, { color: c }]}>{(e.muscleGroup || '').replace('_', ' ')}</Text>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.previewName}>{ex.name}</Text>
-                    <Text style={styles.previewDetail}>
-                      {ex.sets} sets × {ex.reps} reps · {ex.restSeconds}s rest
-                    </Text>
-                  </View>
-                  <View style={[styles.previewChip, { backgroundColor: color + '22' }]}>
-                    <Text style={[styles.previewChipText, { color }]}>{ex.muscleGroup}</Text>
-                  </View>
-                </View>
-              );
-            })}
-
-            <TouchableOpacity
-              style={styles.startBtn}
-              onPress={() => setSessionActive(true)}
-              activeOpacity={0.8}>
-              <Ionicons name="play-circle" size={22} color={Colors.background} />
-              <Text style={styles.startBtnText}>Start Session</Text>
-            </TouchableOpacity>
-          </View>
+                );
+              })}
+            </Card>
+            <PrimaryButton title="Start session" subtitle="Timer and rest breaks are automatic" icon="play" onPress={() => setSessionActive(true)} />
+          </>
         )}
-
-        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.background },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
-  headerLeft: { flexDirection: 'row', alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.text },
-  scroll: { flex: 1, paddingHorizontal: 20 },
+  safe:     { flex: 1, backgroundColor: Palette.ink },
+  flex:     { flex: 1 },
+  label:    { ...Type.label, color: Palette.textSub },
+  divider:  { borderTopWidth: 1, borderTopColor: Palette.lineSoft },
+  disabled: { opacity: 0.4 },
+  noTouch:  { pointerEvents: 'none' },
 
-  stepRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 8 },
-  stepDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.cardBorder },
-  stepDotActive: { backgroundColor: Colors.accentGold },
-  stepHint: { fontSize: 14, color: Colors.textSub, textAlign: 'center', marginBottom: 24, marginTop: 8 },
+  // Generator
+  header:       { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.md },
+  headerSpacer: { width: 38 },
+  headerCenter: { flex: 1, alignItems: 'center', gap: 6 },
+  steps:        { width: 120 },
+  stepText:     { ...Type.small, color: Palette.textSub },
+  body:         { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl, gap: Spacing.lg },
+  title:        { fontFamily: Fonts.display, fontSize: 22, color: Palette.text },
+  hint:         { ...Type.body, color: Palette.textSub, marginTop: -Spacing.sm },
 
-  durationGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 32 },
-  durationBtn: { flex: 1, minWidth: '28%', backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: Colors.cardBorder, padding: 18, alignItems: 'center' },
-  durationBtnActive: { borderColor: Colors.accentGold, backgroundColor: Colors.accentGold + '22' },
-  durationBtnText: { fontSize: 15, fontWeight: '700', color: Colors.textSub },
-  durationBtnTextActive: { color: Colors.accentGold },
+  option:       { backgroundColor: Palette.surface, borderRadius: Radius.lg, borderWidth: 1, borderColor: Palette.lineSoft },
+  optionOn:     { borderColor: Palette.text, backgroundColor: Palette.surface2 },
+  optionTextOn: { color: Palette.text },
 
-  typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 32 },
-  typeCard: { width: '47%', backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, alignItems: 'center', gap: 6 },
-  typeCardActive: { borderColor: Colors.accentGold, backgroundColor: Colors.accentGold + '11' },
-  typeCardLabel: { fontSize: 14, fontWeight: '700', color: Colors.textSub },
-  typeCardLabelActive: { color: Colors.accentGold },
-  typeCardDesc: { fontSize: 10, color: Colors.textMuted, textAlign: 'center' },
+  durations:    { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  durationSlot: { width: '31%', flexGrow: 1 },
+  duration:     { alignItems: 'center', paddingVertical: Spacing.lg },
+  durationNum:  { fontFamily: Fonts.numHeavy, fontSize: 34, color: Palette.textSub },
+  durationUnit: { ...Type.small, color: Palette.textDim },
 
-  nextBtn: { backgroundColor: Colors.accentGold, borderRadius: 14, padding: 16, alignItems: 'center', marginBottom: 8 },
-  nextBtnDisabled: { backgroundColor: Colors.card, borderWidth: 1, borderColor: Colors.cardBorder },
-  nextBtnText: { fontSize: 15, fontWeight: '800', color: Colors.background },
+  types:     { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  typeSlot:  { width: '48%', flexGrow: 1 },
+  type:      { padding: Spacing.lg, gap: 4 },
+  typeLabel: { ...Type.bodyB, color: Palette.textSub, marginTop: Spacing.sm },
+  typeDesc:  { ...Type.small, color: Palette.textDim },
+  loadingRow:{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.md, paddingVertical: Spacing.lg },
 
-  planHeader: { alignItems: 'center', paddingVertical: 20 },
-  planTitle: { fontSize: 22, fontWeight: '800', color: Colors.text, letterSpacing: 0.5 },
-  planMeta:  { fontSize: 13, color: Colors.textSub, marginTop: 6 },
-  previewCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, marginBottom: 10, gap: 12 },
-  previewNum: { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.accentGold + '22', alignItems: 'center', justifyContent: 'center' },
-  previewNumText: { fontSize: 12, fontWeight: '800', color: Colors.accentGold },
-  previewName: { fontSize: 15, fontWeight: '700', color: Colors.text, marginBottom: 3 },
-  previewDetail: { fontSize: 12, color: Colors.textSub },
-  previewChip: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  previewChipText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
-
-  startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: Colors.accentGold, borderRadius: 14, padding: 18, marginTop: 16 },
-  startBtnText: { fontSize: 16, fontWeight: '800', color: Colors.background },
+  sample:     { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.md, borderRadius: Radius.md, backgroundColor: 'rgba(245,165,36,0.08)', borderWidth: 1, borderColor: 'rgba(245,165,36,0.25)' },
+  sampleText: { ...Type.small, color: Palette.text, flex: 1 },
+  planCard:   { paddingVertical: 0, paddingHorizontal: Spacing.md + 2 },
+  planRow:    { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.md },
+  planNum:    { fontFamily: Fonts.numHeavy, fontSize: 20, color: Palette.textDim, width: 22 },
+  planInfo:   { flex: 1, minWidth: 0 },
+  planName:   { ...Type.bodyB, color: Palette.text },
+  planMeta:   { fontFamily: Fonts.num, fontSize: 14, color: Palette.textSub, marginTop: 1 },
+  planMuscle: { fontFamily: Fonts.bodyBold, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase' },
 
   // Session
-  sessionProgressTrack: { height: 4, backgroundColor: Colors.cardBorder },
-  sessionProgressFill:  { height: 4, backgroundColor: Colors.accentGold },
-  sessionExerciseCount: { fontSize: 12, color: Colors.textSub, textAlign: 'center', marginTop: 12, fontWeight: '600' },
-  sessionMain: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  sessionCategoryChip: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 16 },
-  sessionCategoryText: { fontSize: 11, fontWeight: '800', letterSpacing: 1 },
-  sessionExName: { fontSize: 28, fontWeight: '900', color: Colors.text, textAlign: 'center', marginBottom: 8 },
-  sessionSetInfo: { fontSize: 14, color: Colors.textSub, marginBottom: 20 },
-  sessionSetIndicator: { flexDirection: 'row', gap: 10, marginBottom: 8 },
-  sessionSetDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.cardBorder },
-  sessionSetDotDone: { backgroundColor: '#27AE60' },
-  sessionSetDotActive: { backgroundColor: Colors.accentGold, transform: [{ scale: 1.3 }] },
-  sessionCurrentSet: { fontSize: 13, color: Colors.textSub, marginBottom: 28 },
-  workBlock: { alignItems: 'center' },
-  workLabel: { fontSize: 48, fontWeight: '900', color: Colors.accentGold, letterSpacing: 4 },
-  restBlock: { alignItems: 'center', gap: 8 },
-  restLabel: { fontSize: 14, fontWeight: '600', color: Colors.textSub, textTransform: 'uppercase', letterSpacing: 1 },
-  restCountdown: { fontSize: 56, fontWeight: '900', color: '#2E86AB' },
-  skipBtn: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: Colors.cardBorder, marginTop: 8 },
-  skipBtnText: { fontSize: 13, color: Colors.textSub, fontWeight: '600' },
-  sessionBottom: { padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: Colors.cardBorder },
-  sessionTimer: { fontSize: 20, fontWeight: '800', color: Colors.textSub, fontVariant: ['tabular-nums'] },
-  addExBtn: { padding: 4 },
-  markDoneBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.accentGold, borderRadius: 14, paddingHorizontal: 24, paddingVertical: 14 },
-  markDoneBtnText: { fontSize: 15, fontWeight: '800', color: Colors.background },
+  sessionTop:       { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm },
+  sessionTopCenter: { flex: 1, alignItems: 'center' },
+  elapsed:          { fontFamily: Fonts.num, fontSize: 22, color: Palette.text, marginTop: 2 },
+  progressWrap:     { paddingHorizontal: Spacing.lg, marginTop: Spacing.lg, gap: Spacing.sm },
+  progressText:     { ...Type.small, color: Palette.textSub, textAlign: 'center' },
+  sessionMain:      { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl, gap: Spacing.md },
+  muscle:           { fontFamily: Fonts.bodyHeavy, fontSize: 11, letterSpacing: 1.6 },
+  exName:           { fontFamily: Fonts.display, fontSize: 26, lineHeight: 34, color: Palette.text, textAlign: 'center' },
+  dots:             { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.md },
+  dot:              { width: 22, height: 6, borderRadius: 3, backgroundColor: Palette.track },
+  dotDone:          { backgroundColor: Palette.success },
+  dotActive:        { backgroundColor: Palette.text },
+  workWrap:         { alignItems: 'center', gap: Spacing.sm },
+  target:           { fontFamily: Fonts.numHeavy, fontSize: 88, lineHeight: 92, color: Palette.text },
+  targetUnit:       { fontFamily: Fonts.num, fontSize: 24, color: Palette.textSub },
+  restWrap:         { alignItems: 'center', gap: Spacing.lg },
+  ring:             { width: 180, height: 180, alignItems: 'center', justifyContent: 'center' },
+  restTime:         { fontFamily: Fonts.numHeavy, fontSize: 52, color: Palette.text },
+  sessionBottom:    { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.lg, gap: Spacing.md },
+  nextUp:           { ...Type.small, color: Palette.textSub, textAlign: 'center' },
+  addBody:          { gap: Spacing.lg },
+  addSteppers:      { flexDirection: 'row', gap: Spacing.sm },
 
-  // Done screen
-  doneScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 16 },
-  doneIcon:  { fontSize: 64 },
-  doneTitle: { fontSize: 26, fontWeight: '900', color: Colors.text },
-  doneStatsRow: { flexDirection: 'row', backgroundColor: Colors.card, borderRadius: 16, borderWidth: 1, borderColor: Colors.cardBorder, padding: 20, width: '100%' },
-  doneStat: { flex: 1, alignItems: 'center' },
-  doneStatValue: { fontSize: 20, fontWeight: '800', color: Colors.accentGold },
-  doneStatLabel: { fontSize: 11, color: Colors.textSub, marginTop: 4 },
-  doneStatDivider: { width: 1, backgroundColor: Colors.cardBorder, marginVertical: 4 },
-  doneExList: { width: '100%', maxHeight: 160, backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: Colors.cardBorder, overflow: 'hidden' },
-  doneExRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: Colors.cardBorder },
-  doneExNum: { fontSize: 12, fontWeight: '800', color: Colors.accentGold, width: 20 },
-  doneExName: { flex: 1, fontSize: 13, color: Colors.text, fontWeight: '500' },
-  doneExSets: { fontSize: 12, color: Colors.textSub },
-  doneBtn: { backgroundColor: Colors.accentGold, borderRadius: 14, paddingHorizontal: 40, paddingVertical: 16, marginTop: 8, width: '100%', alignItems: 'center' },
-  doneBtnText: { fontSize: 16, fontWeight: '800', color: Colors.background },
-
-  // Saving overlay
-  savingOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-  savingText: { fontSize: 15, color: Colors.textSub, fontWeight: '600' },
-
-  // Add exercise modal
-  addExOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
-  addExSheet: { backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
-  addExHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  addExTitle: { fontSize: 17, fontWeight: '700', color: Colors.text },
-  addExLabel: { fontSize: 12, color: Colors.textSub, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  addExInput: { backgroundColor: Colors.background, borderRadius: 10, borderWidth: 1, borderColor: Colors.cardBorder, color: Colors.text, fontSize: 15, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 16 },
-  addExRow: { flexDirection: 'row', marginBottom: 20 },
-  addExNumInput: { backgroundColor: Colors.background, borderRadius: 10, borderWidth: 1, borderColor: Colors.cardBorder, color: Colors.text, fontSize: 20, fontWeight: '700', textAlign: 'center', paddingVertical: 10 },
-  addExSaveBtn: { backgroundColor: Colors.accentGold, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  addExSaveBtnText: { fontSize: 15, fontWeight: '800', color: Colors.background },
+  // Done
+  doneWrap:      { padding: Spacing.lg, paddingTop: Spacing.xxl, gap: Spacing.lg },
+  doneHead:      { alignItems: 'center', gap: Spacing.sm },
+  doneIcon:      { width: 64, height: 64, borderRadius: 22, backgroundColor: Palette.ivory, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm },
+  doneTitle:     { fontFamily: Fonts.display, fontSize: 24, color: Palette.text },
+  doneSub:       { ...Type.body, color: Palette.textSub },
+  doneStats:     { flexDirection: 'row', gap: Spacing.sm },
+  doneStat:      { flex: 1, backgroundColor: Palette.surface, borderRadius: Radius.lg, borderWidth: 1, borderColor: Palette.lineSoft, padding: Spacing.md + 2, gap: 4 },
+  doneStatValue: { fontFamily: Fonts.numHeavy, fontSize: 28, color: Palette.text },
+  doneStatUnit:  { fontFamily: Fonts.num, fontSize: 13, color: Palette.textSub },
+  doneList:      { paddingVertical: 0, paddingHorizontal: Spacing.md + 2 },
+  doneRow:       { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.md },
+  doneNum:       { fontFamily: Fonts.num, fontSize: 16, color: Palette.textDim, width: 18 },
+  doneName:      { ...Type.body, color: Palette.text, flex: 1 },
+  doneSets:      { fontFamily: Fonts.num, fontSize: 16, color: Palette.textSub },
+  saveState:     { alignItems: 'center', minHeight: 20 },
+  saveRow:       { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  saveText:      { ...Type.small, color: Palette.textSub },
+  retry:         { fontFamily: Fonts.bodyBold, fontSize: 12, color: Palette.text, textDecorationLine: 'underline' },
 });
