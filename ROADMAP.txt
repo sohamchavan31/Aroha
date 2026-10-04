@@ -37,9 +37,10 @@ Done
   [x] Habits + Planner moved under Home "My day"
   [x] Home screen
   [x] Food screen (+ serving sheet, recipe builder)
+  [x] Train screen: library, log-set sheet, PR banner, history chart
 
 Next, in this order
-  [ ] Train screen (WorkoutScreen.js)
+  [x] Train screen (WorkoutScreen.js)
         - Exercise library: category chips, search, clean exercise rows
         - Log set sheet: weight x reps stepper, last session shown beside it
         - "New PR" banner (flat green, +EP) + success haptic
