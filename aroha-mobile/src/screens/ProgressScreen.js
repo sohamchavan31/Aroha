@@ -50,13 +50,19 @@ function MacroBar({ label, grams, percent, color }) {
   );
 }
 
-export default function ProgressScreen() {
+export default function ProgressScreen({ route }) {
   const [summary, setSummary]             = useState(null);
   const [weightHistory, setWeightHistory] = useState([]);
   const [loading, setLoading]             = useState(true);
   const [showModal, setShowModal]         = useState(false);
   const [weightInput, setWeightInput]     = useState('');
   const [saving, setSaving]               = useState(false);
+
+  // Quick-log "Weight" opens the weigh-in modal directly
+  const openWeightLog = route?.params?.openWeightLog;
+  useEffect(() => {
+    if (openWeightLog) setShowModal(true);
+  }, [openWeightLog]);
 
   const loadData = useCallback(async () => {
     setLoading(true);

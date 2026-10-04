@@ -3,344 +3,324 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
   StatusBar,
   Modal,
   Animated,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Speech from 'expo-speech';
-import Colors from '../constants/colors';
+import Svg from 'react-native-svg';
 import client from '../api/client';
-import WellnessModal from '../components/WellnessModal';
 import ProfileScreen from './ProfileScreen';
 import AiScreen from './AiScreen';
+import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { SkeletonMissionCard, SkeletonStatCard } from '../components/Skeleton';
+import Skeleton from '../components/Skeleton';
 import FadeInView from '../components/FadeInView';
 import AnimatedPressable from '../components/AnimatedPressable';
 import AnimatedCounter from '../components/AnimatedCounter';
+import Avatar from '../components/Avatar';
+import Card from '../components/ui/Card';
+import ProgressRings, { Ring } from '../components/ui/ProgressRing';
+import SegmentBar from '../components/ui/SegmentBar';
+import PrimaryButton from '../components/ui/PrimaryButton';
+import IconButton from '../components/ui/IconButton';
+import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
+import { stageInfo } from '../constants/stages';
+import { formatNumber } from '../utils/format';
+import { on } from '../utils/events';
+import { tap, success, warn } from '../utils/haptics';
 
-function getTodayDate() {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const now = new Date();
-  return `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
+function greetingKey() {
+  const h = new Date().getHours();
+  if (h < 12) return 'goodMorning';
+  if (h < 17) return 'goodAfternoon';
+  return 'goodEvening';
 }
 
-const STAGE_ABBR = {
-  Spark: 'SP', Awakened: 'AW', Ascender: 'AS',
-  Guardian: 'GD', Titan: 'TI', Apex: 'AP', Legend: 'LG',
+function firstName(name) {
+  return (name || '').trim().split(/\s+/)[0] || 'there';
+}
+
+// Mission categories come from MissionService on the backend
+const MISSION_ICON = {
+  STRENGTH: 'barbell', DISCIPLINE: 'flag', RECOVERY: 'moon', NUTRITION: 'restaurant',
 };
 
-const STAGE_COLOR = {
-  Spark: Colors.accentGold,
-  Awakened: '#00BFFF',
-  Ascender: '#7B2FBE',
-  Guardian: '#2ECC71',
-  Titan: '#E74C3C',
-  Apex: '#FF6B35',
-  Legend: '#FFD700',
-};
-
-const EP_NEXT = { Spark: 1000, Awakened: 3000, Ascender: 6000, Guardian: 11000, Titan: 18000, Apex: 28000, Legend: 28000 };
-
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   const { t } = useLanguage();
-  const [missions, setMissions]         = useState([]);
-  const [missionsLoading, setMissionsLoading] = useState(true);
-  const [water, setWater]               = useState({ glasses: 0, dailyGoal: 8 });
-  const [showWellness, setShowWellness] = useState(false);
-  const [showProfile, setShowProfile]   = useState(false);
-  const [showAi, setShowAi]             = useState(false);
-  const [stageUp, setStageUp]           = useState(null); // { oldStage, newStage }
-  const [userEP, setUserEP]             = useState(0);
-  const [userStage, setUserStage]       = useState('Spark');
+  const { user } = useAuth();
 
-  const streak = 1;
+  const [profile, setProfile]     = useState(null);
+  const [today, setToday]         = useState({ calories: 0, protein: 0 });
+  const [water, setWater]         = useState({ glasses: 0, dailyGoal: 8 });
+  const [missions, setMissions]   = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Stage-up animation
+  const [showProfile, setShowProfile] = useState(false);
+  const [showAi, setShowAi]           = useState(false);
+  const [stageUp, setStageUp]         = useState(null); // { oldStage, newStage }
+
   const scaleAnim = useRef(new Animated.Value(0)).current;
-  const glowAnim  = useRef(new Animated.Value(0)).current;
 
+  // ── Data ────────────────────────────────────────────────────────────────────
   const loadWater = useCallback(async () => {
     try {
       const { data } = await client.get('/wellness/water/today');
-      setWater({ glasses: data.glasses, dailyGoal: data.dailyGoal });
+      setWater({ glasses: data.glasses ?? 0, dailyGoal: data.dailyGoal || 8 });
     } catch {}
   }, []);
 
-  const loadMissions = useCallback(async () => {
-    try {
-      setMissionsLoading(true);
-      const { data } = await client.get('/missions/today');
-      setMissions(data);
-      const earned = data.filter(m => m.completed).reduce((s, m) => s + m.epReward, 0);
-      setUserEP(prev => prev === 0 ? earned : prev);
-    } catch {
-      setMissions([]);
-    } finally {
-      setMissionsLoading(false);
+  const loadAll = useCallback(async () => {
+    const [p, l, m] = await Promise.allSettled([
+      client.get('/profile'),
+      client.get('/logs/today'),
+      client.get('/missions/today'),
+      loadWater(),
+    ]);
+    if (p.status === 'fulfilled') setProfile(p.value.data);
+    if (l.status === 'fulfilled') {
+      setToday({ calories: l.value.data.totalCalories || 0, protein: l.value.data.totalProtein || 0 });
     }
-  }, []);
+    if (m.status === 'fulfilled') setMissions(m.value.data || []);
+    setLoading(false);
+  }, [loadWater]);
 
-  useEffect(() => {
-    loadWater();
-    loadMissions();
-  }, [loadWater, loadMissions]);
+  // Refresh whenever Home comes back into focus (e.g. after logging food)
+  useFocusEffect(useCallback(() => { loadAll(); }, [loadAll]));
 
-  // Animate stage-up modal in
+  // Water added from the quick-log sheet
+  useEffect(() => on('water-changed', loadWater), [loadWater]);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await loadAll();
+    setRefreshing(false);
+  }
+
   useEffect(() => {
     if (stageUp) {
-      Animated.parallel([
-        Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, tension: 60, friction: 7 }),
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(glowAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-            Animated.timing(glowAnim, { toValue: 0.3, duration: 800, useNativeDriver: true }),
-          ])
-        ),
-      ]).start();
-    } else {
-      scaleAnim.setValue(0);
-      glowAnim.setValue(0);
+      scaleAnim.setValue(0.85);
+      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, tension: 60, friction: 8 }).start();
     }
   }, [stageUp]);
 
+  // ── Actions ─────────────────────────────────────────────────────────────────
   async function completeMission(id) {
-    const prev = missions.map(m => m.id === id ? { ...m, completed: true } : m);
-    setMissions(prev);
+    const oldStage = profile?.evolutionStage;
+    setMissions(ms => ms.map(m => (m.id === id ? { ...m, completed: true } : m)));
+    success();
     try {
       const { data } = await client.post(`/missions/${id}/complete`);
-      setUserEP(data.totalEP);
-      setUserStage(data.evolutionStage);
-      setMissions(ms => ms.map(m => m.id === id ? { ...m, completed: true } : m));
-      if (data.stagedUp) {
-        setStageUp({ oldStage: userStage, newStage: data.newStage });
-      }
+      setProfile(p => (p ? { ...p, evolutionPoints: data.totalEP, evolutionStage: data.evolutionStage } : p));
+      if (data.stagedUp) setStageUp({ oldStage, newStage: data.newStage || data.evolutionStage });
     } catch (err) {
-      setMissions(ms => ms.map(m => m.id === id ? { ...m, completed: false } : m));
-      const status = err.response?.status;
-      const msg    = err.response?.data?.message || err.message || 'Network error';
-      Alert.alert('Mission Error', `${status ?? '?'}: ${msg}`);
+      setMissions(ms => ms.map(m => (m.id === id ? { ...m, completed: false } : m)));
+      warn();
+      const msg = err.response?.data?.message || 'Check your connection and try again.';
+      Alert.alert("Couldn't complete mission", msg);
     }
   }
 
-  async function addGlass() {
-    if (water.glasses >= water.dailyGoal) return;
-    setWater(prev => ({ ...prev, glasses: prev.glasses + 1 }));
-    try { await client.post('/wellness/water/add'); } catch {}
+  async function changeWater(delta) {
+    if (delta > 0 && water.glasses >= water.dailyGoal * 2) return;
+    if (delta < 0 && water.glasses <= 0) return;
+    tap();
+    setWater(w => ({ ...w, glasses: w.glasses + delta }));
+    try {
+      await client.post(delta > 0 ? '/wellness/water/add' : '/wellness/water/remove');
+    } catch {
+      setWater(w => ({ ...w, glasses: w.glasses - delta }));
+    }
   }
 
-  async function removeGlass() {
-    if (water.glasses <= 0) return;
-    setWater(prev => ({ ...prev, glasses: prev.glasses - 1 }));
-    try { await client.post('/wellness/water/remove'); } catch {}
-  }
+  // ── Derived ─────────────────────────────────────────────────────────────────
+  const name       = firstName(profile?.name || user?.name);
+  const ep         = profile?.evolutionPoints ?? 0;
+  const stage      = stageInfo(profile?.evolutionStage, ep);
+  const streak     = profile?.streak ?? 0;
+  const kcalGoal   = profile?.dailyCalorieGoal || 2000;
+  const proteinGoal = profile?.dailyProteinGoal || 100;
+  const waterGoal  = water.dailyGoal || profile?.waterGoalGlasses || 8;
 
-  function speakReminder() {
-    Speech.speak('Bhai, paani pi le!', { language: 'hi-IN', rate: 0.9 });
-  }
-
-  const completedCount = missions.filter(m => m.completed).length;
-  const stageColor = STAGE_COLOR[userStage] || Colors.accentGold;
-  const epNext = EP_NEXT[userStage] || 28000;
-  const epProgress = Math.min(userEP / epNext, 1);
+  const doneCount  = missions.filter(m => m.completed).length;
+  const epEarned   = missions.filter(m => m.completed).reduce((s, m) => s + (m.epReward || 0), 0);
+  const epTotal    = missions.reduce((s, m) => s + (m.epReward || 0), 0);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <StatusBar barStyle="light-content" backgroundColor={Palette.ink} />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Palette.textSub} colors={[Palette.brass]} progressBackgroundColor={Palette.surface2} />}
+      >
         {/* Header */}
         <FadeInView index={0} style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Ohayo, Warrior</Text>
-            <Text style={styles.date}>{getTodayDate()}</Text>
-          </View>
-          <View style={styles.headerRight}>
-            <AnimatedPressable
-              style={styles.aiBtn}
-              onPress={() => setShowAi(true)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="sparkles" size={18} color={Colors.accentGold} />
-            </AnimatedPressable>
-          <AnimatedPressable
-            style={[styles.stageBadge, { backgroundColor: stageColor + '22', borderColor: stageColor }]}
-            onPress={() => setShowProfile(true)}
-          >
-            <Text style={[styles.stageLabel, { color: stageColor }]}>STAGE</Text>
-            <Text style={[styles.stageText, { color: stageColor }]}>{userStage}</Text>
+          <AnimatedPressable onPress={() => { tap(); setShowProfile(true); }} scaleTo={0.94} accessibilityLabel="Open profile">
+            <View style={styles.avatarWrap}>
+              <Svg width={48} height={48} style={StyleSheet.absoluteFill}>
+                <Ring cx={24} cy={24} r={22} stroke={2.5} progress={stage.progress} color={Palette.brass} />
+              </Svg>
+              <Avatar avatarKey={profile?.avatarKey} size={38} style={styles.avatar} />
+            </View>
           </AnimatedPressable>
+          <View style={styles.headerText}>
+            <Text style={styles.greeting}>{t(greetingKey())}</Text>
+            <Text style={styles.name} numberOfLines={1}>{name}</Text>
           </View>
+          <IconButton name="sparkles-outline" onPress={() => setShowAi(true)} accessibilityLabel="Open Aroha AI" />
         </FadeInView>
 
-        {/* Streak + EP Row */}
-        <FadeInView index={1} style={styles.statsRow}>
-          {missionsLoading ? (
-            <>
-              <SkeletonStatCard />
-              <SkeletonStatCard />
-              <SkeletonStatCard />
-            </>
-          ) : (
-            <>
-              <View style={styles.statCard}>
-                <Text style={styles.statIcon}>🔥</Text>
-                <Text style={styles.statValue}>{streak}</Text>
-                <Text style={styles.statLabel}>{t('streak')}</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statIcon}>⚡</Text>
-                <AnimatedCounter value={userEP} style={styles.statValue} />
-                <Text style={styles.statLabel}>Total {t('ep')}</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statIcon}>🎯</Text>
-                <Text style={styles.statValue}>{completedCount}/{missions.length}</Text>
-                <Text style={styles.statLabel}>Missions Done</Text>
-              </View>
-            </>
-          )}
-        </FadeInView>
-
-        {/* Water Tracker */}
-        <FadeInView index={2} style={styles.waterCard}>
-          <View style={styles.waterHeader}>
-            <View style={styles.waterTitleRow}>
-              <Ionicons name="water" size={16} color="#2E86AB" />
-              <Text style={styles.waterTitle}>Water Intake</Text>
-            </View>
-            <View style={styles.waterActions}>
-              <TouchableOpacity onPress={speakReminder} hitSlop={{ top:8,bottom:8,left:8,right:8 }}>
-                <Ionicons name="mic-outline" size={16} color={Colors.accentGold} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowWellness(true)} hitSlop={{ top:8,bottom:8,left:8,right:8 }}>
-                <Ionicons name="moon-outline" size={16} color={Colors.accentPurple} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.waterBody}>
-            <AnimatedPressable onPress={removeGlass} style={styles.waterCtrlBtn} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-              <Ionicons name="remove" size={20} color={Colors.textSub} />
-            </AnimatedPressable>
-            <View style={styles.waterCounterBlock}>
-              <Text style={styles.waterGlasses}>{water.glasses}</Text>
-              <Text style={styles.waterGoalText}>/ {water.dailyGoal} glasses</Text>
-            </View>
-            <AnimatedPressable onPress={addGlass} style={[styles.waterCtrlBtn, styles.waterAddBtn]} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-              <Ionicons name="add" size={20} color={Colors.background} />
-            </AnimatedPressable>
-          </View>
-
-          <View style={styles.waterTrack}>
-            <View style={[styles.waterFill, { width: `${Math.min((water.glasses / water.dailyGoal) * 100, 100)}%` }]} />
-          </View>
-          <Text style={styles.waterHint}>Goal set in Profile · Long press − to reset</Text>
-        </FadeInView>
-
-        {/* Daily Missions Section */}
-        <FadeInView index={3} style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('dailyMissions')}</Text>
-            <View style={styles.epBadge}>
-              <Text style={styles.epBadgeText}>
-                +<AnimatedCounter value={missions.filter(m => m.completed).reduce((s, m) => s + m.epReward, 0)} style={styles.epBadgeText} /> / {missions.reduce((s, m) => s + m.epReward, 0)} EP
-              </Text>
-            </View>
-          </View>
-
-          {missionsLoading ? (
-            <>
-              <SkeletonMissionCard />
-              <SkeletonMissionCard />
-              <SkeletonMissionCard />
-            </>
-          ) : missions.map((mission, i) => (
-            <FadeInView key={mission.id} index={i}>
-              <AnimatedPressable
-                style={[styles.missionCard, mission.completed && styles.missionCardDone]}
-                onPress={() => !mission.completed && completeMission(mission.id)}
-                scaleTo={0.98}
-              >
-                <View style={styles.missionLeft}>
-                  <View style={[styles.missionCheck, mission.completed && styles.missionCheckDone]}>
-                    {mission.completed && <Ionicons name="checkmark" size={14} color={Colors.background} />}
-                  </View>
-                  <View style={styles.missionCategoryDot}>
-                    <Text style={styles.missionCategoryText}>{mission.category[0]}</Text>
-                  </View>
-                  <Text style={[styles.missionTitle, mission.completed && styles.missionTitleDone]}>
-                    {mission.title}
-                  </Text>
+        {/* Stage hero */}
+        <FadeInView index={1}>
+          <Card variant="hero">
+            <View style={styles.row}>
+              <Text style={styles.label}>Stage {stage.number} of {stage.total}</Text>
+              {streak > 0 && (
+                <View style={styles.chip}>
+                  <Ionicons name="flame-outline" size={11} color={Palette.textSub} />
+                  <Text style={styles.chipText}>{streak}-day streak</Text>
                 </View>
-                <Text style={[styles.missionEP, mission.completed && styles.missionEPDone]}>
-                  +{mission.epReward} EP
-                </Text>
-              </AnimatedPressable>
-            </FadeInView>
-          ))}
+              )}
+            </View>
+            <View style={[styles.row, styles.stageRow]}>
+              <Text style={styles.stageName}>{stage.name.toUpperCase()}</Text>
+              {loading ? (
+                <Skeleton width={90} height={22} />
+              ) : (
+                <View style={styles.epWrap}>
+                  <AnimatedCounter value={ep} style={styles.epValue} />
+                  <Text style={styles.epOf}> / {formatNumber(stage.nextMin)} EP</Text>
+                </View>
+              )}
+            </View>
+            <SegmentBar progress={stage.progress} style={styles.segBar} />
+            <Text style={styles.heroFoot}>
+              {stage.next
+                ? <>{formatNumber(stage.epToNext)} EP until <Text style={styles.heroFootStrong}>{stage.next.name}</Text></>
+                : 'Highest stage reached. Keep your streak alive.'}
+            </Text>
+          </Card>
         </FadeInView>
 
-        {/* Evolution Progress Section */}
-        <FadeInView index={4} style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('evolutionProgress')}</Text>
-          <View style={styles.evolutionCard}>
-            <View style={styles.stageRow}>
-              <View style={styles.stageCircleBlock}>
-                <Text style={styles.stageCircleLabel}>Current</Text>
-                <View style={[styles.stageCircle, { backgroundColor: stageColor }]}>
-                  <Text style={styles.stageCircleText}>{STAGE_ABBR[userStage] || 'SP'}</Text>
-                </View>
-              </View>
-              <View style={styles.stageProgressBar}>
-                <View style={styles.stageProgressTrack}>
-                  <View style={[styles.stageProgressFill, { width: `${Math.round(epProgress * 100)}%`, backgroundColor: stageColor }]} />
-                </View>
-                <Text style={styles.stageProgressText}>{userEP} / {epNext} EP</Text>
-              </View>
-              <View style={styles.stageCircleBlock}>
-                <Text style={styles.stageCircleLabel}>Next</Text>
-                <View style={[styles.stageCircle, styles.stageCircleLocked]}>
-                  <Text style={styles.stageCircleText}>
-                    {STAGE_ABBR[Object.keys(STAGE_ABBR)[Object.keys(STAGE_ABBR).indexOf(userStage) + 1]] || 'LG'}
-                  </Text>
+        {/* Today rings */}
+        <FadeInView index={2}>
+          <Card style={styles.todayCard}>
+            <ProgressRings
+              size={104}
+              stroke={9}
+              rings={[
+                { progress: today.calories / kcalGoal,  color: Palette.kcal },
+                { progress: today.protein / proteinGoal, color: Palette.protein },
+                { progress: water.glasses / waterGoal,  color: Palette.water },
+              ]}
+            />
+            <View style={styles.legend}>
+              <Text style={styles.label}>Today</Text>
+              <LegendRow color={Palette.kcal}    value={formatNumber(today.calories)} goal={`/ ${formatNumber(kcalGoal)} kcal`} loading={loading} />
+              <LegendRow color={Palette.protein} value={Math.round(today.protein)}    goal={`/ ${proteinGoal} g protein`}       loading={loading} />
+              <View style={styles.legendWaterRow}>
+                <LegendRow color={Palette.water} value={water.glasses} goal={`/ ${waterGoal} glasses`} loading={loading} />
+                <View style={styles.stepper}>
+                  <AnimatedPressable onPress={() => changeWater(-1)} style={styles.stepBtn} scaleTo={0.88} accessibilityLabel="Remove a glass of water">
+                    <Ionicons name="remove" size={14} color={Palette.textSub} />
+                  </AnimatedPressable>
+                  <AnimatedPressable onPress={() => changeWater(1)} style={[styles.stepBtn, styles.stepBtnAdd]} scaleTo={0.88} accessibilityLabel="Add a glass of water">
+                    <Ionicons name="add" size={14} color={Palette.water} />
+                  </AnimatedPressable>
                 </View>
               </View>
             </View>
-            <Text style={styles.stageMotivation}>Your next stage awaits. Keep evolving.</Text>
-          </View>
+          </Card>
         </FadeInView>
 
-        <View style={styles.bottomPad} />
+        {/* Primary action */}
+        <FadeInView index={3}>
+          <PrimaryButton
+            title="Start a workout"
+            subtitle="Generate a plan or log your own"
+            onPress={() => navigation.navigate('Workout')}
+          />
+        </FadeInView>
+
+        {/* Missions */}
+        <FadeInView index={4}>
+          <Card>
+            <View style={styles.row}>
+              <Text style={styles.label}>{t('dailyMissions')}</Text>
+              {!loading && missions.length > 0 && (
+                <Text style={styles.cardMeta}>{doneCount} of {missions.length} done · {epEarned}/{epTotal} EP</Text>
+              )}
+            </View>
+            <View style={styles.missionList}>
+              {loading ? (
+                [0, 1, 2].map(i => <Skeleton key={i} height={18} style={{ marginTop: Spacing.md }} />)
+              ) : missions.length === 0 ? (
+                <Text style={styles.empty}>{t('noMissions')} New missions arrive tomorrow morning.</Text>
+              ) : (
+                missions.map((m, i) => (
+                  <AnimatedPressable
+                    key={m.id}
+                    scaleTo={0.98}
+                    disabled={m.completed}
+                    onPress={() => completeMission(m.id)}
+                    style={[styles.mission, i > 0 && styles.missionDivider]}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: !!m.completed }}
+                  >
+                    <View style={[styles.check, m.completed && styles.checkOn]}>
+                      {m.completed && <Ionicons name="checkmark" size={13} color={Palette.text} />}
+                    </View>
+                    <Ionicons
+                      name={MISSION_ICON[(m.category || '').toUpperCase()] || 'ellipse-outline'}
+                      size={14}
+                      color={m.completed ? Palette.textDim : Palette.textSub}
+                    />
+                    <Text style={[styles.missionTitle, m.completed && styles.missionTitleDone]} numberOfLines={2}>
+                      {m.title}
+                    </Text>
+                    <Text style={[styles.missionEp, m.completed && styles.missionEpDone]}>+{m.epReward} EP</Text>
+                  </AnimatedPressable>
+                ))
+              )}
+            </View>
+            {!loading && missions.length > 0 && doneCount === missions.length && (
+              <Text style={styles.allDone}>{t('missionsDone')}</Text>
+            )}
+          </Card>
+        </FadeInView>
+
+        {/* My day */}
+        <FadeInView index={5}>
+          <Text style={[styles.label, styles.sectionLabel]}>My day</Text>
+          <View style={styles.tiles}>
+            <DayTile icon="checkmark-done" color={Palette.success} title="Habits" sub="Track your streaks" onPress={() => navigation.navigate('Habits')} />
+            <DayTile icon="calendar-clear" color={Palette.carbs}   title="Planner" sub="Tasks and time blocks" onPress={() => navigation.navigate('Planner')} />
+          </View>
+        </FadeInView>
       </ScrollView>
 
-      <WellnessModal visible={showWellness} onClose={() => setShowWellness(false)} />
-      <ProfileScreen visible={showProfile} onClose={() => setShowProfile(false)} />
+      <ProfileScreen visible={showProfile} onClose={() => { setShowProfile(false); loadAll(); }} />
       <Modal visible={showAi} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowAi(false)}>
         <AiScreen visible={showAi} onClose={() => setShowAi(false)} />
       </Modal>
 
-      {/* Stage-up Celebration Modal */}
-      <Modal visible={!!stageUp} transparent animationType="fade">
-        <View style={styles.stageUpOverlay}>
+      {/* Stage-up celebration */}
+      <Modal visible={!!stageUp} transparent animationType="fade" onRequestClose={() => setStageUp(null)}>
+        <View style={styles.overlay}>
           <Animated.View style={[styles.stageUpCard, { transform: [{ scale: scaleAnim }] }]}>
-            <Animated.Text style={[styles.stageUpGlow, { opacity: glowAnim }]}>✦</Animated.Text>
-            <Text style={styles.stageUpLabel}>EVOLUTION COMPLETE</Text>
+            <Text style={styles.label}>Evolution complete</Text>
             <Text style={styles.stageUpOld}>{stageUp?.oldStage}</Text>
-            <Text style={styles.stageUpArrow}>↓</Text>
-            <Text style={[styles.stageUpNew, { color: STAGE_COLOR[stageUp?.newStage] || Colors.accentGold }]}>
-              {stageUp?.newStage}
-            </Text>
-            <Text style={styles.stageUpSub}>You have ascended. Keep pushing.</Text>
-            <TouchableOpacity style={styles.stageUpBtn} onPress={() => setStageUp(null)}>
-              <Text style={styles.stageUpBtnText}>CONTINUE</Text>
-            </TouchableOpacity>
+            <Ionicons name="arrow-down" size={18} color={Palette.textDim} style={{ marginVertical: Spacing.sm }} />
+            <Text style={styles.stageUpNew}>{(stageUp?.newStage || '').toUpperCase()}</Text>
+            <Text style={styles.stageUpSub}>You reached a new stage. Keep going.</Text>
+            <PrimaryButton title="Continue" icon="checkmark" onPress={() => setStageUp(null)} containerStyle={{ alignSelf: 'stretch' }} />
           </Animated.View>
         </View>
       </Modal>
@@ -348,105 +328,97 @@ export default function HomeScreen() {
   );
 }
 
+function LegendRow({ color, value, goal, loading }) {
+  return (
+    <View style={styles.legendRow}>
+      <View style={[styles.dot, { backgroundColor: color }]} />
+      {loading ? <Skeleton width={70} height={14} /> : (
+        <>
+          <Text style={styles.legendValue}>{value}</Text>
+          <Text style={styles.legendGoal} numberOfLines={1}>{goal}</Text>
+        </>
+      )}
+    </View>
+  );
+}
+
+function DayTile({ icon, color, title, sub, onPress }) {
+  return (
+    <AnimatedPressable containerStyle={styles.tileSlot} style={styles.tile} scaleTo={0.97} onPress={() => { tap(); onPress(); }}>
+      <View style={[styles.tileIcon, { backgroundColor: color + '1F' }]}>
+        <Ionicons name={icon} size={18} color={color} />
+      </View>
+      <Text style={styles.tileTitle}>{title}</Text>
+      <Text style={styles.tileSub}>{sub}</Text>
+    </AnimatedPressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.background },
-  scroll: { flex: 1, paddingHorizontal: 20 },
+  safe:    { flex: 1, backgroundColor: Palette.ink },
+  content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.xl, gap: Spacing.md },
+  row:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  label:   { ...Type.label, color: Palette.textSub },
 
   // Header
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'flex-start', marginTop: 20, marginBottom: 24,
-  },
-  greeting:    { fontSize: 24, fontWeight: '700', color: Colors.text, letterSpacing: 0.5 },
-  date:        { fontSize: 13, color: Colors.textSub, marginTop: 4 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  aiBtn:       { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.accentGold + '22', borderWidth: 1, borderColor: Colors.accentGold + '55', alignItems: 'center', justifyContent: 'center' },
-  stageBadge: {
-    borderRadius: 12, borderWidth: 1,
-    paddingHorizontal: 14, paddingVertical: 8, alignItems: 'center',
-  },
-  stageLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5 },
-  stageText:  { fontSize: 13, fontWeight: '900', letterSpacing: 0.5 },
+  header:     { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.xs },
+  avatarWrap: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  avatar:     { borderWidth: 0 },
+  headerText: { flex: 1 },
+  greeting:   { ...Type.small, color: Palette.textSub },
+  name:       { fontFamily: Fonts.bodyHeavy, fontSize: 20, color: Palette.text },
 
-  // Stats
-  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 28 },
-  statCard: {
-    flex: 1, backgroundColor: Colors.card, borderRadius: 14,
-    borderWidth: 1, borderColor: Colors.cardBorder,
-    padding: 14, alignItems: 'center',
-  },
-  statIcon:  { fontSize: 20, marginBottom: 4 },
-  statValue: { fontSize: 20, fontWeight: '800', color: Colors.text },
-  statLabel: { fontSize: 10, color: Colors.textSub, marginTop: 2, textAlign: 'center' },
+  // Hero
+  chip:     { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: Radius.pill, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: Palette.line },
+  chipText: { fontFamily: Fonts.bodyBold, fontSize: 11, color: Palette.textSub },
+  stageRow: { alignItems: 'flex-end', marginTop: Spacing.sm },
+  stageName:{ ...Type.stage, color: Palette.brass, flexShrink: 1 },
+  epWrap:   { flexDirection: 'row', alignItems: 'baseline' },
+  epValue:  { fontFamily: Fonts.num, fontSize: 26, color: Palette.text },
+  epOf:     { fontFamily: Fonts.num, fontSize: 14, color: Palette.textSub },
+  segBar:   { marginTop: Spacing.md },
+  heroFoot: { ...Type.small, color: Palette.textSub, marginTop: Spacing.sm },
+  heroFootStrong: { fontFamily: Fonts.bodyBold, color: Palette.text },
 
-  // Water
-  waterCard: {
-    backgroundColor: Colors.card, borderRadius: 16, borderWidth: 1,
-    borderColor: Colors.cardBorder, padding: 14, marginBottom: 20,
-  },
-  waterHeader:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  waterTitleRow:  { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  waterTitle:     { fontSize: 14, fontWeight: '700', color: Colors.text },
-  waterActions:   { flexDirection: 'row', gap: 12 },
-  waterBody:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  waterCtrlBtn:   { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: Colors.cardBorder, alignItems: 'center', justifyContent: 'center' },
-  waterAddBtn:    { backgroundColor: '#2E86AB', borderColor: '#2E86AB' },
-  waterCounterBlock: { alignItems: 'center' },
-  waterGlasses:   { fontSize: 32, fontWeight: '900', color: '#2E86AB' },
-  waterGoalText:  { fontSize: 12, color: Colors.textSub, marginTop: 2 },
-  waterTrack:     { height: 6, backgroundColor: Colors.cardBorder, borderRadius: 3, overflow: 'hidden', marginBottom: 8 },
-  waterFill:      { height: '100%', backgroundColor: '#2E86AB', borderRadius: 3 },
-  waterHint:      { fontSize: 10, color: Colors.textMuted, textAlign: 'center' },
+  // Today
+  todayCard:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.lg },
+  legend:         { flex: 1, gap: Spacing.sm, minWidth: 0 },
+  legendRow:      { flexDirection: 'row', alignItems: 'baseline', gap: 6, flexShrink: 1 },
+  legendWaterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.sm },
+  dot:            { width: 7, height: 7, borderRadius: 2, alignSelf: 'center' },
+  legendValue:    { fontFamily: Fonts.num, fontSize: 20, color: Palette.text },
+  legendGoal:     { ...Type.small, color: Palette.textSub, flexShrink: 1 },
+  stepper:        { flexDirection: 'row', gap: 6 },
+  stepBtn:        { width: 26, height: 26, borderRadius: 9, backgroundColor: Palette.surface2, borderWidth: 1, borderColor: Palette.lineSoft, alignItems: 'center', justifyContent: 'center' },
+  stepBtnAdd:     { backgroundColor: Palette.water + '1F', borderColor: Palette.water + '40' },
 
-  // Sections
-  section:       { marginBottom: 28 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
-  sectionTitle:  { fontSize: 17, fontWeight: '700', color: Colors.text, letterSpacing: 0.3, marginBottom: 14 },
-  epBadge:       { backgroundColor: 'rgba(226, 183, 20, 0.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(226, 183, 20, 0.3)', marginBottom: 14 },
-  epBadgeText:   { fontSize: 12, color: Colors.accentGold, fontWeight: '700' },
+  // Missions
+  cardMeta:     { ...Type.small, color: Palette.textSub },
+  missionList:  { marginTop: Spacing.xs },
+  mission:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 2, paddingVertical: Spacing.md },
+  missionDivider: { borderTopWidth: 1, borderTopColor: Palette.lineSoft },
+  check:        { width: 20, height: 20, borderRadius: 7, borderWidth: 1.5, borderColor: Palette.textDim, alignItems: 'center', justifyContent: 'center' },
+  checkOn:      { backgroundColor: Palette.violet, borderColor: Palette.violet },
+  missionTitle: { ...Type.body, color: Palette.text, flex: 1 },
+  missionTitleDone: { color: Palette.textDim, textDecorationLine: 'line-through' },
+  missionEp:    { fontFamily: Fonts.num, fontSize: 15, color: Palette.brass },
+  missionEpDone:{ color: Palette.textDim },
+  empty:        { ...Type.body, color: Palette.textSub, marginTop: Spacing.md },
+  allDone:      { ...Type.small, color: Palette.success, marginTop: Spacing.xs },
 
-  // Mission cards
-  missionCard: {
-    backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1,
-    borderColor: Colors.cardBorder, padding: 16,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10,
-  },
-  missionCardDone:  { borderColor: Colors.success, backgroundColor: 'rgba(46, 204, 113, 0.05)' },
-  missionLeft:      { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  missionCheck:     { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: Colors.textMuted, marginRight: 10, alignItems: 'center', justifyContent: 'center' },
-  missionCheckDone: { backgroundColor: Colors.success, borderColor: Colors.success },
-  missionCategoryDot: { width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.accentPurple + '33', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
-  missionCategoryText:{ fontSize: 10, fontWeight: '800', color: Colors.accentPurple },
-  missionTitle:     { fontSize: 15, color: Colors.text, fontWeight: '500', flex: 1 },
-  missionTitleDone: { color: Colors.textMuted, textDecorationLine: 'line-through' },
-  missionEP:        { fontSize: 13, color: Colors.accentGold, fontWeight: '700', marginLeft: 8 },
-  missionEPDone:    { color: Colors.textMuted },
+  // My day
+  sectionLabel: { marginTop: Spacing.sm, marginBottom: Spacing.sm },
+  tiles:     { flexDirection: 'row', gap: Spacing.md },
+  tileSlot:  { flex: 1 },
+  tile:      { flex: 1, backgroundColor: Palette.surface, borderRadius: Radius.lg, borderWidth: 1, borderColor: Palette.lineSoft, padding: Spacing.lg },
+  tileIcon:  { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md },
+  tileTitle: { ...Type.bodyB, color: Palette.text },
+  tileSub:   { ...Type.small, color: Palette.textSub, marginTop: 2 },
 
-  // Evolution progress
-  evolutionCard:    { backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: Colors.cardBorder, padding: 20 },
-  stageRow:         { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  stageCircleBlock: { alignItems: 'center' },
-  stageCircleLabel: { fontSize: 10, color: Colors.textSub, marginBottom: 6, fontWeight: '600', letterSpacing: 0.5 },
-  stageCircle:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  stageCircleLocked:{ backgroundColor: Colors.textMuted },
-  stageCircleText:  { fontSize: 13, fontWeight: '900', color: Colors.text },
-  stageProgressBar: { flex: 1, marginHorizontal: 16, alignItems: 'center' },
-  stageProgressTrack:{ width: '100%', height: 6, backgroundColor: Colors.cardBorder, borderRadius: 3, overflow: 'hidden', marginBottom: 8 },
-  stageProgressFill: { height: '100%', borderRadius: 3 },
-  stageProgressText: { fontSize: 11, color: Colors.textSub, fontWeight: '600' },
-  stageMotivation:   { fontSize: 13, color: Colors.accentGold, fontStyle: 'italic', textAlign: 'center', borderTopWidth: 1, borderTopColor: Colors.cardBorder, paddingTop: 14 },
-
-  // Stage-up modal
-  stageUpOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center' },
-  stageUpCard:    { backgroundColor: Colors.card, borderRadius: 24, padding: 40, alignItems: 'center', width: '80%', borderWidth: 1, borderColor: Colors.accentGold },
-  stageUpGlow:    { fontSize: 48, color: Colors.accentGold, marginBottom: 8 },
-  stageUpLabel:   { fontSize: 11, fontWeight: '800', color: Colors.accentGold, letterSpacing: 3, marginBottom: 24 },
-  stageUpOld:     { fontSize: 18, color: Colors.textSub, fontWeight: '600' },
-  stageUpArrow:   { fontSize: 24, color: Colors.accentGold, marginVertical: 8 },
-  stageUpNew:     { fontSize: 32, fontWeight: '900', letterSpacing: 1, marginBottom: 16 },
-  stageUpSub:     { fontSize: 13, color: Colors.textSub, textAlign: 'center', marginBottom: 28 },
-  stageUpBtn:     { backgroundColor: Colors.accentGold, borderRadius: 12, paddingHorizontal: 32, paddingVertical: 14 },
-  stageUpBtnText: { fontSize: 14, fontWeight: '800', color: Colors.background, letterSpacing: 1 },
-
-  bottomPad: { height: 20 },
+  // Stage-up
+  overlay:     { flex: 1, backgroundColor: 'rgba(5,4,8,0.85)', alignItems: 'center', justifyContent: 'center', padding: Spacing.xl },
+  stageUpCard: { width: '100%', maxWidth: 360, backgroundColor: Palette.hero, borderRadius: Radius.xl, borderWidth: 1, borderColor: Palette.line, padding: Spacing.xl, alignItems: 'center' },
+  stageUpOld:  { ...Type.body, color: Palette.textSub, marginTop: Spacing.lg },
+  stageUpNew:  { fontFamily: Fonts.display, fontSize: 28, letterSpacing: 1, color: Palette.brass },
+  stageUpSub:  { ...Type.body, color: Palette.textSub, textAlign: 'center', marginTop: Spacing.sm, marginBottom: Spacing.xl },
 });

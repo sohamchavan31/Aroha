@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
+    "@expo-google-fonts/barlow-condensed": "^0.4.1",
+    "@expo-google-fonts/manrope": "^0.4.2",
+    "@expo-google-fonts/unbounded": "^0.4.1",
     "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.16.2",
@@ -12,6 +15,8 @@
     "expo": "~56.0.5",
     "expo-constants": "~56.0.20",
     "expo-dev-client": "~56.0.22",
+    "expo-font": "~56.0.5",
+    "expo-haptics": "~56.0.3",
     "expo-notifications": "~56.0.15",
     "expo-screen-capture": "~56.0.4",
     "expo-secure-store": "~56.0.4",

@@ -18,6 +18,8 @@
 > ✅ UI animation foundation — Skeleton loading states, staggered fade-in, press-scale feedback, animated number counters; applied to HomeScreen
 > ✅ Screenshot protection (Profile screen), account footer (brand/version/legal placeholders), custom EAS dev client build working on physical device
 > ✅ Bottom tab bar no longer overlaps Android's system nav buttons (safe-area-aware height)
+> ✅ UI redesign, step 1 (2026-10-04): matte "signature" design kit (Unbounded / Barlow Condensed / Manrope fonts, ink + ivory + muted brass palette), shared UI components (Card, ProgressRings, SegmentBar, PrimaryButton, IconButton), haptics, new 5-slot tab bar (Home · Food · + · Train · Progress) with quick-log sheet, Habits + Planner moved under Home "My day", Home screen rebuilt
+> ✅ UI redesign, step 2 (2026-10-04): Food screen rebuilt — "calories left" hero (goal − eaten + burned), animated macro bars, meal-slot cards with dashed empty states and "+ Add to slot", new serving sheet and recipe builder sheet; shared Sheet / Chip / Field / MacroBar components
 >
 > **Next 5 backlog tasks (unchanged):**
 > 6. Body Measurements (chest/waist/hips/arms/thighs)
