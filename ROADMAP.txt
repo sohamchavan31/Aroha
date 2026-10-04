@@ -37,14 +37,9 @@ Done
   [x] Habits + Planner moved under Home "My day"
   [x] Home screen
   [x] Food screen (+ serving sheet, recipe builder)
+  [x] Train screen: library, log-set sheet, PR banner, history chart
 
 Next, in this order
-  [ ] Train screen (WorkoutScreen.js)
-        - Exercise library: category chips, search, clean exercise rows
-        - Log set sheet: weight x reps stepper, last session shown beside it
-        - "New PR" banner (flat green, +EP) + success haptic
-        - Exercise history sheet: progression chart restyled (custom SVG)
-        - Today's sessions list
   [ ] Workout generator + live session (WorkoutGeneratorScreen.js)
         - Rest timer ring, set table (Set / Last / Kg / Reps / done)
         - "Log set N" ivory button, "Skip rest" secondary

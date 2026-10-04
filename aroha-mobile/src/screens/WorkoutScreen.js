@@ -1,463 +1,344 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, TouchableOpacity, FlatList,
-  StyleSheet, StatusBar, ActivityIndicator, Alert, Modal, TextInput, Dimensions,
-} from 'react-native';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, StatusBar, Alert, Modal, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { LineChart } from 'react-native-chart-kit';
-import Colors from '../constants/colors';
 import client from '../api/client';
 import WorkoutGeneratorScreen from './WorkoutGeneratorScreen';
-
-const SCREEN_W = Dimensions.get('window').width;
-
-function fmtDate(dateStr) {
-  const [, m, d] = dateStr.split('-');
-  return `${parseInt(m)}/${parseInt(d)}`;
-}
+import Card from '../components/ui/Card';
+import Chip from '../components/ui/Chip';
+import Field from '../components/ui/Field';
+import PrimaryButton from '../components/ui/PrimaryButton';
+import Skeleton from '../components/Skeleton';
+import FadeInView from '../components/FadeInView';
+import AnimatedPressable from '../components/AnimatedPressable';
+import LogSetSheet from '../components/train/LogSetSheet';
+import ExerciseHistorySheet from '../components/train/ExerciseHistorySheet';
+import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
+import { tap, success, warn } from '../utils/haptics';
 
 const CATEGORIES = [
-  { key: 'all',         label: 'All',         icon: 'grid-outline' },
-  { key: 'strength',   label: 'Strength',    icon: 'barbell-outline' },
-  { key: 'cardio',     label: 'Cardio',      icon: 'heart-outline' },
-  { key: 'yoga',       label: 'Yoga',        icon: 'body-outline' },
-  { key: 'flexibility',label: 'Flexibility', icon: 'leaf-outline' },
+  { key: 'all',         label: 'All' },
+  { key: 'strength',    label: 'Strength' },
+  { key: 'cardio',      label: 'Cardio' },
+  { key: 'yoga',        label: 'Yoga' },
+  { key: 'flexibility', label: 'Flexibility' },
 ];
 
-function LogModal({ exercise, visible, onClose, onSave }) {
-  const [sets, setSets]     = useState(String(exercise?.defaultSets || 3));
-  const [reps, setReps]     = useState(String(exercise?.defaultReps || 10));
-  const [weight, setWeight] = useState('0');
+const CATEGORY_ICON = {
+  strength: 'barbell-outline', cardio: 'heart-outline', yoga: 'body-outline', flexibility: 'leaf-outline',
+};
 
-  useEffect(() => {
-    if (exercise) {
-      setSets(String(exercise.defaultSets || 3));
-      setReps(String(exercise.defaultReps || 10));
-      setWeight('0');
-    }
-  }, [exercise]);
-
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>{exercise?.name}</Text>
-          <Text style={styles.modalSub}>{exercise?.description}</Text>
-
-          <View style={styles.inputRow}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Sets</Text>
-              <TextInput
-                style={styles.numInput}
-                value={sets}
-                onChangeText={setSets}
-                keyboardType="numeric"
-                selectTextOnFocus
-              />
-            </View>
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Reps</Text>
-              <TextInput
-                style={styles.numInput}
-                value={reps}
-                onChangeText={setReps}
-                keyboardType="numeric"
-                selectTextOnFocus
-              />
-            </View>
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Weight (kg)</Text>
-              <TextInput
-                style={styles.numInput}
-                value={weight}
-                onChangeText={setWeight}
-                keyboardType="decimal-pad"
-                selectTextOnFocus
-              />
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={styles.saveBtn}
-            onPress={() => onSave({ sets: parseInt(sets) || 1, reps: parseInt(reps) || 1, weightKg: parseFloat(weight) || 0 })}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.saveBtnText}>Log It</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-            <Text style={styles.cancelBtnText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-function HistoryModal({ exercise, visible, onClose }) {
-  const [loading, setLoading] = useState(true);
-  const [history, setHistory] = useState(null);
-
-  useEffect(() => {
-    if (visible && exercise) {
-      setLoading(true);
-      setHistory(null);
-      client.get(`/workouts/history/${exercise.id}`)
-        .then(({ data }) => setHistory(data))
-        .catch(() => setHistory({ entries: [], bestWeightKg: 0, bestReps: 0 }))
-        .finally(() => setLoading(false));
-    }
-  }, [visible, exercise]);
-
-  const entries = history?.entries || [];
-  const isWeighted = entries.some(e => e.weightKg > 0) || (history?.bestWeightKg || 0) > 0;
-  const hasChart = entries.length >= 2;
-
-  let chartData = null;
-  if (hasChart) {
-    const step = Math.max(1, Math.floor(entries.length / 6));
-    const labels = entries.map((e, i) =>
-      i % step === 0 || i === entries.length - 1 ? fmtDate(e.logDate) : '');
-    chartData = {
-      labels,
-      datasets: [{ data: entries.map(e => isWeighted ? e.weightKg : e.reps) }],
-    };
-  }
-
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalCard, { maxHeight: '85%' }]}>
-          <Text style={styles.modalTitle}>{exercise?.name}</Text>
-          <Text style={styles.modalSub}>
-            {isWeighted ? `Best: ${history?.bestWeightKg ?? 0}kg` : `Best: ${history?.bestReps ?? 0} reps`}
-          </Text>
-
-          {loading ? (
-            <ActivityIndicator color={Colors.accentGold} style={{ marginVertical: 30 }} />
-          ) : entries.length === 0 ? (
-            <Text style={styles.emptyText}>No history yet for this exercise.</Text>
-          ) : (
-            <FlatList
-              data={[...entries].reverse()}
-              keyExtractor={e => String(e.id)}
-              ListHeaderComponent={
-                hasChart ? (
-                  <LineChart
-                    data={chartData}
-                    width={SCREEN_W - 80}
-                    height={160}
-                    chartConfig={{
-                      backgroundColor:        Colors.card,
-                      backgroundGradientFrom: Colors.card,
-                      backgroundGradientTo:   Colors.card,
-                      color:                  () => Colors.accentGold,
-                      labelColor:             () => Colors.textSub,
-                      propsForDots: { r: '3', strokeWidth: '2', stroke: Colors.accentGold },
-                      propsForBackgroundLines: { stroke: Colors.cardBorder, strokeDasharray: '' },
-                      decimalPlaces: isWeighted ? 1 : 0,
-                    }}
-                    bezier
-                    withInnerLines={false}
-                    withOuterLines={false}
-                    style={{ borderRadius: 10, marginBottom: 16 }}
-                  />
-                ) : null
-              }
-              renderItem={({ item, index }) => {
-                const reversed = [...entries].reverse();
-                const prev = reversed[index + 1];
-                let delta = null;
-                if (prev) {
-                  if (isWeighted) {
-                    const diff = item.weightKg - prev.weightKg;
-                    if (diff !== 0) delta = `${diff > 0 ? '+' : ''}${diff}kg`;
-                  } else {
-                    const diff = item.reps - prev.reps;
-                    if (diff !== 0) delta = `${diff > 0 ? '+' : ''}${diff} reps`;
-                  }
-                }
-                return (
-                  <View style={styles.logRow}>
-                    <View style={styles.logInfo}>
-                      <Text style={styles.logName}>
-                        {item.sets} × {item.reps}{item.weightKg > 0 ? ` × ${item.weightKg}kg` : ''}
-                      </Text>
-                      <Text style={styles.logMeta}>{fmtDate(item.logDate)}</Text>
-                    </View>
-                    {delta && (
-                      <Text style={[styles.deltaText, { color: delta.startsWith('+') ? Colors.success : Colors.textMuted }]}>
-                        {delta}
-                      </Text>
-                    )}
-                  </View>
-                );
-              }}
-            />
-          )}
-
-          <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-            <Text style={styles.cancelBtnText}>Close</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
+function fmtKg(n) {
+  return Number.isInteger(n) ? String(n) : Number(n).toFixed(1);
 }
 
 export default function WorkoutScreen() {
-  const [exercises, setExercises]       = useState([]);
-  const [filtered, setFiltered]         = useState([]);
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [todayLog, setTodayLog]         = useState([]);
-  const [stats, setStats]               = useState({ exerciseCount: 0, totalSets: 0, totalReps: 0 });
-  const [loading, setLoading]           = useState(true);
-  const [selected, setSelected]           = useState(null);
-  const [modalVisible, setModalVisible]   = useState(false);
-  const [showGenerator, setShowGenerator] = useState(false);
-  const [historyExercise, setHistoryExercise] = useState(null);
-  const [historyVisible, setHistoryVisible]   = useState(false);
+  const [exercises, setExercises]   = useState([]);
+  const [loadingEx, setLoadingEx]   = useState(true);
+  const [exError, setExError]       = useState(false);
+  const [category, setCategory]     = useState('all');
+  const [query, setQuery]           = useState('');
 
+  const [today, setToday]           = useState({ entries: [], exerciseCount: 0, totalSets: 0, totalReps: 0 });
+  const [loadingToday, setLoadingToday] = useState(true);
+  const [prIds, setPrIds]           = useState(() => new Set()); // entries logged as PRs this session
+  const [prBanner, setPrBanner]     = useState(null);            // { name, detail }
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [logExercise, setLogExercise]         = useState(null);
+  const [historyExercise, setHistoryExercise] = useState(null);
+  const [showGenerator, setShowGenerator]     = useState(false);
+
+  const scrollRef = useRef(null);
+  const bannerTimer = useRef(null);
+  useEffect(() => () => clearTimeout(bannerTimer.current), []);
+
+  // ── Data ────────────────────────────────────────────────────────────────────
   const loadExercises = useCallback(async () => {
     try {
       const { data } = await client.get('/workouts/exercises');
-      setExercises(data);
-      setFiltered(data);
+      setExercises(data || []);
+      setExError(false);
     } catch {
-      Alert.alert('Error', 'Could not load exercises.');
+      setExError(true);
     } finally {
-      setLoading(false);
+      setLoadingEx(false);
     }
   }, []);
 
-  const loadTodayLog = useCallback(async () => {
+  const loadToday = useCallback(async () => {
     try {
       const { data } = await client.get('/workouts/today');
-      setTodayLog(data.entries || []);
-      setStats({
+      setToday({
+        entries:       data.entries || [],
         exerciseCount: data.exerciseCount || 0,
-        totalSets: data.totalSets || 0,
-        totalReps: data.totalReps || 0,
+        totalSets:     data.totalSets || 0,
+        totalReps:     data.totalReps || 0,
       });
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    loadExercises();
-    loadTodayLog();
-  }, []);
-
-  function filterByCategory(cat) {
-    setActiveCategory(cat);
-    setFiltered(cat === 'all' ? exercises : exercises.filter(e => e.category === cat));
-  }
-
-  function openLog(exercise) {
-    setSelected(exercise);
-    setModalVisible(true);
-  }
-
-  function openHistory(exercise) {
-    setHistoryExercise(exercise);
-    setHistoryVisible(true);
-  }
-
-  async function saveLog({ sets, reps, weightKg }) {
-    setModalVisible(false);
-    try {
-      const { data } = await client.post('/workouts/log', { exerciseId: selected.id, sets, reps, weightKg });
-      loadTodayLog();
-      if (data.newPR) {
-        Alert.alert('🏆 New PR!', `New personal record for ${selected.name}!`);
-      }
     } catch {
-      Alert.alert('Error', 'Could not save log.');
+      // keep what's on screen
+    } finally {
+      setLoadingToday(false);
     }
+  }, []);
+
+  useFocusEffect(useCallback(() => {
+    loadToday();
+    if (exercises.length === 0) loadExercises();
+  }, [loadToday, loadExercises, exercises.length]));
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await Promise.all([loadToday(), loadExercises()]);
+    setRefreshing(false);
+  }
+
+  // ── Actions ─────────────────────────────────────────────────────────────────
+  async function saveLog({ sets, reps, weightKg }) {
+    const ex = logExercise;
+    try {
+      const { data } = await client.post('/workouts/log', { exerciseId: ex.id, sets, reps, weightKg });
+      setLogExercise(null);
+      if (data?.newPR) {
+        success();
+        setPrIds(s => new Set(s).add(data.id));
+        setPrBanner({ name: ex.name, detail: weightKg > 0 ? `${fmtKg(weightKg)} kg × ${reps}` : `${reps} reps` });
+        clearTimeout(bannerTimer.current);
+        bannerTimer.current = setTimeout(() => setPrBanner(null), 6000);
+        scrollRef.current?.scrollTo({ y: 0, animated: true });
+      } else {
+        tap();
+      }
+      loadToday();
+      return true;
+    } catch {
+      warn();
+      Alert.alert("Couldn't log exercise", 'Check your connection and try again.');
+      return false;
+    }
+  }
+
+  function confirmDelete(entry) {
+    tap();
+    Alert.alert('Remove from today?', `${entry.exerciseName} · ${entry.sets} × ${entry.reps}`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => deleteEntry(entry.id) },
+    ]);
   }
 
   async function deleteEntry(id) {
+    const before = today;
+    setToday(t => ({ ...t, entries: t.entries.filter(e => e.id !== id) }));
     try {
       await client.delete(`/workouts/log/${id}`);
-      loadTodayLog();
+      loadToday();
     } catch {
-      Alert.alert('Error', 'Could not delete entry.');
+      setToday(before);
+      Alert.alert("Couldn't remove entry", 'Check your connection and try again.');
     }
   }
 
+  // ── Derived ─────────────────────────────────────────────────────────────────
+  const q = query.trim().toLowerCase();
+  const visible = exercises.filter(e =>
+    (category === 'all' || e.category === category) &&
+    (!q || e.name?.toLowerCase().includes(q) || e.muscleGroup?.toLowerCase().includes(q))
+  );
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <StatusBar barStyle="light-content" backgroundColor={Palette.ink} />
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Palette.textSub} colors={[Palette.brass]} progressBackgroundColor={Palette.surface2} />}
+      >
+        <FadeInView index={0}>
+          <Text style={styles.title}>Train</Text>
+          <Text style={styles.subtitle}>Log your sets and watch your numbers climb</Text>
+        </FadeInView>
 
-      <FlatList
-        style={styles.list}
-        ListHeaderComponent={
-          <>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>Workout Logger</Text>
-              <TouchableOpacity style={styles.generateBtn} onPress={() => setShowGenerator(true)} activeOpacity={0.8}>
-                <Ionicons name="flash-outline" size={15} color={Colors.background} />
-                <Text style={styles.generateBtnText}>Generate</Text>
-              </TouchableOpacity>
+        {prBanner && (
+          <AnimatedPressable onPress={() => setPrBanner(null)} scaleTo={0.98} accessibilityLabel="Dismiss personal record">
+            <View style={styles.pr}>
+              <View style={styles.prIcon}>
+                <Ionicons name="trending-up" size={16} color="#06210F" />
+              </View>
+              <View style={styles.prText}>
+                <Text style={styles.prTitle}>New personal record</Text>
+                <Text style={styles.prSub}>{prBanner.name} · {prBanner.detail}</Text>
+              </View>
             </View>
-
-            {/* Today stats */}
-            <View style={styles.statsRow}>
-              {[
-                { icon: 'fitness-outline',  value: stats.exerciseCount, label: 'Exercises' },
-                { icon: 'layers-outline',   value: stats.totalSets,     label: 'Total Sets' },
-                { icon: 'repeat-outline',   value: stats.totalReps,     label: 'Total Reps' },
-              ].map(s => (
-                <View key={s.label} style={styles.statCard}>
-                  <Ionicons name={s.icon} size={20} color={Colors.accentGold} />
-                  <Text style={styles.statValue}>{s.value}</Text>
-                  <Text style={styles.statLabel}>{s.label}</Text>
-                </View>
-              ))}
-            </View>
-
-            {/* Category tabs */}
-            <FlatList
-              horizontal
-              data={CATEGORIES}
-              keyExtractor={c => c.key}
-              showsHorizontalScrollIndicator={false}
-              style={styles.catList}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[styles.catTab, activeCategory === item.key && styles.catTabActive]}
-                  onPress={() => filterByCategory(item.key)}
-                >
-                  <Ionicons
-                    name={item.icon}
-                    size={14}
-                    color={activeCategory === item.key ? Colors.background : Colors.textSub}
-                  />
-                  <Text style={[styles.catLabel, activeCategory === item.key && styles.catLabelActive]}>
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            />
-
-            <Text style={styles.sectionTitle}>Exercise Library</Text>
-          </>
-        }
-        data={loading ? [] : filtered}
-        keyExtractor={item => String(item.id)}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.exerciseCard} onPress={() => openLog(item)} activeOpacity={0.7}>
-            <View style={styles.exerciseInfo}>
-              <Text style={styles.exerciseName}>{item.name}</Text>
-              <Text style={styles.exerciseMeta}>{item.muscleGroup} • {item.equipment}</Text>
-            </View>
-            <View style={styles.exerciseRight}>
-              <Text style={styles.exerciseDefault}>{item.defaultSets}×{item.defaultReps}</Text>
-              <TouchableOpacity onPress={() => openHistory(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Ionicons name="stats-chart-outline" size={20} color={Colors.textSub} />
-              </TouchableOpacity>
-              <Ionicons name="add-circle-outline" size={22} color={Colors.accentGold} />
-            </View>
-          </TouchableOpacity>
+          </AnimatedPressable>
         )}
-        ListFooterComponent={
-          todayLog.length > 0 ? (
-            <View style={styles.todaySection}>
-              <Text style={styles.sectionTitle}>Today's Session</Text>
-              {todayLog.map(entry => (
-                <View key={entry.id} style={styles.logRow}>
-                  <View style={styles.logInfo}>
-                    <Text style={styles.logName}>{entry.exerciseName}</Text>
-                    <Text style={styles.logMeta}>
-                      {entry.sets} sets × {entry.reps} reps
-                      {entry.weightKg > 0 ? ` • ${entry.weightKg}kg` : ' • Bodyweight'}
-                    </Text>
-                  </View>
-                  <TouchableOpacity onPress={() => deleteEntry(entry.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <Ionicons name="trash-outline" size={18} color={Colors.textMuted} />
-                  </TouchableOpacity>
-                </View>
-              ))}
+
+        {/* Today */}
+        <FadeInView index={1}>
+          <Card>
+            <Text style={styles.label}>Today</Text>
+            <View style={styles.stats}>
+              <Stat value={today.exerciseCount} label="Exercises" loading={loadingToday} />
+              <Stat value={today.totalSets}     label="Sets"      loading={loadingToday} />
+              <Stat value={today.totalReps}     label="Reps"      loading={loadingToday} />
             </View>
-          ) : null
-        }
-        ListEmptyComponent={
-          loading
-            ? <ActivityIndicator color={Colors.accentGold} style={{ marginTop: 40 }} />
-            : <Text style={styles.emptyText}>No exercises found.</Text>
-        }
-        contentContainerStyle={{ paddingBottom: 40 }}
-      />
+            {!loadingToday && today.entries.length === 0 && (
+              <Text style={styles.todayEmpty}>Nothing logged yet. Pick an exercise below or generate a workout.</Text>
+            )}
+            {today.entries.map(entry => (
+              <View key={entry.id} style={[styles.entry, styles.divider]}>
+                <View style={styles.entryInfo}>
+                  <View style={styles.entryNameRow}>
+                    <Text style={styles.entryName} numberOfLines={1}>{entry.exerciseName}</Text>
+                    {prIds.has(entry.id) && <Text style={styles.prTag}>PR</Text>}
+                  </View>
+                  <Text style={styles.entryMeta}>{entry.weightKg > 0 ? `${fmtKg(entry.weightKg)} kg` : 'Bodyweight'}</Text>
+                </View>
+                <Text style={styles.entrySets}>{entry.sets} × {entry.reps}</Text>
+                <AnimatedPressable onPress={() => confirmDelete(entry)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel={`Remove ${entry.exerciseName}`}>
+                  <Ionicons name="close" size={16} color={Palette.textDim} />
+                </AnimatedPressable>
+              </View>
+            ))}
+          </Card>
+        </FadeInView>
 
-      <LogModal
-        exercise={selected}
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onSave={saveLog}
-      />
+        <FadeInView index={2}>
+          <PrimaryButton
+            title="Generate a workout"
+            subtitle="Pick your time and focus, get a plan"
+            icon="flash"
+            onPress={() => setShowGenerator(true)}
+          />
+        </FadeInView>
 
-      <HistoryModal
-        exercise={historyExercise}
-        visible={historyVisible}
-        onClose={() => setHistoryVisible(false)}
-      />
+        {/* Library */}
+        <FadeInView index={3} style={styles.libraryHead}>
+          <Text style={styles.label}>Exercise library</Text>
+          <Field
+            icon="search-outline"
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search exercise or muscle"
+            returnKeyType="search"
+            right={query.length > 0 ? (
+              <AnimatedPressable onPress={() => setQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Clear search">
+                <Ionicons name="close-circle" size={18} color={Palette.textDim} />
+              </AnimatedPressable>
+            ) : null}
+          />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+            {CATEGORIES.map(c => (
+              <Chip key={c.key} label={c.label} selected={category === c.key} onPress={() => setCategory(c.key)} />
+            ))}
+          </ScrollView>
+        </FadeInView>
+
+        {loadingEx ? (
+          [0, 1, 2, 3].map(i => <Skeleton key={i} height={60} radius={Radius.lg} />)
+        ) : exError ? (
+          <Card variant="dashed" style={styles.emptyCard}>
+            <Text style={styles.emptyText}>Couldn't load exercises.</Text>
+            <AnimatedPressable onPress={() => { setLoadingEx(true); loadExercises(); }}>
+              <Text style={styles.link}>Try again</Text>
+            </AnimatedPressable>
+          </Card>
+        ) : visible.length === 0 ? (
+          <Card variant="dashed" style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No exercises match{q ? ` "${query.trim()}"` : ''}.</Text>
+          </Card>
+        ) : (
+          <Card style={styles.listCard}>
+            {visible.map((ex, i) => (
+              <AnimatedPressable
+                key={ex.id}
+                scaleTo={0.98}
+                onPress={() => { tap(); setLogExercise(ex); }}
+                style={[styles.exRow, i > 0 && styles.divider]}
+                accessibilityLabel={`Log ${ex.name}`}
+              >
+                <View style={styles.exIcon}>
+                  <Ionicons name={CATEGORY_ICON[ex.category] || 'fitness-outline'} size={16} color={Palette.textSub} />
+                </View>
+                <View style={styles.exInfo}>
+                  <Text style={styles.exName} numberOfLines={1}>{ex.name}</Text>
+                  <Text style={styles.exMeta} numberOfLines={1}>{[ex.muscleGroup, ex.equipment].filter(Boolean).join(' · ')}</Text>
+                </View>
+                <Text style={styles.exDefault}>{ex.defaultSets}×{ex.defaultReps}</Text>
+                <AnimatedPressable
+                  onPress={() => { tap(); setHistoryExercise(ex); }}
+                  hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
+                  accessibilityLabel={`${ex.name} history`}
+                >
+                  <Ionicons name="stats-chart-outline" size={18} color={Palette.textSub} />
+                </AnimatedPressable>
+              </AnimatedPressable>
+            ))}
+          </Card>
+        )}
+      </ScrollView>
+
+      <LogSetSheet exercise={logExercise} onClose={() => setLogExercise(null)} onSave={saveLog} />
+      <ExerciseHistorySheet exercise={historyExercise} onClose={() => setHistoryExercise(null)} />
 
       <Modal visible={showGenerator} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowGenerator(false)}>
-        <WorkoutGeneratorScreen visible={showGenerator} onClose={() => setShowGenerator(false)} />
+        <WorkoutGeneratorScreen visible={showGenerator} onClose={() => { setShowGenerator(false); loadToday(); }} />
       </Modal>
     </SafeAreaView>
   );
 }
 
+function Stat({ value, label, loading }) {
+  return (
+    <View style={styles.stat}>
+      {loading ? <Skeleton width={36} height={30} /> : <Text style={styles.statValue}>{value}</Text>}
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  list: { flex: 1, paddingHorizontal: 20 },
+  safe:     { flex: 1, backgroundColor: Palette.ink },
+  content:  { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.xl, gap: Spacing.md },
+  title:    { fontFamily: Fonts.display, fontSize: 22, color: Palette.text },
+  subtitle: { ...Type.small, color: Palette.textSub, marginTop: 2 },
+  label:    { ...Type.label, color: Palette.textSub },
+  divider:  { borderTopWidth: 1, borderTopColor: Palette.lineSoft },
+  link:     { fontFamily: Fonts.bodyBold, fontSize: 13, color: Palette.text, textDecorationLine: 'underline' },
 
-  header: { marginTop: 20, marginBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  generateBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.accentGold, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
-  generateBtnText: { fontSize: 13, fontWeight: '800', color: Colors.background },
-  title: { fontSize: 22, fontWeight: '700', color: Colors.text },
+  // PR banner (flat, no glow)
+  pr:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md + 2, borderRadius: Radius.lg, backgroundColor: 'rgba(74,222,128,0.07)', borderWidth: 1, borderColor: 'rgba(74,222,128,0.25)' },
+  prIcon:  { width: 32, height: 32, borderRadius: 10, backgroundColor: Palette.success, alignItems: 'center', justifyContent: 'center' },
+  prText:  { flex: 1 },
+  prTitle: { ...Type.bodyB, color: Palette.text },
+  prSub:   { ...Type.small, color: Palette.textSub, marginTop: 1 },
 
-  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  statCard: { flex: 1, backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, alignItems: 'center', gap: 4 },
-  statValue: { fontSize: 20, fontWeight: '800', color: Colors.text },
-  statLabel: { fontSize: 10, color: Colors.textSub, textAlign: 'center' },
+  // Today
+  stats:      { flexDirection: 'row', marginTop: Spacing.sm, marginBottom: Spacing.xs },
+  stat:       { flex: 1, gap: 2 },
+  statValue:  { fontFamily: Fonts.numHeavy, fontSize: 32, color: Palette.text },
+  statLabel:  { ...Type.small, color: Palette.textSub },
+  todayEmpty: { ...Type.small, color: Palette.textSub, marginTop: Spacing.md },
+  entry:        { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.md, marginTop: Spacing.xs },
+  entryInfo:    { flex: 1, minWidth: 0 },
+  entryNameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  entryName:    { ...Type.body, color: Palette.text, flexShrink: 1 },
+  prTag:        { fontFamily: Fonts.bodyHeavy, fontSize: 9, letterSpacing: 1, color: Palette.success },
+  entryMeta:    { ...Type.small, color: Palette.textSub, marginTop: 1 },
+  entrySets:    { fontFamily: Fonts.num, fontSize: 18, color: Palette.text },
 
-  catList: { marginBottom: 16 },
-  catTab: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.card, borderRadius: 20, borderWidth: 1, borderColor: Colors.cardBorder, paddingHorizontal: 14, paddingVertical: 8, marginRight: 8 },
-  catTabActive: { backgroundColor: Colors.accentGold, borderColor: Colors.accentGold },
-  catLabel: { fontSize: 12, color: Colors.textSub, fontWeight: '600' },
-  catLabelActive: { color: Colors.background },
-
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.text, marginBottom: 10 },
-
-  exerciseCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, marginBottom: 8 },
-  exerciseInfo: { flex: 1 },
-  exerciseName: { fontSize: 14, color: Colors.text, fontWeight: '600' },
-  exerciseMeta: { fontSize: 11, color: Colors.textSub, marginTop: 2, textTransform: 'capitalize' },
-  exerciseRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  exerciseDefault: { fontSize: 12, color: Colors.textMuted },
-
-  todaySection: { marginTop: 8 },
-  logRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, marginBottom: 8 },
-  logInfo: { flex: 1 },
-  logName: { fontSize: 14, color: Colors.text, fontWeight: '500' },
-  logMeta: { fontSize: 12, color: Colors.textSub, marginTop: 2 },
-  deltaText: { fontSize: 13, fontWeight: '700' },
-
-  emptyText: { textAlign: 'center', color: Colors.textMuted, fontSize: 13, marginTop: 20 },
-
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  modalCard: { backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: Colors.cardBorder, padding: 24, paddingBottom: 40 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: Colors.text, marginBottom: 6 },
-  modalSub: { fontSize: 13, color: Colors.textSub, marginBottom: 24 },
-  inputRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  inputGroup: { flex: 1, alignItems: 'center', gap: 8 },
-  inputLabel: { fontSize: 12, color: Colors.textSub, fontWeight: '600' },
-  numInput: { backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.cardBorder, borderRadius: 12, padding: 12, color: Colors.text, fontSize: 18, fontWeight: '700', textAlign: 'center', width: '100%' },
-  saveBtn: { backgroundColor: Colors.accentGold, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 10 },
-  saveBtnText: { fontSize: 16, fontWeight: '800', color: Colors.background },
-  cancelBtn: { alignItems: 'center', padding: 10 },
-  cancelBtnText: { fontSize: 14, color: Colors.textSub },
+  // Library
+  libraryHead: { gap: Spacing.sm + 2, marginTop: Spacing.sm },
+  chips:       { gap: Spacing.sm },
+  listCard:    { paddingVertical: 0, paddingHorizontal: Spacing.md + 2 },
+  exRow:       { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.md },
+  exIcon:      { width: 32, height: 32, borderRadius: 10, backgroundColor: Palette.surface2, alignItems: 'center', justifyContent: 'center' },
+  exInfo:      { flex: 1, minWidth: 0 },
+  exName:      { ...Type.bodyB, color: Palette.text },
+  exMeta:      { ...Type.small, color: Palette.textSub, marginTop: 1, textTransform: 'capitalize' },
+  exDefault:   { fontFamily: Fonts.num, fontSize: 15, color: Palette.textSub },
+  emptyCard:   { alignItems: 'flex-start', gap: Spacing.sm },
+  emptyText:   { ...Type.body, color: Palette.textSub },
 });
