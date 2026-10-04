@@ -38,12 +38,9 @@ Done
   [x] Home screen
   [x] Food screen (+ serving sheet, recipe builder)
   [x] Train screen: library, log-set sheet, PR banner, history chart
+  [x] Workout generator + live session: 3-step flow, rest ring, auto-save, done screen with kcal
 
 Next, in this order
-  [ ] Workout generator + live session (WorkoutGeneratorScreen.js)
-        - Rest timer ring, set table (Set / Last / Kg / Reps / done)
-        - "Log set N" ivory button, "Skip rest" secondary
-        - Done screen: duration, sets, kcal burned, EP earned
   [ ] Progress screen
         - Goal progress hero (start / current / target)
         - Weight chart: replace react-native-chart-kit with custom SVG
@@ -80,6 +77,10 @@ Next, in this order
   [ ] Water goal ignores the user's setting.
         WellnessController /water/add uses ?goal default 8 and /water/remove
         hard-codes 8 when creating today's row. Use user.waterGoalGlasses.
+  [ ] Generated sessions don't record weights or per-exercise sets, so they never
+        feed exercise history or PR detection. Let the live session log each
+        set (kg x reps) through /workouts/log, then show "Last" per exercise.
+  [ ] Persist WorkoutLog.newPR (currently @Transient) so PR tags survive.
   [ ] Mission categories are STRENGTH / DISCIPLINE / RECOVERY / NUTRITION.
         Missions are never auto-completed: link them to real actions
         (food logged -> NUTRITION, workout saved -> STRENGTH, etc.)
