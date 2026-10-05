@@ -40,9 +40,9 @@ Done
   [x] Train screen: library, log-set sheet, PR banner, history chart
   [x] Workout generator + live session: 3-step flow, rest ring, auto-save, done screen with kcal
   [x] Progress screen: weight hero + goal bar, SVG trend chart, weekly tiles, macro split, weigh-in sheet
+  [x] Profile + Edit Profile + Avatar picker
 
 Next, in this order
-  [ ] Profile screen + Edit Profile + Avatar picker
   [ ] Settings + Legal screens
   [ ] Habits screen (keep weekly grid, restyle)
   [ ] Planner screen (restyle time blocks, to-do, carry forward)

@@ -1,143 +1,68 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  StatusBar, Modal, Alert, ActivityIndicator, TextInput,
-} from 'react-native';
+import { View, Text, ScrollView, StyleSheet, StatusBar, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Colors from '../constants/colors';
+import Svg from 'react-native-svg';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+import { useScreenshotProtection } from '../utils/screenshotProtection';
 import SettingsScreen from './SettingsScreen';
 import LegalScreen from './LegalScreen';
 import AvatarPickerScreen from './AvatarPickerScreen';
+import EditProfileForm from '../components/profile/EditProfileForm';
 import Avatar from '../components/Avatar';
+import Card from '../components/ui/Card';
+import IconButton from '../components/ui/IconButton';
+import PrimaryButton from '../components/ui/PrimaryButton';
+import { Ring } from '../components/ui/ProgressRing';
+import Skeleton from '../components/Skeleton';
+import FadeInView from '../components/FadeInView';
 import AnimatedPressable from '../components/AnimatedPressable';
-import { useLanguage } from '../context/LanguageContext';
-import { useScreenshotProtection } from '../utils/screenshotProtection';
 import AppInfo from '../constants/appInfo';
+import { stageInfo } from '../constants/stages';
+import {
+  ALL_GOALS, GENDERS, ACTIVITY_LEVELS, EXPERIENCE_LEVELS, DIET_PREFS,
+  LOSS_SPEEDS, GAIN_SPEEDS, labelFor, bmiColor,
+} from '../constants/profile';
+import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
+import { formatNumber } from '../utils/format';
+import { tap, warn } from '../utils/haptics';
 
-const FOOTER_LINKS = [
-  { key: 'privacy', icon: 'shield-checkmark-outline', label: 'Privacy Policy' },
-  { key: 'terms',   icon: 'document-text-outline',    label: 'Terms & Conditions' },
-  { key: 'rate',    icon: 'star-outline',              label: 'Rate App' },
-  { key: 'about',   icon: 'information-circle-outline', label: 'About Us' },
+const ACCOUNT_LINKS = [
+  { key: 'settings', icon: 'settings-outline',           label: 'Settings',           sub: 'Notifications, language' },
+  { key: 'privacy',  icon: 'shield-checkmark-outline',   label: 'Privacy policy' },
+  { key: 'terms',    icon: 'document-text-outline',      label: 'Terms & conditions' },
+  { key: 'about',    icon: 'information-circle-outline', label: 'About Aroha' },
+  { key: 'rate',     icon: 'star-outline',               label: 'Rate the app',       soon: true },
 ];
 
-// ── Constants ──────────────────────────────────────────────────────────────
-const ALL_GOALS = {
-  lose_weight:         { label: 'Lose Weight',         color: '#E74C3C' },
-  reduce_body_fat:     { label: 'Reduce Body Fat',     color: '#FF6B6B' },
-  gain_muscle:         { label: 'Gain Muscle',         color: '#E67E22' },
-  gain_weight:         { label: 'Gain Weight',         color: '#F39C12' },
-  increase_strength:   { label: 'Increase Strength',   color: '#E2B714' },
-  general_fitness:     { label: 'General Fitness',     color: '#2ECC71' },
-  maintain:            { label: 'Maintain Weight',     color: '#1ABC9C' },
-  endurance:           { label: 'Endurance',           color: '#2E86AB' },
-  improve_flexibility: { label: 'Improve Flexibility', color: '#9B59B6' },
-};
-
-const ACTIVITY_LEVELS = [
-  { key: 'sedentary',         label: 'Sedentary',          sub: 'Desk job, little movement' },
-  { key: 'lightly_active',    label: 'Lightly Active',     sub: 'Light exercise 1–3×/week' },
-  { key: 'moderately_active', label: 'Moderately Active',  sub: 'Moderate exercise 3–5×/week' },
-  { key: 'very_active',       label: 'Very Active',        sub: 'Hard training 6–7×/week' },
-  { key: 'athlete',           label: 'Athlete',            sub: 'Twice-daily or physical job' },
-];
-
-const EXPERIENCE_LEVELS = [
-  { key: 'beginner',     label: 'Beginner',     sub: '< 1 year' },
-  { key: 'intermediate', label: 'Intermediate', sub: '1–3 years' },
-  { key: 'advanced',     label: 'Advanced',     sub: '3+ years' },
-];
-
-const DIET_PREFS = [
-  { key: 'vegetarian',     label: 'Vegetarian' },
-  { key: 'eggetarian',     label: 'Eggetarian' },
-  { key: 'non_vegetarian', label: 'Non-Veg' },
-  { key: 'vegan',          label: 'Vegan' },
-  { key: 'jain',           label: 'Jain' },
-];
-
-const LOSS_SPEEDS = [
-  { key: 'slow_cut',       label: 'Slow Cut',       sub: '−200 kcal/day' },
-  { key: 'moderate_cut',   label: 'Moderate Cut',   sub: '−400 kcal/day' },
-  { key: 'aggressive_cut', label: 'Aggressive Cut', sub: '−600 kcal/day' },
-];
-
-const GAIN_SPEEDS = [
-  { key: 'slow_bulk',       label: 'Slow Bulk',       sub: '+150 kcal/day' },
-  { key: 'lean_bulk',       label: 'Lean Bulk',       sub: '+250 kcal/day' },
-  { key: 'aggressive_bulk', label: 'Aggressive Bulk', sub: '+400 kcal/day' },
-];
-
-const LOSS_GOALS = new Set(['lose_weight', 'reduce_body_fat']);
-const GAIN_GOALS = new Set(['gain_muscle', 'gain_weight']);
-
-// ── Sub-components ─────────────────────────────────────────────────────────
-function StatBox({ label, value, unit, color }) {
-  return (
-    <View style={styles.statBox}>
-      <Text style={[styles.statValue, color && { color }]}>{value ?? '—'}</Text>
-      {unit ? <Text style={styles.statUnit}>{unit}</Text> : null}
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
+function fmtKg(n) {
+  const v = Math.round(Number(n) * 10) / 10;
+  return Number.isInteger(v) ? String(v) : v.toFixed(1);
 }
 
-function MacroCard({ label, value, unit, color }) {
-  return (
-    <View style={[styles.macroCard, { borderColor: color + '44' }]}>
-      <Text style={[styles.macroValue, { color }]}>{value ?? '—'}</Text>
-      <Text style={styles.macroUnit}>{unit}</Text>
-      <Text style={styles.macroLabel}>{label}</Text>
-    </View>
-  );
-}
-
-function SectionLabel({ children }) {
-  return <Text style={styles.sectionLabel}>{children}</Text>;
-}
-
-function DetailRow({ icon, label, value, color = Colors.accentGold }) {
-  return (
-    <View style={styles.detailRow}>
-      <Ionicons name={icon} size={14} color={color} style={{ width: 20 }} />
-      <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={styles.detailValue}>{value}</Text>
-    </View>
-  );
-}
-
-// ── Screen ─────────────────────────────────────────────────────────────────
 export default function ProfileScreen({ visible, onClose }) {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
-  const [profile, setProfile]           = useState(null);
-  const [loading, setLoading]           = useState(true);
-  const [evoHistory, setEvoHistory]     = useState([]);
-  const [editing, setEditing]           = useState(false);
-  const [saving, setSaving]             = useState(false);
+  const [profile, setProfile]       = useState(null);
+  const [loading, setLoading]       = useState(true);
+  const [loadError, setLoadError]   = useState(false);
+  const [evoHistory, setEvoHistory] = useState([]);
+  const [editing, setEditing]       = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [legalType, setLegalType]       = useState(null);
+  const [legalType, setLegalType]   = useState(null);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-  const [heightUnit, setHeightUnit]     = useState('cm');
-
-  const [form, setForm] = useState({
-    gender: '', age: '', weightKg: '', targetWeightKg: '',
-    heightCm: '', feet: '', inches: '',
-    activityLevel: '', healthGoal: '', weightChangeSpeed: '',
-    experienceLevel: '', dietaryPreference: '', waterGoalGlasses: '8',
-  });
 
   useScreenshotProtection(visible);
 
   useEffect(() => {
-    if (visible) loadProfile();
+    if (visible) { setEditing(false); loadProfile(); }
   }, [visible]);
 
   async function loadProfile() {
     setLoading(true);
+    setLoadError(false);
     try {
       const [profileRes, historyRes] = await Promise.all([
         client.get('/profile'),
@@ -146,527 +71,256 @@ export default function ProfileScreen({ visible, onClose }) {
       setProfile(profileRes.data);
       setEvoHistory(historyRes.data ?? []);
     } catch {
-      Alert.alert('Error', 'Could not load profile.');
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
   }
 
-  function cmToFtIn(cm) {
-    const totalInches = cm / 2.54;
-    return { feet: String(Math.floor(totalInches / 12)), inches: String(Math.round(totalInches % 12)) };
-  }
-
-  function getHeightCm() {
-    if (heightUnit === 'cm') return parseFloat(form.heightCm);
-    const f = parseFloat(form.feet) || 0;
-    const i = parseFloat(form.inches) || 0;
-    return Math.round((f * 30.48 + i * 2.54) * 10) / 10;
-  }
-
-  function openEdit() {
-    const storedCm = profile?.heightCm ?? '';
-    const ftIn = storedCm ? cmToFtIn(storedCm) : { feet: '', inches: '' };
-    setHeightUnit('cm');
-    setForm({
-      gender:            profile?.gender ?? '',
-      age:               String(profile?.age ?? ''),
-      weightKg:          String(profile?.weightKg ?? ''),
-      targetWeightKg:    String(profile?.targetWeightKg ?? ''),
-      heightCm:          String(storedCm),
-      feet:              ftIn.feet,
-      inches:            ftIn.inches,
-      activityLevel:     profile?.activityLevel ?? '',
-      healthGoal:        profile?.healthGoal ?? '',
-      weightChangeSpeed: profile?.weightChangeSpeed ?? '',
-      experienceLevel:   profile?.experienceLevel ?? '',
-      dietaryPreference: profile?.dietaryPreference ?? '',
-      waterGoalGlasses:  String(profile?.waterGoalGlasses ?? '8'),
-    });
-    setEditing(true);
-  }
-
-  async function saveEdit() {
-    const heightCm = getHeightCm();
-    if (!form.gender)        { Alert.alert('Required', 'Please select a gender.');         return; }
-    if (!form.age || !form.weightKg || !heightCm) { Alert.alert('Required', 'Fill in age, weight, and height.'); return; }
-    if (isNaN(heightCm) || heightCm < 50) { Alert.alert('Invalid', 'Height must be at least 50 cm.'); return; }
-    if (!form.activityLevel) { Alert.alert('Required', 'Please select an activity level.'); return; }
-    if (!form.healthGoal)    { Alert.alert('Required', 'Please select a health goal.');    return; }
-
-    setSaving(true);
-    try {
-      const payload = {
-        gender:           form.gender,
-        age:              parseInt(form.age),
-        weightKg:         parseFloat(form.weightKg),
-        heightCm,
-        activityLevel:    form.activityLevel,
-        healthGoal:       form.healthGoal,
-        waterGoalGlasses: parseInt(form.waterGoalGlasses) || 8,
-      };
-      if (form.targetWeightKg)    payload.targetWeightKg    = parseFloat(form.targetWeightKg);
-      if (form.weightChangeSpeed) payload.weightChangeSpeed = form.weightChangeSpeed;
-      if (form.experienceLevel)   payload.experienceLevel   = form.experienceLevel;
-      if (form.dietaryPreference) payload.dietaryPreference = form.dietaryPreference;
-
-      const { data } = await client.patch('/profile', payload);
-      setProfile(data);
-      setEditing(false);
-    } catch {
-      Alert.alert('Error', 'Could not save profile.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function selectAvatar(avatarKey) {
-    const prevAvatarKey = profile?.avatarKey;
+    const prev = profile?.avatarKey;
     setProfile(p => ({ ...p, avatarKey }));
     setShowAvatarPicker(false);
     try {
       await client.patch('/profile/avatar', { avatarKey });
     } catch {
-      setProfile(p => ({ ...p, avatarKey: prevAvatarKey }));
-      Alert.alert('Error', 'Could not save avatar.');
+      warn();
+      setProfile(p => ({ ...p, avatarKey: prev }));
+      Alert.alert("Couldn't change avatar", 'Check your connection and try again.');
     }
   }
 
-  async function handleLogout() {
-    Alert.alert('Logout', 'Are you sure?', [
+  function confirmLogout() {
+    Alert.alert('Log out?', "You'll need your email and password to sign back in.", [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: () => { logout(); onClose(); } },
+      { text: 'Log out', style: 'destructive', onPress: () => { logout(); onClose(); } },
     ]);
   }
 
-  const goalInfo          = profile?.healthGoal ? ALL_GOALS[profile.healthGoal] : null;
-  const showTargetWeight  = LOSS_GOALS.has(form.healthGoal) || GAIN_GOALS.has(form.healthGoal);
-  const showSpeed         = LOSS_GOALS.has(form.healthGoal) || GAIN_GOALS.has(form.healthGoal);
-  const speedOptions      = LOSS_GOALS.has(form.healthGoal) ? LOSS_SPEEDS : GAIN_SPEEDS;
+  function openLink(key) {
+    tap();
+    if (key === 'settings') setShowSettings(true);
+    else setLegalType(key);
+  }
 
-  const genderLabel = (g) => {
-    if (!g) return null;
-    if (g === 'prefer_not_to_say') return 'Prefer not to say';
-    return g.charAt(0).toUpperCase() + g.slice(1);
-  };
+  const ep = profile?.evolutionPoints ?? 0;
+  const stage = stageInfo(profile?.evolutionStage, ep);
+  const goal = profile?.healthGoal ? ALL_GOALS[profile.healthGoal] : null;
+
+  const details = profile ? [
+    profile.healthGoal        && { icon: 'flag-outline',        label: 'Goal',       value: goal?.label ?? profile.healthGoal, dot: goal?.color },
+    profile.targetWeightKg    && { icon: 'locate-outline',      label: 'Target',     value: `${fmtKg(profile.targetWeightKg)} kg` },
+    profile.weightChangeSpeed && { icon: 'speedometer-outline', label: 'Pace',       value: labelFor([...LOSS_SPEEDS, ...GAIN_SPEEDS], profile.weightChangeSpeed) },
+    profile.activityLevel     && { icon: 'walk-outline',        label: 'Activity',   value: labelFor(ACTIVITY_LEVELS, profile.activityLevel) },
+    profile.experienceLevel   && { icon: 'barbell-outline',     label: 'Experience', value: labelFor(EXPERIENCE_LEVELS, profile.experienceLevel) },
+    profile.dietaryPreference && { icon: 'leaf-outline',        label: 'Diet',       value: labelFor(DIET_PREFS, profile.dietaryPreference) },
+    profile.gender            && { icon: 'person-outline',      label: 'Gender',     value: labelFor(GENDERS, profile.gender) },
+    { icon: 'water-outline', label: 'Water goal', value: `${profile.waterGoalGlasses ?? 8} glasses` },
+  ].filter(Boolean) : [];
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={editing ? () => setEditing(false) : onClose}>
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={Palette.ink} />
 
-        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>{editing ? 'Edit Profile' : t('profile')}</Text>
-          <View style={styles.headerRight}>
-            {!editing && !loading && (
-              <>
-                <TouchableOpacity onPress={openEdit} hitSlop={{ top:10,bottom:10,left:10,right:10 }} style={{ marginRight: 16 }}>
-                  <Ionicons name="pencil-outline" size={20} color={Colors.accentGold} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setShowSettings(true)} hitSlop={{ top:10,bottom:10,left:10,right:10 }} style={{ marginRight: 16 }}>
-                  <Ionicons name="settings-outline" size={20} color={Colors.textSub} />
-                </TouchableOpacity>
-              </>
-            )}
-            <TouchableOpacity onPress={editing ? () => setEditing(false) : onClose} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-              <Ionicons name="close" size={24} color={Colors.textSub} />
-            </TouchableOpacity>
-          </View>
+          {editing
+            ? <IconButton name="chevron-back" onPress={() => setEditing(false)} accessibilityLabel="Back to profile" />
+            : <View style={styles.headerSpacer} />}
+          <Text style={styles.headerTitle}>{editing ? 'Edit profile' : t('profile')}</Text>
+          <IconButton name="close" onPress={onClose} accessibilityLabel="Close profile" />
         </View>
 
         {loading ? (
-          <ActivityIndicator color={Colors.accentGold} style={{ marginTop: 60 }} />
+          <View style={styles.content}>
+            <Skeleton height={180} radius={Radius.xl} />
+            <Skeleton height={56} radius={Radius.md} />
+            <Skeleton height={140} radius={Radius.lg} />
+          </View>
+        ) : loadError ? (
+          <View style={styles.errorWrap}>
+            <Ionicons name="cloud-offline-outline" size={30} color={Palette.textDim} />
+            <Text style={styles.errorText}>Couldn't load your profile.</Text>
+            <AnimatedPressable onPress={loadProfile}><Text style={styles.link}>Try again</Text></AnimatedPressable>
+          </View>
         ) : editing ? (
-
-          /* ── EDIT MODE ──────────────────────────────────────────────────── */
-          <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-
-            <SectionLabel>Body Stats</SectionLabel>
-
-            <Text style={styles.inputLabel}>Gender</Text>
-            <View style={styles.chipRow}>
-              {[
-                { key: 'male',              label: 'Male' },
-                { key: 'female',            label: 'Female' },
-                { key: 'prefer_not_to_say', label: 'Prefer not to say' },
-              ].map(({ key, label }) => {
-                const sel = form.gender === key;
-                return (
-                  <TouchableOpacity key={key} style={[styles.chip, sel && styles.chipActive]} onPress={() => setForm(f => ({ ...f, gender: key }))}>
-                    <Text style={[styles.chipText, sel && styles.chipTextActive]}>{label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <View style={[styles.inputRow, { marginTop: 12 }]}>
-              <View style={styles.inputHalf}>
-                <Text style={styles.inputLabel}>Age</Text>
-                <TextInput style={styles.input} value={form.age} onChangeText={v => setForm(f => ({ ...f, age: v }))} keyboardType="numeric" placeholder="e.g. 22" placeholderTextColor={Colors.textMuted} />
-              </View>
-              <View style={styles.inputHalf}>
-                <Text style={styles.inputLabel}>Weight (kg)</Text>
-                <TextInput style={styles.input} value={form.weightKg} onChangeText={v => setForm(f => ({ ...f, weightKg: v }))} keyboardType="decimal-pad" placeholder="e.g. 70" placeholderTextColor={Colors.textMuted} />
-              </View>
-            </View>
-
-            <View style={styles.heightHeader}>
-              <Text style={styles.inputLabel}>Height</Text>
-              <View style={styles.unitToggle}>
-                <TouchableOpacity style={[styles.unitBtn, heightUnit === 'cm' && styles.unitBtnActive]} onPress={() => setHeightUnit('cm')}>
-                  <Text style={[styles.unitBtnText, heightUnit === 'cm' && styles.unitBtnTextActive]}>cm</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.unitBtn, heightUnit === 'ft' && styles.unitBtnActive]} onPress={() => setHeightUnit('ft')}>
-                  <Text style={[styles.unitBtnText, heightUnit === 'ft' && styles.unitBtnTextActive]}>ft / in</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            {heightUnit === 'cm' ? (
-              <TextInput style={[styles.input, { marginBottom: 4 }]} value={form.heightCm} onChangeText={v => setForm(f => ({ ...f, heightCm: v }))} keyboardType="decimal-pad" placeholder="e.g. 175" placeholderTextColor={Colors.textMuted} />
-            ) : (
-              <View style={styles.ftRow}>
-                <TextInput style={[styles.input, styles.ftInput]} value={form.feet} onChangeText={v => setForm(f => ({ ...f, feet: v }))} keyboardType="numeric" placeholder="5" placeholderTextColor={Colors.textMuted} />
-                <Text style={styles.ftLabel}>ft</Text>
-                <TextInput style={[styles.input, styles.ftInput]} value={form.inches} onChangeText={v => setForm(f => ({ ...f, inches: v }))} keyboardType="numeric" placeholder="9" placeholderTextColor={Colors.textMuted} />
-                <Text style={styles.ftLabel}>in</Text>
-              </View>
-            )}
-
-            {/* Activity Level */}
-            <SectionLabel>Activity Level</SectionLabel>
-            {ACTIVITY_LEVELS.map(({ key, label, sub }) => {
-              const sel = form.activityLevel === key;
-              return (
-                <TouchableOpacity key={key} style={[styles.optionCard, sel && styles.optionCardActive]} onPress={() => setForm(f => ({ ...f, activityLevel: key }))}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.optionLabel, sel && { color: Colors.accentGold }]}>{label}</Text>
-                    <Text style={styles.optionSub}>{sub}</Text>
+          <EditProfileForm profile={profile} onSaved={data => { setProfile(data); setEditing(false); }} />
+        ) : (
+          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            {/* Identity */}
+            <FadeInView index={0}>
+              <Card variant="hero" style={styles.identity}>
+                <AnimatedPressable onPress={() => { tap(); setShowAvatarPicker(true); }} scaleTo={0.94} accessibilityLabel="Change avatar">
+                  <View style={styles.avatarWrap}>
+                    <Svg width={104} height={104} style={StyleSheet.absoluteFill}>
+                      <Ring cx={52} cy={52} r={49} stroke={3} progress={stage.progress} color={Palette.brass} />
+                    </Svg>
+                    <Avatar avatarKey={profile?.avatarKey} size={86} style={styles.avatar} />
+                    <View style={styles.avatarEdit}>
+                      <Ionicons name="camera" size={12} color={Palette.onIvory} />
+                    </View>
                   </View>
-                  {sel && <Ionicons name="checkmark-circle" size={20} color={Colors.accentGold} />}
-                </TouchableOpacity>
-              );
-            })}
+                </AnimatedPressable>
+                <Text style={styles.name} numberOfLines={1}>{profile?.name || user?.name}</Text>
+                <Text style={styles.email} numberOfLines={1}>{profile?.email || user?.email}</Text>
+                <Text style={styles.stage}>{stage.name.toUpperCase()}</Text>
 
-            {/* Health Goal */}
-            <SectionLabel>Health Goal</SectionLabel>
-            <View style={styles.goalGrid}>
-              {Object.entries(ALL_GOALS).map(([key, { label, color }]) => {
-                const sel = form.healthGoal === key;
-                return (
-                  <TouchableOpacity
-                    key={key}
-                    style={[styles.goalOption, sel && { borderColor: color, backgroundColor: color + '22' }]}
-                    onPress={() => setForm(f => ({ ...f, healthGoal: key, weightChangeSpeed: '' }))}
-                  >
-                    <View style={[styles.goalDotSmall, { backgroundColor: sel ? color : Colors.textMuted }]} />
-                    <Text style={[styles.goalOptionText, sel && { color }]}>{label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                <View style={styles.idStats}>
+                  <IdStat value={formatNumber(ep)} label="EP" brass />
+                  <View style={styles.idDivider} />
+                  <IdStat value={String(profile?.streak ?? 0)} label="Day streak" />
+                  <View style={styles.idDivider} />
+                  <IdStat value={`${stage.number}/${stage.total}`} label="Stage" />
+                </View>
+              </Card>
+            </FadeInView>
 
-            {/* Target Weight — only for gain/loss goals */}
-            {showTargetWeight && (
-              <>
-                <Text style={[styles.inputLabel, { marginTop: 4 }]}>
-                  Target Weight (kg) <Text style={{ color: Colors.textMuted, fontWeight: '400' }}>optional</Text>
-                </Text>
-                <TextInput
-                  style={[styles.input, { marginBottom: 4 }]}
-                  value={form.targetWeightKg}
-                  onChangeText={v => setForm(f => ({ ...f, targetWeightKg: v }))}
-                  keyboardType="decimal-pad"
-                  placeholder={LOSS_GOALS.has(form.healthGoal) ? 'e.g. 65' : 'e.g. 80'}
-                  placeholderTextColor={Colors.textMuted}
-                />
-              </>
+            <FadeInView index={1}>
+              <PrimaryButton title="Edit profile" subtitle="Body stats, goal, pace and diet" icon="create-outline" onPress={() => setEditing(true)} />
+            </FadeInView>
+
+            {/* Body */}
+            {!!profile?.weightKg && (
+              <FadeInView index={2}>
+                <Card>
+                  <Text style={styles.label}>Body</Text>
+                  <View style={styles.bodyGrid}>
+                    <BodyStat label="Weight" value={fmtKg(profile.weightKg)} unit="kg" />
+                    <BodyStat label="Height" value={profile.heightCm ? String(Math.round(profile.heightCm)) : '—'} unit="cm" />
+                    <BodyStat label="Age" value={profile.age ?? '—'} unit="yrs" />
+                    <BodyStat label="BMI" value={profile.bmi ?? '—'} color={bmiColor(profile.bmi)} />
+                  </View>
+                  {(profile.bmiCategory || profile.tdee) && (
+                    <View style={styles.bodyFoot}>
+                      {!!profile.bmiCategory && <Text style={styles.bodyFootText}>{profile.bmiCategory}</Text>}
+                      {!!profile.tdee && <Text style={styles.bodyFootText}>Burns ~<Text style={styles.bodyFootStrong}>{formatNumber(profile.tdee)}</Text> kcal/day</Text>}
+                    </View>
+                  )}
+                </Card>
+              </FadeInView>
             )}
 
-            {/* Goal Pace — conditional on goal type */}
-            {showSpeed && (
-              <>
-                <SectionLabel>Goal Pace</SectionLabel>
-                {speedOptions.map(({ key, label, sub }) => {
-                  const sel = form.weightChangeSpeed === key;
-                  return (
-                    <TouchableOpacity key={key} style={[styles.optionCard, sel && styles.optionCardActive]} onPress={() => setForm(f => ({ ...f, weightChangeSpeed: key }))}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.optionLabel, sel && { color: Colors.accentGold }]}>{label}</Text>
-                        <Text style={styles.optionSub}>{sub}</Text>
+            {/* Daily targets */}
+            {!!profile?.dailyCalorieGoal && (
+              <FadeInView index={3}>
+                <Card>
+                  <Text style={styles.label}>Daily targets</Text>
+                  <View style={styles.targets}>
+                    <Target label="Calories" value={formatNumber(profile.dailyCalorieGoal)} unit="kcal" color={Palette.kcal} />
+                    <Target label="Protein"  value={profile.dailyProteinGoal} unit="g" color={Palette.protein} />
+                    <Target label="Carbs"    value={profile.dailyCarbGoal}    unit="g" color={Palette.carbs} />
+                    <Target label="Fat"      value={profile.dailyFatGoal}     unit="g" color={Palette.fat} />
+                  </View>
+                  <Text style={styles.note}>Worked out from your body, activity and goal.</Text>
+                </Card>
+              </FadeInView>
+            )}
+
+            {/* Goal & plan */}
+            {details.length > 0 && (
+              <FadeInView index={4}>
+                <Card style={styles.listCard}>
+                  <Text style={[styles.label, styles.listLabel]}>Goal and plan</Text>
+                  {details.map((d, i) => (
+                    <View key={d.label} style={[styles.detail, i > 0 && styles.divider]}>
+                      <Ionicons name={d.icon} size={16} color={Palette.textSub} />
+                      <Text style={styles.detailLabel}>{d.label}</Text>
+                      <View style={styles.detailValueWrap}>
+                        {!!d.dot && <View style={[styles.goalDot, { backgroundColor: d.dot }]} />}
+                        <Text style={styles.detailValue} numberOfLines={1}>{d.value}</Text>
                       </View>
-                      {sel && <Ionicons name="checkmark-circle" size={20} color={Colors.accentGold} />}
-                    </TouchableOpacity>
+                    </View>
+                  ))}
+                </Card>
+              </FadeInView>
+            )}
+
+            {/* Attributes */}
+            <FadeInView index={5}>
+              <Card>
+                <Text style={styles.label}>{t('healthAttributes')}</Text>
+                {[
+                  { key: 'strengthAttr',   label: t('strength'),   color: Palette.danger,  icon: 'barbell-outline' },
+                  { key: 'disciplineAttr', label: t('discipline'), color: Palette.protein, icon: 'medal-outline' },
+                  { key: 'recoveryAttr',   label: t('recovery'),   color: Palette.water,   icon: 'bed-outline' },
+                  { key: 'nutritionAttr',  label: t('nutrition'),  color: Palette.success, icon: 'leaf-outline' },
+                ].map(a => {
+                  const val = Math.max(0, Math.min(100, profile?.[a.key] ?? 0));
+                  return (
+                    <View key={a.key} style={styles.attr}>
+                      <Ionicons name={a.icon} size={15} color={a.color} />
+                      <Text style={styles.attrLabel}>{a.label}</Text>
+                      <View style={styles.attrTrack}>
+                        <View style={[styles.attrFill, { width: `${val}%`, backgroundColor: a.color }]} />
+                      </View>
+                      <Text style={styles.attrValue}>{val}</Text>
+                    </View>
                   );
                 })}
-              </>
-            )}
+              </Card>
+            </FadeInView>
 
-            {/* Preferences */}
-            <SectionLabel>Preferences</SectionLabel>
-
-            <Text style={styles.inputLabel}>Experience Level</Text>
-            <View style={styles.chipRow}>
-              {EXPERIENCE_LEVELS.map(({ key, label, sub }) => {
-                const sel = form.experienceLevel === key;
-                return (
-                  <TouchableOpacity key={key} style={[styles.chip, sel && styles.chipActive]} onPress={() => setForm(f => ({ ...f, experienceLevel: key }))}>
-                    <Text style={[styles.chipText, sel && styles.chipTextActive]}>{label}</Text>
-                    <Text style={[styles.chipSub, sel && { color: Colors.accentGold + 'AA' }]}>{sub}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <Text style={[styles.inputLabel, { marginTop: 14 }]}>Dietary Preference</Text>
-            <View style={styles.chipRow}>
-              {DIET_PREFS.map(({ key, label }) => {
-                const sel = form.dietaryPreference === key;
-                return (
-                  <TouchableOpacity key={key} style={[styles.chip, sel && styles.chipActive]} onPress={() => setForm(f => ({ ...f, dietaryPreference: key }))}>
-                    <Text style={[styles.chipText, sel && styles.chipTextActive]}>{label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <Text style={[styles.inputLabel, { marginTop: 16 }]}>Water Goal (glasses/day)</Text>
-            <TextInput
-              style={[styles.input, { marginBottom: 4 }]}
-              value={form.waterGoalGlasses}
-              onChangeText={v => setForm(f => ({ ...f, waterGoalGlasses: v }))}
-              keyboardType="numeric"
-              placeholder="e.g. 8"
-              placeholderTextColor={Colors.textMuted}
-            />
-
-            <TouchableOpacity style={styles.saveBtn} onPress={saveEdit} disabled={saving} activeOpacity={0.8}>
-              {saving
-                ? <ActivityIndicator color={Colors.background} />
-                : <Text style={styles.saveBtnText}>Save Changes</Text>
-              }
-            </TouchableOpacity>
-            <View style={{ height: 40 }} />
-          </ScrollView>
-
-        ) : (
-
-          /* ── VIEW MODE ──────────────────────────────────────────────────── */
-          <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-
-            {/* Avatar + Name + Stage */}
-            <View style={styles.avatarSection}>
-              <AnimatedPressable onPress={() => setShowAvatarPicker(true)} scaleTo={0.94}>
-                <Avatar avatarKey={profile?.avatarKey} size={88} />
-                <View style={styles.avatarEditBadge}>
-                  <Ionicons name="camera" size={13} color={Colors.background} />
-                </View>
-              </AnimatedPressable>
-              <Text style={styles.userName}>{profile?.name || user?.name}</Text>
-              <Text style={styles.userEmail}>{profile?.email || user?.email}</Text>
-              <View style={[styles.rankBadge, { backgroundColor: Colors.accentPurple }]}>
-                <Text style={styles.rankText}>{profile?.evolutionStage || 'Spark'}</Text>
-              </View>
-            </View>
-
-            {/* EP + Streak */}
-            <View style={styles.xpRow}>
-              <View style={styles.xpCard}>
-                <Text style={styles.xpValue}>{profile?.evolutionPoints ?? 0}</Text>
-                <Text style={styles.xpLabel}>{t('evolutionPoints')}</Text>
-              </View>
-              <View style={styles.xpCard}>
-                <Text style={styles.xpValue}>{profile?.streak ?? 0}</Text>
-                <Text style={styles.xpLabel}>{t('dayStreak')}</Text>
-              </View>
-            </View>
-
-            {/* Body Stats */}
-            {profile?.weightKg && (
-              <View style={styles.card}>
-                <Text style={styles.cardTitle}>Body Stats</Text>
-                {profile.gender && (
-                  <DetailRow icon="person-outline" label="Gender" value={genderLabel(profile.gender)} />
-                )}
-                <View style={styles.statsGrid}>
-                  <StatBox label="Weight" value={profile.weightKg} unit="kg" />
-                  <StatBox label="Height" value={profile.heightCm} unit="cm" />
-                  <StatBox label="Age"    value={profile.age}      unit="yrs" />
-                  <StatBox label="BMI"    value={profile.bmi}      color={
-                    !profile.bmi ? undefined :
-                    profile.bmi < 18.5 ? '#2E86AB' :
-                    profile.bmi < 25   ? '#2ECC71' :
-                    profile.bmi < 30   ? '#E67E22' : '#E74C3C'
-                  } />
-                </View>
-                {profile.bmiCategory && (
-                  <Text style={styles.bmiCategory}>BMI Category: {profile.bmiCategory}</Text>
-                )}
-                {profile.tdee && (
-                  <Text style={styles.tdeeText}>
-                    TDEE: <Text style={{ color: Colors.accentGold }}>{profile.tdee} kcal/day</Text>
-                  </Text>
-                )}
-              </View>
-            )}
-
-            {/* Profile Details */}
-            {(profile?.activityLevel || profile?.experienceLevel || profile?.dietaryPreference || profile?.targetWeightKg || profile?.weightChangeSpeed) && (
-              <View style={styles.card}>
-                <Text style={styles.cardTitle}>Profile Details</Text>
-                {profile.activityLevel && (
-                  <DetailRow
-                    icon="flash-outline"
-                    label="Activity"
-                    value={ACTIVITY_LEVELS.find(a => a.key === profile.activityLevel)?.label ?? profile.activityLevel}
-                  />
-                )}
-                {profile.experienceLevel && (
-                  <DetailRow
-                    icon="barbell-outline"
-                    label="Experience"
-                    value={EXPERIENCE_LEVELS.find(e => e.key === profile.experienceLevel)?.label ?? profile.experienceLevel}
-                  />
-                )}
-                {profile.dietaryPreference && (
-                  <DetailRow
-                    icon="leaf-outline"
-                    label="Diet"
-                    value={DIET_PREFS.find(d => d.key === profile.dietaryPreference)?.label ?? profile.dietaryPreference}
-                  />
-                )}
-                {profile.targetWeightKg && (
-                  <DetailRow icon="flag-outline" label="Target" value={`${profile.targetWeightKg} kg`} />
-                )}
-                {profile.weightChangeSpeed && (
-                  <DetailRow
-                    icon="speedometer-outline"
-                    label="Pace"
-                    value={[...LOSS_SPEEDS, ...GAIN_SPEEDS].find(s => s.key === profile.weightChangeSpeed)?.label ?? profile.weightChangeSpeed}
-                  />
-                )}
-              </View>
-            )}
-
-            {/* Health Goal */}
-            {profile?.healthGoal && goalInfo && (
-              <View style={[styles.card, { borderColor: goalInfo.color + '55' }]}>
-                <Text style={styles.cardTitle}>Health Goal</Text>
-                <View style={styles.goalRow}>
-                  <View style={[styles.goalDot, { backgroundColor: goalInfo.color }]} />
-                  <Text style={[styles.goalText, { color: goalInfo.color }]}>{goalInfo.label}</Text>
-                </View>
-              </View>
-            )}
-
-            {/* Macro Targets */}
-            {profile?.dailyCalorieGoal && (
-              <View style={styles.card}>
-                <Text style={styles.cardTitle}>Daily Macro Targets</Text>
-                <View style={styles.macroGrid}>
-                  <MacroCard label="Calories" value={profile.dailyCalorieGoal} unit="kcal" color="#E74C3C" />
-                  <MacroCard label="Protein"  value={profile.dailyProteinGoal} unit="g"    color="#E67E22" />
-                  <MacroCard label="Carbs"    value={profile.dailyCarbGoal}    unit="g"    color="#E2B714" />
-                  <MacroCard label="Fat"      value={profile.dailyFatGoal}     unit="g"    color="#2E86AB" />
-                </View>
-                <Text style={styles.macroNote}>Calculated from your BMR, activity, and goal</Text>
-              </View>
-            )}
-
-            {/* Health Attributes */}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{t('healthAttributes')}</Text>
-              {[
-                { key: 'strengthAttr',   label: t('strength'),   color: '#E74C3C', icon: 'barbell-outline' },
-                { key: 'disciplineAttr', label: t('discipline'), color: '#7B2FBE', icon: 'medal-outline' },
-                { key: 'recoveryAttr',   label: t('recovery'),   color: '#2E86AB', icon: 'bed-outline' },
-                { key: 'nutritionAttr',  label: t('nutrition'),  color: '#2ECC71', icon: 'leaf-outline' },
-              ].map(({ key, label, color, icon }) => {
-                const val = profile?.[key] ?? 0;
-                return (
-                  <View key={key} style={styles.attrRow}>
-                    <Ionicons name={icon} size={16} color={color} style={{ width: 20 }} />
-                    <Text style={styles.attrLabel}>{label}</Text>
-                    <View style={styles.attrBarBg}>
-                      <View style={[styles.attrBarFill, { width: `${val}%`, backgroundColor: color }]} />
-                    </View>
-                    <Text style={[styles.attrValue, { color }]}>{val}</Text>
+            {/* Evolution history */}
+            <FadeInView index={6}>
+              <Card>
+                <Text style={styles.label}>{t('evolutionHistory')}</Text>
+                {evoHistory.length === 0 ? (
+                  <Text style={styles.empty}>{t('noStageUps')}</Text>
+                ) : (
+                  <View style={styles.timeline}>
+                    {evoHistory.map((entry, i) => {
+                      const date = new Date(entry.stagedUpAt);
+                      const when = isNaN(date) ? '' : `${date.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][date.getMonth()]} ${date.getFullYear()}`;
+                      return (
+                        <View key={entry.id ?? i} style={styles.evo}>
+                          <View style={styles.evoRail}>
+                            <View style={styles.evoDot} />
+                            {i < evoHistory.length - 1 && <View style={styles.evoLine} />}
+                          </View>
+                          <View style={styles.evoBody}>
+                            <Text style={styles.evoStages}>{entry.fromStage} → <Text style={styles.evoTo}>{entry.toStage}</Text></Text>
+                            <Text style={styles.evoMeta}>{when}{when ? ' · ' : ''}{formatNumber(entry.epAtStageUp)} EP</Text>
+                          </View>
+                        </View>
+                      );
+                    })}
                   </View>
-                );
-              })}
-            </View>
+                )}
+              </Card>
+            </FadeInView>
 
-            {/* Evolution History */}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{t('evolutionHistory')}</Text>
-              {evoHistory.length === 0 ? (
-                <Text style={styles.evoEmpty}>{t('noStageUps')}</Text>
-              ) : (
-                evoHistory.map(entry => {
-                  const date = new Date(entry.stagedUpAt);
-                  const label = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-                  return (
-                    <View key={entry.id} style={styles.evoRow}>
-                      <View style={styles.evoDot} />
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.evoStages}>{entry.fromStage} <Text style={styles.evoArrow}>→</Text> {entry.toStage}</Text>
-                        <Text style={styles.evoMeta}>{label} · {entry.epAtStageUp} EP</Text>
-                      </View>
+            {/* Account */}
+            <FadeInView index={7}>
+              <Card style={styles.listCard}>
+                {ACCOUNT_LINKS.map((l, i) => (
+                  <AnimatedPressable
+                    key={l.key}
+                    disabled={l.soon}
+                    scaleTo={0.98}
+                    onPress={() => openLink(l.key)}
+                    style={[styles.link_, i > 0 && styles.divider, l.soon && styles.soon]}
+                  >
+                    <Ionicons name={l.icon} size={18} color={Palette.textSub} />
+                    <View style={styles.linkText}>
+                      <Text style={styles.linkLabel}>{l.label}</Text>
+                      {!!l.sub && <Text style={styles.linkSub}>{l.sub}</Text>}
                     </View>
-                  );
-                })
-              )}
-            </View>
+                    {l.soon
+                      ? <Text style={styles.soonTag}>Soon</Text>
+                      : <Ionicons name="chevron-forward" size={16} color={Palette.textDim} />}
+                  </AnimatedPressable>
+                ))}
+                <AnimatedPressable onPress={() => { tap(); confirmLogout(); }} scaleTo={0.98} style={[styles.link_, styles.divider]}>
+                  <Ionicons name="log-out-outline" size={18} color={Palette.danger} />
+                  <Text style={[styles.linkLabel, styles.logout]}>{t('logout')}</Text>
+                </AnimatedPressable>
+              </Card>
+            </FadeInView>
 
-            {/* Water Goal */}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{t('waterGoal')}</Text>
-              <View style={styles.goalRow}>
-                <Ionicons name="water" size={16} color="#2E86AB" />
-                <Text style={[styles.goalText, { color: '#2E86AB' }]}>
-                  {profile?.waterGoalGlasses ?? 8} {t('glassesPerDay')}
-                </Text>
-              </View>
-            </View>
-
-            {/* Logout */}
-            <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
-              <Ionicons name="log-out-outline" size={18} color="#E74C3C" />
-              <Text style={styles.logoutText}>{t('logout')}</Text>
-            </TouchableOpacity>
-
-            {/* Brand footer */}
-            <View style={styles.brandFooter}>
-              <Text style={styles.brandWordmark}>AROHA</Text>
+            <View style={styles.brand}>
+              <Text style={styles.brandMark}>AROHA</Text>
               <Text style={styles.brandVersion}>{AppInfo.displayVersion}</Text>
             </View>
-
-            <View style={styles.footerLinks}>
-              {FOOTER_LINKS.map(link => {
-                const disabled = link.key === 'rate';
-                return (
-                  <TouchableOpacity
-                    key={link.key}
-                    style={[styles.footerLinkRow, disabled && styles.footerLinkRowDisabled]}
-                    onPress={() => !disabled && setLegalType(link.key)}
-                    disabled={disabled}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name={link.icon} size={18} color={disabled ? Colors.textMuted : Colors.textSub} />
-                    <Text style={[styles.footerLinkText, disabled && styles.footerLinkTextDisabled]}>
-                      {link.label}
-                    </Text>
-                    {disabled ? (
-                      <Text style={styles.footerLinkBadge}>Coming soon</Text>
-                    ) : (
-                      <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <View style={{ height: 40 }} />
           </ScrollView>
         )}
       </SafeAreaView>
@@ -674,9 +328,7 @@ export default function ProfileScreen({ visible, onClose }) {
       <Modal visible={showSettings} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowSettings(false)}>
         <SettingsScreen visible={showSettings} onClose={() => setShowSettings(false)} />
       </Modal>
-
       <LegalScreen visible={!!legalType} type={legalType} onClose={() => setLegalType(null)} />
-
       <AvatarPickerScreen
         visible={showAvatarPicker}
         selectedKey={profile?.avatarKey}
@@ -687,137 +339,119 @@ export default function ProfileScreen({ visible, onClose }) {
   );
 }
 
-// ── Styles ─────────────────────────────────────────────────────────────────
+function IdStat({ value, label, brass }) {
+  return (
+    <View style={styles.idStat}>
+      <Text style={[styles.idStatValue, brass && { color: Palette.brass }]}>{value}</Text>
+      <Text style={styles.idStatLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function BodyStat({ label, value, unit, color }) {
+  return (
+    <View style={styles.bodyStat}>
+      <Text style={styles.bodyStatLabel}>{label}</Text>
+      <Text style={[styles.bodyStatValue, color && { color }]}>
+        {value}{!!unit && <Text style={styles.bodyStatUnit}> {unit}</Text>}
+      </Text>
+    </View>
+  );
+}
+
+function Target({ label, value, unit, color }) {
+  return (
+    <View style={styles.target}>
+      <View style={[styles.targetBar, { backgroundColor: color }]} />
+      <Text style={styles.targetValue}>{value ?? '—'}<Text style={styles.targetUnit}> {unit}</Text></Text>
+      <Text style={styles.targetLabel}>{label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  safe:        { flex: 1, backgroundColor: Colors.background },
-  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.text },
-  headerRight: { flexDirection: 'row', alignItems: 'center' },
-  scroll:      { flex: 1, paddingHorizontal: 20 },
+  safe:         { flex: 1, backgroundColor: Palette.ink },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.md },
+  headerSpacer: { width: 38 },
+  headerTitle:  { fontFamily: Fonts.display, fontSize: 17, color: Palette.text },
+  content:      { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl, gap: Spacing.md },
+  label:        { ...Type.label, color: Palette.textSub },
+  divider:      { borderTopWidth: 1, borderTopColor: Palette.lineSoft },
+  note:         { ...Type.small, color: Palette.textDim, marginTop: Spacing.md },
+  empty:        { ...Type.body, color: Palette.textSub, marginTop: Spacing.md },
+  link:         { fontFamily: Fonts.bodyBold, fontSize: 13, color: Palette.text, textDecorationLine: 'underline' },
+  errorWrap:    { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
+  errorText:    { ...Type.body, color: Palette.textSub },
 
-  // Avatar
-  avatarSection: { alignItems: 'center', paddingVertical: 24 },
-  avatarEditBadge: {
-    position: 'absolute', bottom: 0, right: -2,
-    width: 26, height: 26, borderRadius: 13,
-    backgroundColor: Colors.accentGold,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: Colors.background,
-  },
-  userName:  { fontSize: 22, fontWeight: '800', color: Colors.text, marginTop: 12, marginBottom: 4 },
-  userEmail: { fontSize: 12, color: Colors.textMuted, marginBottom: 10 },
-  rankBadge: { borderRadius: 10, paddingHorizontal: 14, paddingVertical: 5 },
-  rankText:  { fontSize: 11, fontWeight: '800', color: Colors.text, letterSpacing: 1.5 },
+  // Identity
+  identity:   { alignItems: 'center', paddingTop: Spacing.xl },
+  avatarWrap: { width: 104, height: 104, alignItems: 'center', justifyContent: 'center' },
+  avatar:     { borderWidth: 0 },
+  avatarEdit: { position: 'absolute', right: 4, bottom: 4, width: 26, height: 26, borderRadius: 13, backgroundColor: Palette.ivory, borderWidth: 2, borderColor: Palette.hero, alignItems: 'center', justifyContent: 'center' },
+  name:       { fontFamily: Fonts.bodyHeavy, fontSize: 22, color: Palette.text, marginTop: Spacing.md },
+  email:      { ...Type.small, color: Palette.textSub, marginTop: 2 },
+  stage:      { fontFamily: Fonts.display, fontSize: 13, letterSpacing: 1.2, color: Palette.brass, marginTop: Spacing.sm },
+  idStats:    { flexDirection: 'row', alignSelf: 'stretch', marginTop: Spacing.lg, paddingTop: Spacing.lg, borderTopWidth: 1, borderTopColor: Palette.lineSoft },
+  idStat:     { flex: 1, alignItems: 'center', gap: 2 },
+  idStatValue:{ fontFamily: Fonts.num, fontSize: 22, color: Palette.text },
+  idStatLabel:{ ...Type.small, color: Palette.textSub },
+  idDivider:  { width: 1, backgroundColor: Palette.lineSoft },
 
-  // EP/Streak row
-  xpRow:   { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  xpCard:  { flex: 1, backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: Colors.cardBorder, padding: 16, alignItems: 'center' },
-  xpValue: { fontSize: 24, fontWeight: '900', color: Colors.accentGold },
-  xpLabel: { fontSize: 11, color: Colors.textSub, marginTop: 4 },
+  // Body
+  bodyGrid:      { flexDirection: 'row', flexWrap: 'wrap', marginTop: Spacing.md, rowGap: Spacing.lg },
+  bodyStat:      { width: '50%', gap: 2 },
+  bodyStatLabel: { ...Type.small, color: Palette.textSub },
+  bodyStatValue: { fontFamily: Fonts.numHeavy, fontSize: 28, color: Palette.text },
+  bodyStatUnit:  { fontFamily: Fonts.num, fontSize: 13, color: Palette.textSub },
+  bodyFoot:      { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', gap: Spacing.sm, marginTop: Spacing.lg, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Palette.lineSoft },
+  bodyFootText:  { ...Type.small, color: Palette.textSub },
+  bodyFootStrong:{ fontFamily: Fonts.bodyBold, color: Palette.text },
 
-  // Cards
-  card:      { backgroundColor: Colors.card, borderRadius: 16, borderWidth: 1, borderColor: Colors.cardBorder, padding: 16, marginBottom: 12 },
-  cardTitle: { fontSize: 13, fontWeight: '700', color: Colors.textSub, marginBottom: 14, textTransform: 'uppercase', letterSpacing: 0.8 },
+  // Targets
+  targets:     { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.md },
+  target:      { flex: 1, gap: 4 },
+  targetBar:   { height: 3, borderRadius: 2, width: 22, marginBottom: 4 },
+  targetValue: { fontFamily: Fonts.num, fontSize: 20, color: Palette.text },
+  targetUnit:  { fontSize: 11, color: Palette.textSub },
+  targetLabel: { ...Type.small, color: Palette.textSub },
 
-  // Stats grid
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 10, marginTop: 8 },
-  statBox:   { flex: 1, minWidth: '40%', backgroundColor: Colors.background, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, padding: 12, alignItems: 'center' },
-  statValue: { fontSize: 22, fontWeight: '800', color: Colors.text },
-  statUnit:  { fontSize: 11, color: Colors.textMuted, marginTop: 1 },
-  statLabel: { fontSize: 11, color: Colors.textSub, marginTop: 4 },
-  bmiCategory: { fontSize: 13, color: Colors.textSub, textAlign: 'center', marginTop: 2 },
-  tdeeText:    { fontSize: 13, color: Colors.textSub, marginTop: 6, textAlign: 'center' },
-
-  // Detail rows
-  detailRow:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  detailLabel: { fontSize: 13, color: Colors.textMuted, width: 72 },
-  detailValue: { fontSize: 13, fontWeight: '600', color: Colors.text, flex: 1 },
-
-  // Goal
-  goalRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  goalDot: { width: 10, height: 10, borderRadius: 5 },
-  goalText: { fontSize: 15, fontWeight: '700' },
-
-  // Macro targets
-  macroGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 10 },
-  macroCard:     { flex: 1, minWidth: '40%', backgroundColor: Colors.background, borderRadius: 12, borderWidth: 1, padding: 12, alignItems: 'center', gap: 2 },
-  macroValue:    { fontSize: 20, fontWeight: '800' },
-  macroUnit:     { fontSize: 11, color: Colors.textMuted },
-  macroLabel:    { fontSize: 11, color: Colors.textSub, marginTop: 2 },
-  macroNote:     { fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: 4 },
+  // Lists
+  listCard:    { paddingVertical: Spacing.xs, paddingHorizontal: Spacing.lg },
+  listLabel:   { marginTop: Spacing.md, marginBottom: Spacing.xs },
+  detail:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.md },
+  detailLabel: { ...Type.body, color: Palette.textSub, width: 86 },
+  detailValueWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.sm },
+  detailValue: { ...Type.bodyB, color: Palette.text, flexShrink: 1, textAlign: 'right' },
+  goalDot:     { width: 8, height: 8, borderRadius: 3 },
 
   // Attributes
-  attrRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  attrLabel:  { fontSize: 12, fontWeight: '600', color: Colors.textSub, width: 72 },
-  attrBarBg:  { flex: 1, height: 6, backgroundColor: Colors.background, borderRadius: 3, overflow: 'hidden' },
-  attrBarFill:{ height: 6, borderRadius: 3 },
-  attrValue:  { fontSize: 12, fontWeight: '700', width: 28, textAlign: 'right' },
+  attr:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 2, marginTop: Spacing.md },
+  attrLabel: { ...Type.small, color: Palette.textSub, width: 72 },
+  attrTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: Palette.track, overflow: 'hidden' },
+  attrFill:  { height: '100%', borderRadius: 3 },
+  attrValue: { fontFamily: Fonts.num, fontSize: 15, color: Palette.text, width: 28, textAlign: 'right' },
 
-  // Evolution history
-  evoEmpty:  { fontSize: 13, color: Colors.textMuted, fontStyle: 'italic', textAlign: 'center', paddingVertical: 8 },
-  evoRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
-  evoDot:    { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.accentGold, marginTop: 5 },
-  evoStages: { fontSize: 14, fontWeight: '700', color: Colors.text },
-  evoArrow:  { color: Colors.accentGold },
-  evoMeta:   { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  // Evolution timeline
+  timeline:  { marginTop: Spacing.md },
+  evo:       { flexDirection: 'row', gap: Spacing.md },
+  evoRail:   { alignItems: 'center', width: 12 },
+  evoDot:    { width: 10, height: 10, borderRadius: 5, backgroundColor: Palette.brass, marginTop: 5 },
+  evoLine:   { flex: 1, width: 2, backgroundColor: Palette.line, marginVertical: 2 },
+  evoBody:   { flex: 1, paddingBottom: Spacing.lg },
+  evoStages: { ...Type.bodyB, color: Palette.textSub },
+  evoTo:     { color: Palette.text },
+  evoMeta:   { ...Type.small, color: Palette.textDim, marginTop: 2 },
 
-  // Logout
-  logoutBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: '#E74C3C33', padding: 16, marginTop: 8 },
-  logoutText: { fontSize: 15, fontWeight: '700', color: '#E74C3C' },
+  // Account
+  link_:     { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.md + 2 },
+  linkText:  { flex: 1 },
+  linkLabel: { ...Type.body, color: Palette.text },
+  linkSub:   { ...Type.small, color: Palette.textSub, marginTop: 1 },
+  soon:      { opacity: 0.55 },
+  soonTag:   { fontFamily: Fonts.bodyBold, fontSize: 10, letterSpacing: 1, color: Palette.textSub, textTransform: 'uppercase' },
+  logout:    { color: Palette.danger },
 
-  // Brand footer
-  brandFooter:   { alignItems: 'center', marginTop: 32, marginBottom: 8 },
-  brandWordmark: { fontSize: 16, fontWeight: '900', letterSpacing: 3, color: Colors.accentGold },
-  brandVersion:  { fontSize: 11, color: Colors.textMuted, marginTop: 6 },
-
-  footerLinks: { marginTop: 12 },
-  footerLinkRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
-  },
-  footerLinkRowDisabled: { opacity: 0.6 },
-  footerLinkText:         { flex: 1, fontSize: 14, color: Colors.textSub, fontWeight: '500' },
-  footerLinkTextDisabled: { color: Colors.textMuted },
-  footerLinkBadge:        { fontSize: 10, color: Colors.textMuted, fontStyle: 'italic' },
-
-  // Edit mode — shared
-  sectionLabel: { fontSize: 13, fontWeight: '700', color: Colors.textSub, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 22, marginBottom: 12 },
-  inputRow:     { flexDirection: 'row', gap: 12 },
-  inputHalf:    { flex: 1 },
-  inputLabel:   { fontSize: 12, color: Colors.textSub, marginBottom: 6, fontWeight: '600' },
-  input:        { backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, color: Colors.text, fontSize: 15, marginBottom: 4 },
-
-  // Chips
-  chipRow:       { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
-  chip:          { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: Colors.cardBorder, backgroundColor: Colors.card, alignItems: 'center' },
-  chipActive:    { borderColor: Colors.accentGold, backgroundColor: Colors.accentGold + '22' },
-  chipText:      { fontSize: 13, color: Colors.textSub, fontWeight: '600' },
-  chipTextActive:{ color: Colors.accentGold },
-  chipSub:       { fontSize: 10, color: Colors.textMuted, marginTop: 2 },
-
-  // Option cards (activity / pace)
-  optionCard:       { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, marginBottom: 8 },
-  optionCardActive: { borderColor: Colors.accentGold, backgroundColor: Colors.accentGold + '11' },
-  optionLabel:      { fontSize: 14, fontWeight: '700', color: Colors.text, marginBottom: 2 },
-  optionSub:        { fontSize: 12, color: Colors.textMuted },
-
-  // Goal grid (edit mode)
-  goalGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 8 },
-  goalOption:     { flex: 1, minWidth: '45%', backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, padding: 12, alignItems: 'center', gap: 6 },
-  goalDotSmall:   { width: 8, height: 8, borderRadius: 4 },
-  goalOptionText: { fontSize: 12, fontWeight: '700', color: Colors.textSub, textAlign: 'center' },
-
-  saveBtn:     { backgroundColor: Colors.accentGold, borderRadius: 14, padding: 16, alignItems: 'center', marginTop: 12 },
-  saveBtnText: { fontSize: 15, fontWeight: '800', color: Colors.background },
-
-  // Height toggle
-  heightHeader:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  unitToggle:        { flexDirection: 'row', backgroundColor: Colors.card, borderRadius: 8, borderWidth: 1, borderColor: Colors.cardBorder, overflow: 'hidden' },
-  unitBtn:           { paddingHorizontal: 12, paddingVertical: 5 },
-  unitBtnActive:     { backgroundColor: Colors.accentGold },
-  unitBtnText:       { fontSize: 12, color: Colors.textMuted, fontWeight: '600' },
-  unitBtnTextActive: { color: Colors.background },
-  ftRow:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  ftInput: { flex: 1 },
-  ftLabel: { fontSize: 15, color: Colors.textSub, fontWeight: '600' },
+  brand:        { alignItems: 'center', marginTop: Spacing.lg, gap: 4 },
+  brandMark:    { fontFamily: Fonts.display, fontSize: 14, letterSpacing: 4, color: Palette.textDim },
+  brandVersion: { ...Type.small, color: Palette.textDim },
 });

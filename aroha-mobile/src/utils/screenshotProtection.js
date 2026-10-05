@@ -6,7 +6,8 @@ import * as ScreenCapture from 'expo-screen-capture';
 // iOS: Apple provides no API to block screenshots, so we only detect and warn.
 export function useScreenshotProtection(active = true) {
   useEffect(() => {
-    if (!active) return;
+    // expo-screen-capture has no web implementation
+    if (!active || Platform.OS === 'web') return;
 
     ScreenCapture.preventScreenCaptureAsync();
 
