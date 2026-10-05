@@ -62,7 +62,7 @@ export default function LineChart({ points = [], height = 150, color = Palette.b
           <Path d={area} fill="url(#lcFill)" />
           <Path d={line} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
 
-          {points.map((p, i) => (i % labelEvery === 0 || i === points.length - 1) && (
+          {points.map((p, i) => (i === points.length - 1 || (i % labelEvery === 0 && points.length - 1 - i >= Math.ceil(labelEvery / 2))) && (
             <SvgText
               key={`l${i}`}
               x={x(i)}
