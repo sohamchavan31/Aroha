@@ -5,7 +5,7 @@ import { Palette, Fonts, Radius, Spacing } from '../../constants/theme';
 import { tap } from '../../utils/haptics';
 
 // Selectable pill. `color` tints the selected state (defaults to neutral white).
-export default function Chip({ label, sublabel, selected, onPress, color, style, containerStyle }) {
+export default function Chip({ label, sublabel, selected, onPress, color, style, containerStyle, capitalize = true }) {
   const tint = color || Palette.text;
   return (
     <AnimatedPressable
@@ -16,7 +16,7 @@ export default function Chip({ label, sublabel, selected, onPress, color, style,
       accessibilityState={{ selected: !!selected }}
       style={[styles.chip, selected && { borderColor: tint + '80', backgroundColor: tint + '1A' }, style]}
     >
-      <Text style={[styles.label, selected && { color: tint }]}>{label}</Text>
+      <Text style={[styles.label, !capitalize && styles.noCaps, selected && { color: tint }]}>{label}</Text>
       {!!sublabel && <Text style={[styles.sub, selected && { color: tint }]}>{sublabel}</Text>}
     </AnimatedPressable>
   );
@@ -31,5 +31,6 @@ const styles = StyleSheet.create({
     backgroundColor: Palette.surface2,
   },
   label: { fontFamily: Fonts.bodyBold, fontSize: 12, color: Palette.textSub, textTransform: 'capitalize' },
+  noCaps:{ textTransform: 'none' },
   sub:   { fontFamily: Fonts.num, fontSize: 13, color: Palette.textDim, marginTop: 1 },
 });

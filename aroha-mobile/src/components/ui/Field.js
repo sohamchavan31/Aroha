@@ -36,5 +36,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md + 2,
     minHeight: 48,
   },
-  input: { flex: 1, fontFamily: Fonts.bodySemi, fontSize: 15, color: Palette.text, paddingVertical: Spacing.md },
+  input: { flex: 1, minWidth: 0, fontFamily: Fonts.bodySemi, fontSize: 15, color: Palette.text, paddingVertical: Spacing.md },
 });
