@@ -1,17 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  StatusBar, Modal, TextInput, Alert, ActivityIndicator,
-} from 'react-native';
+import { View, Text, ScrollView, StyleSheet, StatusBar, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Colors from '../constants/colors';
 import client from '../api/client';
+import Card from '../components/ui/Card';
+import Chip from '../components/ui/Chip';
+import Sheet from '../components/ui/Sheet';
+import Field from '../components/ui/Field';
+import IconButton from '../components/ui/IconButton';
+import SegmentBar from '../components/ui/SegmentBar';
+import PrimaryButton from '../components/ui/PrimaryButton';
+import Skeleton from '../components/Skeleton';
+import AnimatedPressable from '../components/AnimatedPressable';
+import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
+import { tap, success, warn } from '../utils/haptics';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const DAY_NAMES   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun',
-                     'Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAY_NAMES   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 const TIME_SLOTS = [
   '05:00','06:00','07:00','08:00','09:00','10:00','11:00','12:00',
@@ -19,398 +25,373 @@ const TIME_SLOTS = [
   '21:00','22:00','23:00',
 ];
 
-function formatDate(d) {
-  return `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
-}
-
 function toDateStr(d) {
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-// ─── Add Task Modal ───────────────────────────────────────────────────────────
-function AddTaskModal({ visible, onClose, onAdd, defaultTime }) {
-  const [title, setTitle]   = useState('');
-  const [time, setTime]     = useState(defaultTime || '');
-  const [timed, setTimed]   = useState(!!defaultTime);
+function relativeLabel(d, today) {
+  const diff = Math.round((new Date(toDateStr(d)) - new Date(toDateStr(today))) / 86400000);
+  if (diff === 0) return 'Today';
+  if (diff === -1) return 'Yesterday';
+  if (diff === 1) return 'Tomorrow';
+  return DAY_NAMES[d.getDay()];
+}
+
+// "13:00" → "1 PM"
+function prettyTime(slot) {
+  const [h, m] = slot.split(':').map(Number);
+  const suffix = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return m ? `${h12}:${String(m).padStart(2, '0')} ${suffix}` : `${h12} ${suffix}`;
+}
+
+// ─── Add task sheet ──────────────────────────────────────────────────────────
+function AddTaskSheet({ visible, onClose, onAdd, defaultTime, dateLabel }) {
+  const [title, setTitle] = useState('');
+  const [time, setTime]   = useState(null);
 
   useEffect(() => {
-    setTitle('');
-    setTime(defaultTime || '');
-    setTimed(!!defaultTime);
+    if (visible) { setTitle(''); setTime(defaultTime || null); }
   }, [visible, defaultTime]);
 
-  function submit() {
-    if (!title.trim()) { Alert.alert('Enter a task title'); return; }
-    onAdd({ title: title.trim(), scheduledTime: timed && time ? time : null });
-  }
-
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>New Task</Text>
-
-          <TextInput
-            style={styles.titleInput}
-            placeholder="What do you need to do?"
-            placeholderTextColor={Colors.textMuted}
-            value={title}
-            onChangeText={setTitle}
-            autoFocus
-          />
-
-          {/* Time toggle */}
-          <TouchableOpacity style={styles.timeToggleRow} onPress={() => setTimed(t => !t)}>
-            <Ionicons
-              name={timed ? 'time' : 'time-outline'}
-              size={18}
-              color={timed ? Colors.accentGold : Colors.textMuted}
-            />
-            <Text style={[styles.timeToggleText, timed && { color: Colors.accentGold }]}>
-              {timed ? 'Scheduled at' : 'Add a time (optional)'}
-            </Text>
-          </TouchableOpacity>
-
-          {timed && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.timeSlotScroll}>
-              {TIME_SLOTS.map(t => (
-                <TouchableOpacity
-                  key={t}
-                  style={[styles.timeChip, time === t && styles.timeChipActive]}
-                  onPress={() => setTime(t)}
-                >
-                  <Text style={[styles.timeChipText, time === t && styles.timeChipTextActive]}>{t}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+    <Sheet visible={visible} onClose={onClose} title="New task" subtitle={dateLabel} showClose>
+      <View style={styles.sheetBody}>
+        <Field value={title} onChangeText={setTitle} placeholder="What do you need to do?" autoFocus autoCorrect returnKeyType="done" />
+        <View style={styles.row}>
+          <Text style={styles.label}>Time (optional)</Text>
+          {!!time && (
+            <AnimatedPressable onPress={() => { tap(); setTime(null); }}>
+              <Text style={styles.clear}>No time</Text>
+            </AnimatedPressable>
           )}
-
-          <TouchableOpacity style={styles.addBtn} onPress={submit} activeOpacity={0.8}>
-            <Text style={styles.addBtnText}>Add Task</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </TouchableOpacity>
         </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.timeChips} keyboardShouldPersistTaps="handled">
+          {TIME_SLOTS.map(t => (
+            <Chip key={t} label={prettyTime(t)} selected={time === t} onPress={() => setTime(time === t ? null : t)} capitalize={false} />
+          ))}
+        </ScrollView>
+        <PrimaryButton
+          title="Add task"
+          subtitle={time ? `Scheduled at ${prettyTime(time)}` : 'Goes to your to-do list'}
+          icon="add"
+          onPress={() => {
+            if (!title.trim()) { Alert.alert('Name your task', 'Write what you need to do.'); return; }
+            onAdd({ title: title.trim(), scheduledTime: time });
+          }}
+          style={!title.trim() && styles.disabled}
+        />
       </View>
-    </Modal>
+    </Sheet>
   );
 }
 
-// ─── Task Row ─────────────────────────────────────────────────────────────────
-function TaskRow({ task, onToggle, onDelete }) {
+// ─── Task row ────────────────────────────────────────────────────────────────
+function TaskRow({ task, onToggle, onDelete, first }) {
   return (
-    <TouchableOpacity
-      style={[styles.taskRow, task.completed && styles.taskRowDone]}
-      onPress={() => onToggle(task.id)}
-      onLongPress={() => onDelete(task.id, task.title)}
-      activeOpacity={0.7}
+    <AnimatedPressable
+      onPress={() => onToggle(task)}
+      onLongPress={() => onDelete(task)}
+      scaleTo={0.98}
+      style={[styles.task, !first && styles.divider]}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: !!task.completed }}
+      accessibilityHint="Long press to delete"
     >
-      <View style={[styles.checkbox, task.completed && styles.checkboxDone]}>
-        {task.completed && <Ionicons name="checkmark" size={12} color={Colors.background} />}
+      <View style={[styles.checkbox, task.completed && styles.checkboxOn]}>
+        {task.completed && <Ionicons name="checkmark" size={13} color={Palette.text} />}
       </View>
       <View style={styles.taskInfo}>
-        <Text style={[styles.taskTitle, task.completed && styles.taskTitleDone]}>
-          {task.title}
-        </Text>
+        <Text style={[styles.taskTitle, task.completed && styles.taskTitleDone]}>{task.title}</Text>
         {task.carriedForward && (
-          <Text style={styles.carriedTag}>↩ carried forward</Text>
+          <View style={styles.carried}>
+            <Ionicons name="return-down-forward" size={11} color={Palette.violet} />
+            <Text style={styles.carriedText}>Carried from yesterday</Text>
+          </View>
         )}
       </View>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 }
 
-// ─── Main Screen ─────────────────────────────────────────────────────────────
+// ─── Screen ──────────────────────────────────────────────────────────────────
 export default function PlannerScreen() {
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(today);
-  const [tasks, setTasks]       = useState([]);
-  const [stats, setStats]       = useState({ total: 0, done: 0, remaining: 0 });
-  const [loading, setLoading]   = useState(true);
-  const [showModal, setShowModal]   = useState(false);
+  const [tasks, setTasks]         = useState([]);
+  const [stats, setStats]         = useState({ total: 0, done: 0, remaining: 0 });
+  const [loading, setLoading]     = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showAdd, setShowAdd]     = useState(false);
   const [defaultTime, setDefaultTime] = useState(null);
 
   const isToday = toDateStr(selectedDate) === toDateStr(today);
 
   const load = useCallback(async () => {
-    setLoading(true);
     try {
       const { data } = await client.get(`/tasks?date=${toDateStr(selectedDate)}`);
       setTasks(data.tasks || []);
-      setStats({ total: data.total, done: data.done, remaining: data.remaining });
+      setStats({ total: data.total ?? 0, done: data.done ?? 0, remaining: data.remaining ?? 0 });
     } catch {
-      Alert.alert('Error', 'Could not load tasks.');
+      Alert.alert("Couldn't load tasks", 'Pull down to try again.');
     } finally {
       setLoading(false);
     }
   }, [selectedDate]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { setLoading(true); load(); }, [load]);
 
-  function prevDay() {
+  async function onRefresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
+
+  function shiftDay(dir) {
+    tap();
     const d = new Date(selectedDate);
-    d.setDate(d.getDate() - 1);
+    d.setDate(d.getDate() + dir);
     setSelectedDate(d);
   }
 
-  function nextDay() {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() + 1);
-    setSelectedDate(d);
-  }
-
-  function openAddModal(time = null) {
+  function openAdd(time = null) {
+    tap();
     setDefaultTime(time);
-    setShowModal(true);
+    setShowAdd(true);
   }
 
   async function addTask({ title, scheduledTime }) {
-    setShowModal(false);
+    setShowAdd(false);
     try {
-      await client.post('/tasks', {
-        title,
-        taskDate: toDateStr(selectedDate),
-        scheduledTime,
-      });
+      await client.post('/tasks', { title, taskDate: toDateStr(selectedDate), scheduledTime });
+      success();
       load();
     } catch {
-      Alert.alert('Error', 'Could not add task.');
+      warn();
+      Alert.alert("Couldn't add task", 'Check your connection and try again.');
     }
   }
 
-  async function toggleTask(id) {
+  async function toggleTask(task) {
+    if (task.completed) tap(); else success();
     try {
-      const { data: updated } = await client.patch(`/tasks/${id}/toggle`);
-      setTasks(prev => prev.map(t => t.id === id ? updated : t));
+      const { data: updated } = await client.patch(`/tasks/${task.id}/toggle`);
+      setTasks(prev => prev.map(t => (t.id === task.id ? updated : t)));
       setStats(prev => ({
         ...prev,
         done:      updated.completed ? prev.done + 1 : prev.done - 1,
         remaining: updated.completed ? prev.remaining - 1 : prev.remaining + 1,
       }));
     } catch {
-      Alert.alert('Error', 'Could not update task.');
+      warn();
+      Alert.alert("Couldn't update task", 'Check your connection and try again.');
     }
   }
 
-  async function deleteTask(id, title) {
-    Alert.alert('Delete', `Delete "${title}"?`, [
+  function confirmDelete(task) {
+    tap();
+    Alert.alert('Delete task?', `"${task.title}"`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
-        try { await client.delete(`/tasks/${id}`); load(); }
-        catch { Alert.alert('Error', 'Could not delete task.'); }
+        try { await client.delete(`/tasks/${task.id}`); load(); }
+        catch { Alert.alert("Couldn't delete task", 'Check your connection and try again.'); }
       }},
     ]);
   }
 
-  async function handleCarryForward() {
+  async function carryForward() {
+    tap();
     try {
       const { data } = await client.post('/tasks/carry-forward');
       if (data.carried === 0) {
-        Alert.alert('Nothing to carry', 'No incomplete tasks from yesterday.');
+        Alert.alert('Nothing to carry over', 'Every task from yesterday is done.');
       } else {
+        success();
         load();
       }
     } catch {
-      Alert.alert('Error', 'Could not carry forward tasks.');
+      warn();
+      Alert.alert("Couldn't carry tasks over", 'Check your connection and try again.');
     }
   }
 
-  // Split tasks: timed vs unscheduled
-  const timedTasks    = tasks.filter(t => t.scheduledTime);
-  const untimedTasks  = tasks.filter(t => !t.scheduledTime);
-
-  const progressPct = stats.total === 0 ? 0 : Math.round((stats.done / stats.total) * 100);
+  const timed   = tasks.filter(t => t.scheduledTime);
+  const untimed = tasks.filter(t => !t.scheduledTime);
+  const slots   = TIME_SLOTS.filter(slot => timed.some(t => t.scheduledTime === slot));
+  const otherTimed = timed.filter(t => !TIME_SLOTS.includes(t.scheduledTime)); // e.g. "07:30"
+  const progress = stats.total === 0 ? 0 : stats.done / stats.total;
+  const dateLabel = `${relativeLabel(selectedDate, today)}, ${selectedDate.getDate()} ${MONTH_NAMES[selectedDate.getMonth()]}`;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
-
-      {/* ── Date Header ── */}
-      <View style={styles.dateHeader}>
-        <TouchableOpacity onPress={prevDay} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-          <Ionicons name="chevron-back" size={22} color={Colors.text} />
-        </TouchableOpacity>
-        <View style={styles.dateCenter}>
-          <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
-          {isToday && <Text style={styles.todayBadge}>Today</Text>}
-        </View>
-        <TouchableOpacity onPress={nextDay} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-          <Ionicons name="chevron-forward" size={22} color={Colors.text} />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-
-        {/* ── Stats Row ── */}
-        {stats.total > 0 && (
-          <View style={styles.statsCard}>
-            <View style={styles.statsRow}>
-              {[
-                { label: 'Total',  value: stats.total,     color: Colors.text },
-                { label: 'Done',   value: stats.done,      color: Colors.success },
-                { label: 'Left',   value: stats.remaining, color: '#E67E22' },
-                { label: 'Done',   value: `${progressPct}%`, color: Colors.accentGold },
-              ].map((s, i) => (
-                <View key={i} style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
-                  <Text style={styles.statLabel}>{s.label}</Text>
-                </View>
-              ))}
-            </View>
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
-            </View>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <StatusBar barStyle="light-content" backgroundColor={Palette.ink} />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Palette.textSub} colors={[Palette.brass]} progressBackgroundColor={Palette.surface2} />}
+      >
+        {/* Date */}
+        <View style={styles.dateRow}>
+          <IconButton name="chevron-back" onPress={() => shiftDay(-1)} accessibilityLabel="Previous day" />
+          <View style={styles.dateCenter}>
+            <Text style={styles.dateTitle}>{relativeLabel(selectedDate, today)}</Text>
+            <Text style={styles.meta}>{selectedDate.getDate()} {MONTH_NAMES[selectedDate.getMonth()]} {selectedDate.getFullYear()}</Text>
           </View>
+          <IconButton name="chevron-forward" onPress={() => shiftDay(1)} accessibilityLabel="Next day" />
+        </View>
+        {!isToday && (
+          <AnimatedPressable onPress={() => { tap(); setSelectedDate(new Date()); }} containerStyle={styles.backToday}>
+            <Text style={styles.link}>Back to today</Text>
+          </AnimatedPressable>
         )}
 
         {loading ? (
-          <ActivityIndicator color={Colors.accentGold} style={{ marginTop: 40 }} />
+          <>
+            <Skeleton height={96} radius={Radius.lg} />
+            <Skeleton height={160} radius={Radius.lg} />
+          </>
         ) : (
           <>
-            {/* ── Carry Forward Button (always visible on today's view) ── */}
+            {/* Progress */}
+            {stats.total > 0 && (
+              <Card>
+                <View style={styles.row}>
+                  <Text style={styles.label}>Progress</Text>
+                  <Text style={styles.meta}>{stats.remaining} left</Text>
+                </View>
+                <Text style={styles.big}>
+                  {stats.done}<Text style={styles.bigOf}> of {stats.total} done</Text>
+                </Text>
+                <SegmentBar progress={progress} segments={Math.min(Math.max(stats.total, 1), 12)} color={Palette.success} height={6} style={styles.bar} />
+              </Card>
+            )}
+
+            {/* Carry forward */}
             {isToday && (
-              <TouchableOpacity style={styles.carryBtn} onPress={handleCarryForward}>
-                <Ionicons name="return-down-forward-outline" size={16} color={Colors.accentGold} />
-                <Text style={styles.carryBtnText}>Carry forward yesterday's tasks</Text>
-              </TouchableOpacity>
+              <AnimatedPressable onPress={carryForward} scaleTo={0.98} style={styles.carry}>
+                <View style={styles.carryIcon}>
+                  <Ionicons name="return-down-forward" size={16} color={Palette.violet} />
+                </View>
+                <View style={styles.flex1}>
+                  <Text style={styles.carryTitle}>Carry over yesterday's tasks</Text>
+                  <Text style={styles.meta}>Moves anything you didn't finish to today</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={Palette.textDim} />
+              </AnimatedPressable>
             )}
 
-            {/* ── Scheduled / Time-blocked ── */}
-            {timedTasks.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Scheduled</Text>
-                {TIME_SLOTS.filter(slot => timedTasks.some(t => t.scheduledTime === slot)).map(slot => (
-                  <View key={slot}>
-                    <View style={styles.slotHeader}>
-                      <Text style={styles.slotTime}>{slot}</Text>
-                      <View style={styles.slotLine} />
+            {/* Schedule */}
+            {timed.length > 0 && (
+              <View>
+                <Text style={[styles.label, styles.sectionLabel]}>Schedule</Text>
+                <Card style={styles.listCard}>
+                  {[...slots.map(slot => ({ slot, items: timed.filter(t => t.scheduledTime === slot) })),
+                    ...(otherTimed.length ? [{ slot: null, items: otherTimed }] : [])].map(({ slot, items }, si) => (
+                    <View key={slot || 'other'} style={[styles.slot, si > 0 && styles.divider]}>
+                      <Text style={styles.slotTime}>{slot ? prettyTime(slot) : 'Other'}</Text>
+                      <View style={styles.slotTasks}>
+                        {items.map((task, ti) => (
+                          <TaskRow key={task.id} task={task} onToggle={toggleTask} onDelete={confirmDelete} first={ti === 0} />
+                        ))}
+                      </View>
                     </View>
-                    {timedTasks.filter(t => t.scheduledTime === slot).map(task => (
-                      <TaskRow key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
-                    ))}
-                  </View>
-                ))}
+                  ))}
+                </Card>
               </View>
             )}
 
-            {/* ── To-Do List (unscheduled) ── */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>To-Do</Text>
-                <TouchableOpacity onPress={() => openAddModal()} style={styles.addRowBtn}>
-                  <Ionicons name="add" size={16} color={Colors.accentGold} />
-                  <Text style={styles.addRowBtnText}>Add</Text>
-                </TouchableOpacity>
+            {/* To-do */}
+            <View>
+              <View style={[styles.row, styles.sectionLabel]}>
+                <Text style={styles.label}>To-do</Text>
+                {untimed.length > 0 && <Text style={styles.meta}>{untimed.filter(t => !t.completed).length} open</Text>}
               </View>
-
-              {untimedTasks.length === 0 ? (
-                <Text style={styles.emptyText}>No tasks yet. Tap Add to create one.</Text>
+              {untimed.length === 0 ? (
+                <Card variant="dashed" style={styles.empty}>
+                  <Text style={styles.emptyText}>{tasks.length === 0 ? `Nothing planned for ${relativeLabel(selectedDate, today).toLowerCase()}.` : 'No unscheduled tasks.'}</Text>
+                </Card>
               ) : (
-                untimedTasks.map(task => (
-                  <TaskRow key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
-                ))
+                <Card style={styles.listCard}>
+                  {untimed.map((task, i) => (
+                    <TaskRow key={task.id} task={task} onToggle={toggleTask} onDelete={confirmDelete} first={i === 0} />
+                  ))}
+                </Card>
               )}
             </View>
 
-            {/* ── Add Scheduled Task ── */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>Add to Schedule</Text>
-              </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {TIME_SLOTS.map(t => (
-                  <TouchableOpacity key={t} style={styles.quickTimeChip} onPress={() => openAddModal(t)}>
-                    <Ionicons name="add-circle-outline" size={12} color={Colors.textMuted} />
-                    <Text style={styles.quickTimeText}>{t}</Text>
-                  </TouchableOpacity>
-                ))}
+            <PrimaryButton title="Add a task" subtitle={dateLabel} icon="add" onPress={() => openAdd()} />
+
+            {/* Quick add at a time */}
+            <View>
+              <Text style={[styles.label, styles.sectionLabel]}>Add at a time</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.timeChips}>
+                {TIME_SLOTS.map(t => <Chip key={t} label={prettyTime(t)} onPress={() => openAdd(t)} capitalize={false} />)}
               </ScrollView>
             </View>
+
+            {tasks.length > 0 && <Text style={styles.hint}>Tap a task to tick it off · long press to delete</Text>}
           </>
         )}
-
-        <Text style={styles.hintText}>Long press a task to delete it</Text>
-        <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* ── FAB ── */}
-      <TouchableOpacity style={styles.fab} onPress={() => openAddModal()} activeOpacity={0.8}>
-        <Ionicons name="add" size={26} color={Colors.background} />
-      </TouchableOpacity>
-
-      <AddTaskModal
-        visible={showModal}
-        onClose={() => setShowModal(false)}
+      <AddTaskSheet
+        visible={showAdd}
+        onClose={() => setShowAdd(false)}
         onAdd={addTask}
         defaultTime={defaultTime}
+        dateLabel={dateLabel}
       />
     </SafeAreaView>
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.background },
-  scroll: { flex: 1, paddingHorizontal: 16 },
+  safe:     { flex: 1, backgroundColor: Palette.ink },
+  content:  { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xl, gap: Spacing.md },
+  flex1:    { flex: 1 },
+  row:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  label:    { ...Type.label, color: Palette.textSub },
+  meta:     { ...Type.small, color: Palette.textSub },
+  link:     { fontFamily: Fonts.bodyBold, fontSize: 13, color: Palette.text, textDecorationLine: 'underline' },
+  divider:  { borderTopWidth: 1, borderTopColor: Palette.lineSoft },
+  disabled: { opacity: 0.4 },
+  sectionLabel: { marginBottom: Spacing.sm },
+  hint:     { ...Type.small, color: Palette.textDim, textAlign: 'center' },
 
-  dateHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, gap: 12 },
+  // Date
+  dateRow:    { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.xs },
   dateCenter: { flex: 1, alignItems: 'center' },
-  dateText: { fontSize: 16, fontWeight: '700', color: Colors.text },
-  todayBadge: { fontSize: 11, color: Colors.accentGold, fontWeight: '600', marginTop: 2 },
+  dateTitle:  { fontFamily: Fonts.display, fontSize: 18, color: Palette.text },
+  backToday:  { alignSelf: 'center', marginTop: -Spacing.sm },
 
-  statsCard: { backgroundColor: Colors.card, borderRadius: 16, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, marginBottom: 14 },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 12 },
-  statItem: { alignItems: 'center' },
-  statValue: { fontSize: 20, fontWeight: '800' },
-  statLabel: { fontSize: 10, color: Colors.textSub, marginTop: 2 },
-  progressTrack: { height: 5, backgroundColor: Colors.cardBorder, borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: Colors.accentGold, borderRadius: 3 },
+  // Progress
+  big:   { fontFamily: Fonts.numHeavy, fontSize: 36, color: Palette.text, marginTop: Spacing.xs },
+  bigOf: { fontFamily: Fonts.num, fontSize: 18, color: Palette.textSub },
+  bar:   { marginTop: Spacing.md },
 
-  carryBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1, borderColor: Colors.accentGold + '44', padding: 14, marginBottom: 14 },
-  carryBtnText: { fontSize: 14, color: Colors.accentGold, fontWeight: '600' },
+  // Carry forward
+  carry:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md + 2, borderRadius: Radius.lg, backgroundColor: Palette.surface, borderWidth: 1, borderColor: Palette.lineSoft },
+  carryIcon:  { width: 32, height: 32, borderRadius: 10, backgroundColor: Palette.violet + '1F', alignItems: 'center', justifyContent: 'center' },
+  carryTitle: { ...Type.bodyB, color: Palette.text },
 
-  section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: Colors.text, marginBottom: 10 },
-  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  addRowBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  addRowBtnText: { fontSize: 13, color: Colors.accentGold, fontWeight: '600' },
+  // Lists
+  listCard:      { paddingVertical: 0, paddingHorizontal: Spacing.lg },
+  slot:          { flexDirection: 'row', gap: Spacing.md },
+  slotTime:      { fontFamily: Fonts.num, fontSize: 15, color: Palette.textSub, width: 52, paddingTop: Spacing.md + 2 },
+  slotTasks:     { flex: 1 },
+  task:          { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md, paddingVertical: Spacing.md + 2 },
+  checkbox:      { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, borderColor: Palette.textDim, alignItems: 'center', justifyContent: 'center', marginTop: -1 },
+  checkboxOn:    { backgroundColor: Palette.violet, borderColor: Palette.violet },
+  taskInfo:      { flex: 1 },
+  taskTitle:     { ...Type.body, color: Palette.text },
+  taskTitleDone: { color: Palette.textDim, textDecorationLine: 'line-through' },
+  carried:       { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
+  carriedText:   { fontFamily: Fonts.bodySemi, fontSize: 11, color: Palette.violet },
+  empty:         { paddingVertical: Spacing.lg },
+  emptyText:     { ...Type.body, color: Palette.textSub },
+  timeChips:     { gap: Spacing.sm },
 
-  slotHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  slotTime: { fontSize: 11, color: Colors.textMuted, fontWeight: '600', width: 40 },
-  slotLine: { flex: 1, height: 1, backgroundColor: Colors.cardBorder },
-
-  taskRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, marginBottom: 6, gap: 12 },
-  taskRowDone: { opacity: 0.6 },
-  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: Colors.textMuted, alignItems: 'center', justifyContent: 'center' },
-  checkboxDone: { backgroundColor: Colors.success, borderColor: Colors.success },
-  taskInfo: { flex: 1 },
-  taskTitle: { fontSize: 14, color: Colors.text, fontWeight: '500' },
-  taskTitleDone: { textDecorationLine: 'line-through', color: Colors.textMuted },
-  carriedTag: { fontSize: 10, color: Colors.accentPurple, marginTop: 3, fontWeight: '600' },
-
-  quickTimeChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.card, borderRadius: 20, borderWidth: 1, borderColor: Colors.cardBorder, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 },
-  quickTimeText: { fontSize: 11, color: Colors.textMuted },
-
-  emptyText: { color: Colors.textMuted, fontSize: 13, textAlign: 'center', paddingVertical: 20 },
-  hintText: { textAlign: 'center', color: Colors.textMuted, fontSize: 11, marginTop: 4 },
-
-  fab: { position: 'absolute', bottom: 20, right: 20, backgroundColor: Colors.accentGold, width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', elevation: 4 },
-
-  // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  modalCard: { backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: Colors.cardBorder, padding: 24, paddingBottom: 40 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: Colors.text, marginBottom: 16 },
-  titleInput: { backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.cardBorder, borderRadius: 12, padding: 14, color: Colors.text, fontSize: 15, marginBottom: 16 },
-  timeToggleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  timeToggleText: { fontSize: 14, color: Colors.textMuted, fontWeight: '500' },
-  timeSlotScroll: { marginBottom: 20 },
-  timeChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: Colors.cardBorder, marginRight: 8, backgroundColor: Colors.background },
-  timeChipActive: { backgroundColor: Colors.accentGold, borderColor: Colors.accentGold },
-  timeChipText: { fontSize: 12, color: Colors.textSub, fontWeight: '600' },
-  timeChipTextActive: { color: Colors.background },
-  addBtn: { backgroundColor: Colors.accentGold, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 10 },
-  addBtnText: { fontSize: 16, fontWeight: '800', color: Colors.background },
-  cancelBtn: { alignItems: 'center', padding: 10 },
-  cancelText: { fontSize: 14, color: Colors.textSub },
+  // Sheet
+  sheetBody: { gap: Spacing.md, paddingBottom: Spacing.sm },
+  clear:     { fontFamily: Fonts.bodyBold, fontSize: 12, color: Palette.textSub, textDecorationLine: 'underline' },
 });
