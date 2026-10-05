@@ -43,10 +43,10 @@ Done
   [x] Profile + Edit Profile + Avatar picker
   [x] Settings + Legal screens
   [x] Habits + Planner
+  [x] AI screen: coach chat, meal plan cards, numbered insights, honest offline samples
+  [x] Sleep & voice sheet (WellnessModal) rebuilt on Sheet
 
 Next, in this order
-  [ ] AI screen (chat bubbles, meal plan, insights)
-  [ ] WellnessModal (sleep + voice reminders) -> rebuild on Sheet
   [ ] Onboarding (5 steps) -> one question per screen, progress bar,
       show calculated macro targets on the last step
   [ ] Login + Register
@@ -85,6 +85,10 @@ Next, in this order
   [ ] client.js production API URL is still a TODO (needed before release).
   [ ] Sleep reminder toggle in Settings had no scheduler behind it; it now shows
         "Coming soon". Add scheduleSleepReminder() in utils/notifications.js.
+  [ ] Scheduled voice reminders: the Voice tab only plays phrases on tap. Schedule
+        them as local notifications (custom sound or speak on open) in a later build.
+  [ ] Sleep log is saved against today's date only; allow editing yesterday and
+        show a 7-day sleep trend on Progress.
 
 
 ======================================================================
