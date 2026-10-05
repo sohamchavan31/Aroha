@@ -45,17 +45,15 @@ Done
   [x] Habits + Planner
   [x] AI screen: coach chat, meal plan cards, numbered insights, honest offline samples
   [x] Sleep & voice sheet (WellnessModal) rebuilt on Sheet
+  [x] Login + Register: matte layout, show/hide password, email checks, real server errors
 
 Next, in this order
   [ ] Onboarding (5 steps) -> one question per screen, progress bar,
       show calculated macro targets on the last step
-  [ ] Login + Register
-        - Remove hardcoded STAGE badge (user isn't logged in yet)
-        - Layout ready for "Continue with Google / Apple"
   [ ] Stage-up celebration: full-screen moment (+ Lottie later)
   [ ] Replace assets/icon.png (current one has construction guides baked in)
         and update the Android adaptive icon background (#E6F4FE -> ink)
-  [ ] Remove constants/colors.js once no screen imports it
+  [ ] Remove constants/colors.js once no screen imports it (left: Onboarding, Skeleton)
   [ ] Later: light mode as a second theme (tokens already make this possible)
   [ ] Later: react-native-reanimated for smoother rings and sheets
   [ ] After merging PR #24: make a new EAS dev build (expo-haptics is native)
@@ -102,6 +100,7 @@ Next, in this order
       goes in the Food search bar
   [ ] Progress photos: date-stamped, Day 1 / 30 / 60 / 90 prompts,
       side-by-side compare
+  [ ] Forgot password (email reset link)
   [ ] Google login (expo-auth-session + backend token verification),
       then Apple login (required for iOS)
   [ ] Meal templates: save a named combo, log it in one tap

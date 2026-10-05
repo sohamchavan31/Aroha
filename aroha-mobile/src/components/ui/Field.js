@@ -3,13 +3,13 @@ import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Palette, Fonts, Type, Radius, Spacing } from '../../constants/theme';
 
-// Text input in the kit's style. Optional label above and icon inside.
-const Field = forwardRef(function Field({ label, icon, right, style, inputStyle, ...inputProps }, ref) {
+// Text input in the kit's style. Optional label above, icon inside and error below.
+const Field = forwardRef(function Field({ label, icon, right, error, style, inputStyle, ...inputProps }, ref) {
   return (
     <View style={style}>
       {!!label && <Text style={styles.label}>{label}</Text>}
-      <View style={styles.box}>
-        {!!icon && <Ionicons name={icon} size={17} color={Palette.textDim} />}
+      <View style={[styles.box, !!error && styles.boxError]}>
+        {!!icon && <Ionicons name={icon} size={17} color={error ? Palette.danger : Palette.textDim} />}
         <TextInput
           ref={ref}
           placeholderTextColor={Palette.textDim}
@@ -21,6 +21,7 @@ const Field = forwardRef(function Field({ label, icon, right, style, inputStyle,
         />
         {right}
       </View>
+      {!!error && <Text style={styles.error}>{error}</Text>}
     </View>
   );
 });
@@ -36,5 +37,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md + 2,
     minHeight: 48,
   },
+  boxError: { borderColor: Palette.danger + '99' },
+  error: { ...Type.small, color: Palette.danger, marginTop: 6 },
   input: { flex: 1, minWidth: 0, fontFamily: Fonts.bodySemi, fontSize: 15, color: Palette.text, paddingVertical: Spacing.md },
 });

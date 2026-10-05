@@ -1,166 +1,80 @@
-import React, { useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity,
-  StyleSheet, StatusBar, ActivityIndicator, KeyboardAvoidingView,
-  Platform, ScrollView,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Colors from '../constants/colors';
+import React, { useRef, useState } from 'react';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import AuthShell from '../components/auth/AuthShell';
+import PasswordField from '../components/auth/PasswordField';
+import FormError from '../components/auth/FormError';
+import Field from '../components/ui/Field';
+import PrimaryButton from '../components/ui/PrimaryButton';
+import { apiError, EMAIL_RE } from '../utils/apiError';
+import { warn } from '../utils/haptics';
 
 export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
+  const [tried, setTried]       = useState(false);
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
+  const passwordRef = useRef(null);
+
+  const cleanEmail = email.trim().toLowerCase();
+  const emailError = !cleanEmail ? 'Enter your email' : !EMAIL_RE.test(cleanEmail) ? 'Enter a valid email address' : '';
+  const passError  = !password ? 'Enter your password' : '';
 
   async function handleLogin() {
-    if (!email.trim() || !password.trim()) {
-      setError('Enter your email and password.');
-      return;
-    }
+    if (loading) return;
+    setTried(true);
     setError('');
+    if (emailError || passError) { warn(); return; }
     setLoading(true);
     try {
-      const { data } = await client.post('/auth/login', { email: email.trim(), password });
+      const { data } = await client.post('/auth/login', { email: cleanEmail, password });
       await login(data.token, { name: data.name, evolutionStage: data.evolutionStage, evolutionPoints: data.evolutionPoints, profileComplete: data.profileComplete });
     } catch (err) {
-      const msg = err.response?.data?.message || 'Invalid email or password.';
-      setError(msg);
+      warn();
+      setError(apiError(err, 'Invalid email or password.'));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.rankBadge}>
-              <Text style={styles.rankLabel}>STAGE</Text>
-              <Text style={styles.rankText}>SPARK</Text>
-            </View>
-            <Text style={styles.title}>Aroha</Text>
-            <Text style={styles.subtitle}>Your Evolution Begins Here</Text>
-          </View>
-
-          {/* Form */}
-          <View style={styles.form}>
-            <Text style={styles.formTitle}>Login</Text>
-
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="you@aroha.com"
-              placeholderTextColor={Colors.textMuted}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor={Colors.textMuted}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleLogin}
-              activeOpacity={0.8}
-              disabled={loading}
-            >
-              {loading
-                ? <ActivityIndicator color={Colors.background} />
-                : <Text style={styles.buttonText}>Login</Text>
-              }
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.link}
-              onPress={() => navigation.navigate('Register')}
-            >
-              <Text style={styles.linkText}>
-                New here?{' '}
-                <Text style={styles.linkHighlight}>Create an account</Text>
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    <AuthShell
+      title="Welcome back"
+      subtitle="Log in to keep your streak going."
+      footerText="New to Aroha?"
+      footerAction="Create an account"
+      onFooter={() => navigation.navigate('Register')}
+    >
+      <Field
+        label="Email"
+        icon="mail-outline"
+        placeholder="you@example.com"
+        value={email}
+        onChangeText={t => { setEmail(t); setError(''); }}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoComplete="email"
+        textContentType="emailAddress"
+        returnKeyType="next"
+        onSubmitEditing={() => passwordRef.current?.focus()}
+        error={tried ? emailError : ''}
+      />
+      <PasswordField
+        ref={passwordRef}
+        label="Password"
+        placeholder="Your password"
+        value={password}
+        onChangeText={t => { setPassword(t); setError(''); }}
+        autoComplete="current-password"
+        textContentType="password"
+        returnKeyType="go"
+        onSubmitEditing={handleLogin}
+        error={tried ? passError : ''}
+      />
+      <FormError message={error} />
+      <PrimaryButton title={loading ? 'Logging in…' : 'Log in'} onPress={handleLogin} />
+    </AuthShell>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  scroll: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 40 },
-
-  header: { alignItems: 'center', marginTop: 60, marginBottom: 48 },
-  rankBadge: {
-    backgroundColor: Colors.accentPurple,
-    borderRadius: 12, paddingHorizontal: 16, paddingVertical: 8,
-    alignItems: 'center', marginBottom: 20,
-  },
-  rankLabel: { fontSize: 9, color: 'rgba(255,255,255,0.7)', fontWeight: '700', letterSpacing: 1.5 },
-  rankText: { fontSize: 24, fontWeight: '900', color: Colors.text },
-  title: { fontSize: 40, fontWeight: '900', color: Colors.text, letterSpacing: 2 },
-  subtitle: { fontSize: 13, color: Colors.textSub, marginTop: 8 },
-
-  form: {
-    backgroundColor: Colors.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    padding: 24,
-  },
-  formTitle: { fontSize: 20, fontWeight: '700', color: Colors.text, marginBottom: 24 },
-
-  label: { fontSize: 13, color: Colors.textSub, fontWeight: '600', marginBottom: 8 },
-  input: {
-    backgroundColor: Colors.background,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    borderRadius: 12,
-    padding: 14,
-    color: Colors.text,
-    fontSize: 15,
-    marginBottom: 18,
-  },
-
-  error: { color: '#E74C3C', fontSize: 13, marginBottom: 14, textAlign: 'center' },
-
-  button: {
-    backgroundColor: Colors.accentGold,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { fontSize: 16, fontWeight: '800', color: Colors.background },
-
-  link: { marginTop: 20, alignItems: 'center' },
-  linkText: { fontSize: 14, color: Colors.textSub },
-  linkHighlight: { color: Colors.accentGold, fontWeight: '600' },
-});
