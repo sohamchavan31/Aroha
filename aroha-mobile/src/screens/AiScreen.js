@@ -18,6 +18,9 @@ import { ALL_GOALS } from '../constants/profile';
 import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
 import { tap, success } from '../utils/haptics';
 
+// Local models can take a while on the first reply, so AI calls get a longer timeout.
+const AI_TIMEOUT = { timeout: 60000 };
+
 const TABS = [
   { key: 'chat',     label: 'Coach',     icon: 'chatbubble-ellipses-outline' },
   { key: 'meal',     label: 'Meal plan', icon: 'restaurant-outline' },
@@ -132,7 +135,7 @@ function ChatTab({ messages, setMessages }) {
     setMessages(prev => [...prev, { id: Date.now(), role: 'user', text }]);
     setLoading(true);
     try {
-      const { data } = await client.post('/ai/chat', { message: text });
+      const { data } = await client.post('/ai/chat', { message: text }, AI_TIMEOUT);
       setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: data.reply }]);
     } catch {
       setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: MOCK_CHAT, sample: true }]);
@@ -266,7 +269,7 @@ function MealPlanTab({ profile, state, setState }) {
         fat:     profile?.dailyFatGoal || undefined,
         goal,
         region: 'Indian',
-      });
+      }, AI_TIMEOUT);
       set({ plan: data.mealPlan || '' });
       success();
     } catch {
@@ -354,7 +357,7 @@ function InsightsTab({ profile, today, state, setState }) {
       const { data } = await client.post('/ai/insights', {
         goal: profile?.healthGoal || 'general_fitness',
         nutritionSummary: today || {},
-      });
+      }, AI_TIMEOUT);
       setState({ insights: data.insights || '', sample: false });
       success();
     } catch {

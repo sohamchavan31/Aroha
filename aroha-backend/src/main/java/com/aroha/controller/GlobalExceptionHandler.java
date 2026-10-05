@@ -28,7 +28,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error("Invalid request"));
+        // Field messages come from our own DTO annotations, so they are safe to show.
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(e -> e.getDefaultMessage())
+                .filter(m -> m != null && !m.isBlank())
+                .findFirst()
+                .orElse("Invalid request");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error(message));
     }
 
     @ExceptionHandler(AuthenticationException.class)

@@ -21,14 +21,15 @@ public class AuthService {
     private final JwtUtil jwtUtil;
 
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
+        String email = normalizeEmail(request.getEmail());
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "An account with this email already exists");
         }
 
         User user = User.builder()
-                .email(request.getEmail())
+                .email(email)
                 .password(passwordEncoder.encode(request.getPassword()))
-                .name(request.getName())
+                .name(request.getName().trim())
                 .evolutionStage("Spark")
                 .evolutionPoints(0)
                 .streak(0)
@@ -47,7 +48,7 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmailIgnoreCase(normalizeEmail(request.getEmail()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -61,5 +62,10 @@ public class AuthService {
                 .evolutionPoints(user.getEvolutionPoints())
                 .profileComplete(user.getProfileComplete())
                 .build();
+    }
+
+    // Emails are case-insensitive in practice: store and look them up trimmed and lower-cased.
+    private static String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase(java.util.Locale.ROOT);
     }
 }

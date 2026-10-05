@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/colors';
 import client from '../api/client';
+import { apiError } from '../utils/apiError';
 import { useAuth } from '../context/AuthContext';
 
 const GENDERS = [
@@ -159,7 +160,7 @@ export default function OnboardingScreen({ onComplete }) {
       await login(token, { ...user, profileComplete: true, waterGoalGlasses: waterGoal });
       onComplete();
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || 'Could not save. Try again.');
+      setError(apiError(err, 'Could not save. Try again.'));
     } finally {
       setSaving(false);
     }

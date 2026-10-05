@@ -15,6 +15,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg from 'react-native-svg';
 import client from '../api/client';
+import { apiError } from '../utils/apiError';
 import ProfileScreen from './ProfileScreen';
 import AiScreen from './AiScreen';
 import { useAuth } from '../context/AuthContext';
@@ -122,7 +123,7 @@ export default function HomeScreen({ navigation }) {
     } catch (err) {
       setMissions(ms => ms.map(m => (m.id === id ? { ...m, completed: false } : m)));
       warn();
-      const msg = err.response?.data?.message || 'Check your connection and try again.';
+      const msg = apiError(err, 'Check your connection and try again.');
       Alert.alert("Couldn't complete mission", msg);
     }
   }
