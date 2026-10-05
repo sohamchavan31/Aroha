@@ -1,538 +1,494 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  StatusBar, Modal, TextInput, Alert, ActivityIndicator,
-} from 'react-native';
+import { View, Text, ScrollView, StyleSheet, StatusBar, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Colors from '../constants/colors';
 import client from '../api/client';
+import Card from '../components/ui/Card';
+import Chip from '../components/ui/Chip';
+import Sheet from '../components/ui/Sheet';
+import Field from '../components/ui/Field';
+import IconButton from '../components/ui/IconButton';
+import SegmentBar from '../components/ui/SegmentBar';
+import PrimaryButton from '../components/ui/PrimaryButton';
+import Skeleton from '../components/Skeleton';
+import AnimatedPressable from '../components/AnimatedPressable';
+import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
+import { tap, success, warn } from '../utils/haptics';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const MONTH_NAMES  = ['January','February','March','April','May','June',
-                      'July','August','September','October','November','December'];
+const MONTH_NAMES = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December'];
 const DAY_LABELS   = ['Sa','Su','Mo','Tu','We','Th','Fr'];
-// JS getDay(): 0=Sun,1=Mon,...,6=Sat  →  our order: Sa=6,Su=0,Mo=1,Tu=2,We=3,Th=4,Fr=5
+// JS getDay(): 0=Sun..6=Sat → our column order Sa Su Mo Tu We Th Fr
 const JS_DAY_ORDER = [6, 0, 1, 2, 3, 4, 5];
 
-const PRESET_COLORS = ['#E2B714','#7B2FBE','#2ECC71','#E74C3C','#2E86AB','#E67E22','#1ABC9C','#9B59B6'];
+const PRESET_COLORS = [Palette.kcal, Palette.protein, Palette.carbs, Palette.fat, Palette.water, Palette.success, Palette.violet, Palette.danger];
 const PRESET_ICONS  = ['fitness-outline','book-outline','water-outline','bed-outline',
-                       'walk-outline','fast-food-outline','musical-notes-outline','barbell-outline'];
+                       'walk-outline','fast-food-outline','musical-notes-outline','barbell-outline',
+                       'leaf-outline','sunny-outline','phone-portrait-outline','heart-outline'];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function getWeeksOfMonth(year, month) {
-  // Returns array of weeks; each week is array of {date, dayOfMonth} or null if out of month
   const daysInMonth = new Date(year, month, 0).getDate();
   const weeks = [];
   let currentWeek = [];
-
   for (let d = 1; d <= daysInMonth; d++) {
-    const jsDay = new Date(year, month - 1, d).getDay(); // 0=Sun..6=Sat
-    const colIndex = JS_DAY_ORDER.indexOf(jsDay);
-
-    if (d === 1) {
-      // Pad start of first week with nulls
-      for (let i = 0; i < colIndex; i++) currentWeek.push(null);
-    }
-
+    const colIndex = JS_DAY_ORDER.indexOf(new Date(year, month - 1, d).getDay());
+    if (d === 1) for (let i = 0; i < colIndex; i++) currentWeek.push(null);
     currentWeek.push(d);
-
-    if (currentWeek.length === 7) {
-      weeks.push([...currentWeek]);
-      currentWeek = [];
-    }
+    if (currentWeek.length === 7) { weeks.push(currentWeek); currentWeek = []; }
   }
-
-  // Pad last week
   if (currentWeek.length > 0) {
     while (currentWeek.length < 7) currentWeek.push(null);
-    weeks.push([...currentWeek]);
+    weeks.push(currentWeek);
   }
-
   return weeks;
 }
 
-// ─── Add Habit Modal ─────────────────────────────────────────────────────────
-function AddHabitModal({ visible, onClose, onAdd }) {
+function pct(done, total) {
+  return total === 0 ? 0 : Math.round((done / total) * 100);
+}
+
+// ─── Add habit sheet ─────────────────────────────────────────────────────────
+function AddHabitSheet({ visible, onClose, onAdd }) {
   const [name, setName]   = useState('');
   const [color, setColor] = useState(PRESET_COLORS[0]);
   const [icon, setIcon]   = useState(PRESET_ICONS[0]);
 
-  function submit() {
-    if (!name.trim()) { Alert.alert('Enter a habit name'); return; }
-    onAdd({ name: name.trim(), color, icon });
-    setName(''); setColor(PRESET_COLORS[0]); setIcon(PRESET_ICONS[0]);
-  }
+  useEffect(() => {
+    if (visible) { setName(''); setColor(PRESET_COLORS[0]); setIcon(PRESET_ICONS[0]); }
+  }, [visible]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>New Habit</Text>
+    <Sheet visible={visible} onClose={onClose} title="New habit" subtitle="Something small you'll do every day" showClose>
+      <View style={styles.sheetBody}>
+        <Field value={name} onChangeText={setName} placeholder="e.g. Read 20 minutes" autoFocus autoCorrect />
 
-          <TextInput
-            style={styles.nameInput}
-            placeholder="e.g. Wake up at 5, Read 30 min..."
-            placeholderTextColor={Colors.textMuted}
-            value={name}
-            onChangeText={setName}
-            autoFocus
-          />
-
-          <Text style={styles.modalSection}>Color</Text>
-          <View style={styles.colorRow}>
-            {PRESET_COLORS.map(c => (
-              <TouchableOpacity
-                key={c}
-                style={[styles.colorDot, { backgroundColor: c }, color === c && styles.colorDotSelected]}
-                onPress={() => setColor(c)}
-              />
-            ))}
+        <View style={styles.preview}>
+          <View style={[styles.previewIcon, { backgroundColor: color + '1F' }]}>
+            <Ionicons name={icon} size={18} color={color} />
           </View>
-
-          <Text style={styles.modalSection}>Icon</Text>
-          <View style={styles.iconRow}>
-            {PRESET_ICONS.map(ic => (
-              <TouchableOpacity
-                key={ic}
-                style={[styles.iconBtn, icon === ic && { borderColor: color }]}
-                onPress={() => setIcon(ic)}
-              >
-                <Ionicons name={ic} size={20} color={icon === ic ? color : Colors.textMuted} />
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <TouchableOpacity style={[styles.addBtn, { backgroundColor: color }]} onPress={submit} activeOpacity={0.8}>
-            <Text style={styles.addBtnText}>Add Habit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </TouchableOpacity>
+          <Text style={styles.previewName} numberOfLines={1}>{name.trim() || 'Your habit'}</Text>
         </View>
+
+        <Text style={styles.sheetLabel}>Colour</Text>
+        <View style={styles.swatches}>
+          {PRESET_COLORS.map(c => (
+            <AnimatedPressable
+              key={c}
+              onPress={() => { tap(); setColor(c); }}
+              scaleTo={0.88}
+              style={[styles.swatchRing, color === c && { borderColor: c }]}
+              accessibilityLabel="Pick colour"
+              accessibilityState={{ selected: color === c }}
+            >
+              <View style={[styles.swatch, { backgroundColor: c }]} />
+            </AnimatedPressable>
+          ))}
+        </View>
+
+        <Text style={styles.sheetLabel}>Icon</Text>
+        <View style={styles.icons}>
+          {PRESET_ICONS.map(ic => (
+            <AnimatedPressable
+              key={ic}
+              onPress={() => { tap(); setIcon(ic); }}
+              scaleTo={0.9}
+              style={[styles.iconBtn, icon === ic && { borderColor: color, backgroundColor: color + '14' }]}
+              accessibilityState={{ selected: icon === ic }}
+            >
+              <Ionicons name={ic} size={19} color={icon === ic ? color : Palette.textSub} />
+            </AnimatedPressable>
+          ))}
+        </View>
+
+        <PrimaryButton
+          title="Add habit"
+          icon="add"
+          onPress={() => {
+            if (!name.trim()) { Alert.alert('Name your habit', 'For example: Read 20 minutes.'); return; }
+            onAdd({ name: name.trim(), color, icon });
+          }}
+          style={!name.trim() && styles.disabled}
+        />
       </View>
-    </Modal>
+    </Sheet>
   );
 }
 
-// ─── Progress Chart ──────────────────────────────────────────────────────────
-function ProgressChart({ habits, monthData, year, month, weeks, weekIndex }) {
+// ─── Completion chart ────────────────────────────────────────────────────────
+function CompletionChart({ habits, year, month, weeks }) {
   const [tab, setTab] = useState('Day');
   const today = new Date();
-
-  // Build chart bars based on tab
+  const total = habits.length;
+  const doneOn = day => habits.filter(h => (h.completedDays || []).includes(day)).length;
   let bars = [];
 
   if (tab === 'Day') {
-    // Last 7 days completion %
     for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
+      const label = DAY_LABELS[JS_DAY_ORDER.indexOf(d.getDay())];
       if (d.getMonth() + 1 !== month || d.getFullYear() !== year) {
-        bars.push({ label: DAY_LABELS[JS_DAY_ORDER.indexOf(d.getDay())] || '?', pct: 0, faded: true });
+        bars.push({ label, pct: 0, faded: true });
         continue;
       }
-      const dayNum = d.getDate();
-      const total = habits.length;
-      const done  = total === 0 ? 0 : habits.filter(h => (h.completedDays || []).includes(dayNum)).length;
-      const pct   = total === 0 ? 0 : Math.round((done / total) * 100);
-      bars.push({ label: DAY_LABELS[JS_DAY_ORDER.indexOf(d.getDay())], pct });
+      bars.push({ label, pct: pct(doneOn(d.getDate()), total), current: i === 0 });
     }
   } else if (tab === 'Week') {
-    // Each week of the month
     weeks.forEach((week, wi) => {
-      const validDays = week.filter(Boolean);
-      const total     = habits.length;
-      const done = total === 0 ? 0 : validDays.reduce((sum, d) =>
-        sum + habits.filter(h => (h.completedDays || []).includes(d)).length, 0);
-      const maxPossible = total * validDays.length;
-      const pct = maxPossible === 0 ? 0 : Math.round((done / maxPossible) * 100);
-      bars.push({ label: `W${wi + 1}`, pct });
+      const days = week.filter(Boolean);
+      bars.push({ label: `W${wi + 1}`, pct: pct(days.reduce((s, d) => s + doneOn(d), 0), total * days.length) });
     });
   } else {
-    // Month — show overall % for this month
-    const daysInMonth = monthData?.daysInMonth || 30;
-    const total = habits.length;
-    const totalPossible = total * daysInMonth;
-    const done = total === 0 ? 0 : habits.reduce((sum, h) => sum + (h.completedDays?.length || 0), 0);
-    const pct = totalPossible === 0 ? 0 : Math.round((done / totalPossible) * 100);
-    bars.push({ label: MONTH_NAMES[month - 1].slice(0, 3), pct });
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const done = habits.reduce((s, h) => s + (h.completedDays?.length || 0), 0);
+    bars.push({ label: MONTH_NAMES[month - 1].slice(0, 3), pct: pct(done, total * daysInMonth), current: true });
   }
 
   return (
-    <View style={styles.chartCard}>
-      {/* Tab row */}
-      <View style={styles.chartTabRow}>
-        {['Day','Week','Month'].map(t => (
-          <TouchableOpacity
-            key={t}
-            style={[styles.chartTab, tab === t && styles.chartTabActive]}
-            onPress={() => setTab(t)}
-          >
-            <Text style={[styles.chartTabText, tab === t && styles.chartTabTextActive]}>{t}</Text>
-          </TouchableOpacity>
-        ))}
+    <Card>
+      <View style={styles.row}>
+        <Text style={styles.label}>Completion</Text>
+        <View style={styles.tabs}>
+          {['Day', 'Week', 'Month'].map(t => <Chip key={t} label={t} selected={tab === t} onPress={() => setTab(t)} style={styles.tabChip} />)}
+        </View>
       </View>
-
-      {/* Y-axis labels + bars */}
-      <View style={styles.chartArea}>
+      <View style={styles.chart}>
         <View style={styles.yAxis}>
-          {['100%','50%','0%'].map(l => (
-            <Text key={l} style={styles.yLabel}>{l}</Text>
-          ))}
+          {['100', '50', '0'].map(l => <Text key={l} style={styles.yLabel}>{l}%</Text>)}
         </View>
         <View style={styles.barsArea}>
-          {/* Grid lines */}
-          {[0, 50, 100].map(pct => (
-            <View key={pct} style={[styles.gridLine, { bottom: `${pct}%` }]} />
-          ))}
-          {/* Bars */}
+          {[0, 50, 100].map(p => <View key={p} style={[styles.gridLine, { bottom: `${p}%` }]} />)}
           <View style={styles.barsRow}>
             {bars.map((b, i) => (
-              <View key={i} style={styles.barWrapper}>
+              <View key={i} style={styles.barCol}>
                 <View style={styles.barTrack}>
-                  <View style={[styles.barFill, { height: `${b.pct}%`, opacity: b.faded ? 0.3 : 1 }]} />
+                  <View style={[styles.barFill, { height: `${b.pct}%`, opacity: b.faded ? 0.25 : b.current ? 1 : 0.7 }]} />
                 </View>
-                <Text style={styles.barLabel}>{b.label}</Text>
               </View>
             ))}
           </View>
         </View>
       </View>
-    </View>
+      <View style={styles.barLabels}>
+        <View style={styles.yAxisSpacer} />
+        {bars.map((b, i) => <Text key={i} style={[styles.barLabel, b.current && styles.barLabelOn]}>{b.label}</Text>)}
+      </View>
+    </Card>
   );
 }
 
-// ─── Main Screen ─────────────────────────────────────────────────────────────
+// ─── Screen ──────────────────────────────────────────────────────────────────
 export default function HabitScreen() {
   const now = new Date();
-  const [year, setYear]         = useState(now.getFullYear());
-  const [month, setMonth]       = useState(now.getMonth() + 1);
+  const [year, setYear]           = useState(now.getFullYear());
+  const [month, setMonth]         = useState(now.getMonth() + 1);
   const [weekIndex, setWeekIndex] = useState(0);
-  const [monthData, setMonthData] = useState(null);
-  const [habits, setHabits]     = useState([]);
-  const [weeks, setWeeks]       = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [habits, setHabits]       = useState([]);
+  const [weeks, setWeeks]         = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showAdd, setShowAdd]     = useState(false);
 
   const load = useCallback(async () => {
-    setLoading(true);
     try {
       const { data } = await client.get(`/habits/monthly?year=${year}&month=${month}`);
-      setMonthData(data);
       setHabits(data.habits || []);
       const w = getWeeksOfMonth(year, month);
       setWeeks(w);
-      // Jump to current week if same month
-      if (year === now.getFullYear() && month === now.getMonth() + 1) {
-        const todayDate = now.getDate();
-        const idx = w.findIndex(week => week.includes(todayDate));
+      const n = new Date();
+      if (year === n.getFullYear() && month === n.getMonth() + 1) {
+        const idx = w.findIndex(week => week.includes(n.getDate()));
         setWeekIndex(idx >= 0 ? idx : 0);
       } else {
         setWeekIndex(0);
       }
     } catch {
-      Alert.alert('Error', 'Could not load habits.');
+      Alert.alert("Couldn't load habits", 'Pull down to try again.');
     } finally {
       setLoading(false);
     }
   }, [year, month]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { setLoading(true); load(); }, [load]);
 
-  function prevMonth() {
-    if (month === 1) { setYear(y => y - 1); setMonth(12); }
-    else setMonth(m => m - 1);
-  }
-  function nextMonth() {
-    if (month === 12) { setYear(y => y + 1); setMonth(1); }
-    else setMonth(m => m + 1);
+  async function onRefresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
   }
 
-  async function toggle(habitId, day) {
+  function shiftMonth(dir) {
+    tap();
+    const m = month + dir;
+    if (m < 1) { setYear(y => y - 1); setMonth(12); }
+    else if (m > 12) { setYear(y => y + 1); setMonth(1); }
+    else setMonth(m);
+  }
+
+  function setDone(habitId, day, done) {
+    setHabits(prev => prev.map(h => {
+      if (h.id !== habitId) return h;
+      const days = new Set(h.completedDays || []);
+      if (done) days.add(day); else days.delete(day);
+      return { ...h, completedDays: Array.from(days), completedCount: days.size };
+    }));
+  }
+
+  async function toggle(habit, day) {
     if (!day) return;
-    const date = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const wasDone = (habit.completedDays || []).includes(day);
+    if (wasDone) tap(); else success();
+    setDone(habit.id, day, !wasDone); // optimistic
+    const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     try {
-      await client.post(`/habits/${habitId}/toggle?date=${date}`);
-      setHabits(prev => prev.map(h => {
-        if (h.id !== habitId) return h;
-        const days = new Set(h.completedDays || []);
-        days.has(day) ? days.delete(day) : days.add(day);
-        return { ...h, completedDays: Array.from(days), completedCount: days.size };
-      }));
+      await client.post(`/habits/${habit.id}/toggle?date=${date}`);
     } catch {
-      Alert.alert('Error', 'Could not update.');
+      setDone(habit.id, day, wasDone);
+      warn();
+      Alert.alert("Couldn't update habit", 'Check your connection and try again.');
     }
   }
 
   async function addHabit(req) {
-    setShowModal(false);
+    setShowAdd(false);
     try {
       await client.post('/habits', req);
+      success();
       load();
     } catch {
-      Alert.alert('Error', 'Could not add habit.');
+      warn();
+      Alert.alert("Couldn't add habit", 'Check your connection and try again.');
     }
   }
 
-  async function deleteHabit(id, name) {
-    Alert.alert('Delete', `Delete "${name}"?`, [
+  function confirmDelete(habit) {
+    tap();
+    Alert.alert('Delete habit?', `"${habit.name}" and its history will be removed.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
-        try { await client.delete(`/habits/${id}`); load(); }
-        catch { Alert.alert('Error', 'Could not delete.'); }
+        try { await client.delete(`/habits/${habit.id}`); load(); }
+        catch { Alert.alert("Couldn't delete habit", 'Check your connection and try again.'); }
       }},
     ]);
   }
 
-  // Metrics
-  const todayDate     = (year === now.getFullYear() && month === now.getMonth() + 1) ? now.getDate() : null;
-  const currentWeek   = weeks[weekIndex] || [];
-  const validWeekDays = currentWeek.filter(Boolean);
-
-  const totalHabits = habits.length;
-
-  const dayDone    = todayDate ? habits.filter(h => (h.completedDays || []).includes(todayDate)).length : 0;
-  const dayNotDone = totalHabits - dayDone;
-  const dayPct     = totalHabits === 0 ? 0 : Math.round((dayDone / totalHabits) * 100);
-
-  const weekDoneTotal = validWeekDays.reduce((sum, d) =>
-    sum + habits.filter(h => (h.completedDays || []).includes(d)).length, 0);
-  const weekMaxPossible = totalHabits * validWeekDays.length;
-  const weekPct = weekMaxPossible === 0 ? 0 : Math.round((weekDoneTotal / weekMaxPossible) * 100);
-  const weekDoneHabits = validWeekDays.length === 0 ? 0
-    : habits.filter(h => validWeekDays.every(d => (h.completedDays || []).includes(d))).length;
+  // ── Metrics ──
+  const isThisMonth  = year === now.getFullYear() && month === now.getMonth() + 1;
+  const todayDate    = isThisMonth ? now.getDate() : null;
+  const currentWeek  = weeks[weekIndex] || [];
+  const weekDays     = currentWeek.filter(Boolean);
+  const total        = habits.length;
+  const doneToday    = todayDate ? habits.filter(h => (h.completedDays || []).includes(todayDate)).length : 0;
+  const weekDone     = weekDays.reduce((s, d) => s + habits.filter(h => (h.completedDays || []).includes(d)).length, 0);
+  const weekPct      = pct(weekDone, total * weekDays.length);
+  const perfectWeek  = weekDays.length === 0 ? 0 : habits.filter(h => weekDays.every(d => (h.completedDays || []).includes(d))).length;
+  const rangeLabel   = weekDays.length ? `${weekDays[0]}–${weekDays[weekDays.length - 1]} ${MONTH_NAMES[month - 1].slice(0, 3)}` : '';
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
-
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-
-        {/* ── Month Header ── */}
-        <View style={styles.monthHeader}>
-          <TouchableOpacity onPress={prevMonth} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-            <Ionicons name="chevron-back" size={22} color={Colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.monthTitle}>{MONTH_NAMES[month - 1]} {year}</Text>
-          <TouchableOpacity onPress={nextMonth} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-            <Ionicons name="chevron-forward" size={22} color={Colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.addFab} onPress={() => setShowModal(true)}>
-            <Ionicons name="add" size={18} color={Colors.background} />
-          </TouchableOpacity>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <StatusBar barStyle="light-content" backgroundColor={Palette.ink} />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Palette.textSub} colors={[Palette.brass]} progressBackgroundColor={Palette.surface2} />}
+      >
+        {/* Month */}
+        <View style={styles.monthRow}>
+          <IconButton name="chevron-back" onPress={() => shiftMonth(-1)} accessibilityLabel="Previous month" />
+          <Text style={styles.month}>{MONTH_NAMES[month - 1]} {year}</Text>
+          <IconButton name="chevron-forward" onPress={() => shiftMonth(1)} accessibilityLabel="Next month" />
         </View>
 
         {loading ? (
-          <ActivityIndicator color={Colors.accentGold} style={{ marginTop: 60 }} />
+          <>
+            <Skeleton height={120} radius={Radius.lg} />
+            <Skeleton height={220} radius={Radius.lg} />
+          </>
+        ) : total === 0 ? (
+          <Card variant="dashed" style={styles.emptyCard}>
+            <Ionicons name="checkmark-done-outline" size={30} color={Palette.textDim} />
+            <Text style={styles.emptyTitle}>No habits yet</Text>
+            <Text style={styles.emptyText}>Start with one small thing you want to do every day. Tick it off here and watch your week fill up.</Text>
+            <PrimaryButton title="Add your first habit" icon="add" onPress={() => setShowAdd(true)} containerStyle={styles.stretch} />
+          </Card>
         ) : (
           <>
-            {/* ── Grid Card ── */}
-            <View style={styles.gridCard}>
-              {/* Week nav */}
-              <View style={styles.weekNavRow}>
-                <TouchableOpacity
-                  onPress={() => setWeekIndex(i => Math.max(0, i - 1))}
-                  disabled={weekIndex === 0}
-                >
-                  <Ionicons name="chevron-back" size={16} color={weekIndex === 0 ? Colors.textMuted : Colors.text} />
-                </TouchableOpacity>
-                <Text style={styles.weekLabel}>
-                  Week {weekIndex + 1} of {weeks.length}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setWeekIndex(i => Math.min(weeks.length - 1, i + 1))}
-                  disabled={weekIndex === weeks.length - 1}
-                >
-                  <Ionicons name="chevron-forward" size={16} color={weekIndex === weeks.length - 1 ? Colors.textMuted : Colors.text} />
-                </TouchableOpacity>
+            {/* Summary */}
+            <Card>
+              <View style={styles.summary}>
+                <View style={styles.summaryCol}>
+                  <Text style={styles.label}>Today</Text>
+                  <Text style={styles.big}>
+                    {todayDate ? doneToday : '–'}<Text style={styles.bigOf}>/{total}</Text>
+                  </Text>
+                  <Text style={styles.meta}>{todayDate ? (doneToday === total ? 'All done. Nice.' : `${total - doneToday} left today`) : 'Not this month'}</Text>
+                </View>
+                <View style={styles.summaryDivider} />
+                <View style={styles.summaryCol}>
+                  <Text style={styles.label}>This week</Text>
+                  <Text style={styles.big}>{weekPct}<Text style={styles.bigOf}>%</Text></Text>
+                  <Text style={styles.meta}>{perfectWeek} perfect habit{perfectWeek !== 1 ? 's' : ''}</Text>
+                </View>
+              </View>
+              {!!todayDate && <SegmentBar progress={total ? doneToday / total : 0} segments={Math.max(total, 1)} color={Palette.success} height={6} style={styles.summaryBar} />}
+            </Card>
+
+            {/* Week grid */}
+            <Card style={styles.gridCard}>
+              <View style={styles.weekRow}>
+                <IconButton name="chevron-back" size={32} onPress={() => setWeekIndex(i => Math.max(0, i - 1))} accessibilityLabel="Previous week" style={weekIndex === 0 && styles.disabled} />
+                <View style={styles.weekCenter}>
+                  <Text style={styles.weekTitle}>Week {weekIndex + 1} of {weeks.length}</Text>
+                  <Text style={styles.meta}>{rangeLabel}</Text>
+                </View>
+                <IconButton name="chevron-forward" size={32} onPress={() => setWeekIndex(i => Math.min(weeks.length - 1, i + 1))} accessibilityLabel="Next week" style={weekIndex === weeks.length - 1 && styles.disabled} />
               </View>
 
-              {/* Column headers: Habits | Sa Su Mo Tu We Th Fr */}
-              <View style={styles.gridHeaderRow}>
-                <Text style={styles.habitsColHeader}>Habits</Text>
+              <View style={styles.gridHead}>
+                <View style={styles.nameCol} />
                 {DAY_LABELS.map((d, i) => {
                   const dayNum = currentWeek[i];
-                  const isToday = todayDate && dayNum === todayDate;
+                  const isToday = !!todayDate && dayNum === todayDate;
                   return (
-                    <View key={d} style={styles.dayColHeader}>
-                      <Text style={[styles.dayColLabel, isToday && { color: Colors.accentGold }]}>{d}</Text>
-                      {dayNum ? <Text style={[styles.dayColDate, isToday && { color: Colors.accentGold }]}>{dayNum}</Text> : null}
+                    <View key={d} style={[styles.dayCol, isToday && styles.todayCol]}>
+                      <Text style={[styles.dayLabel, isToday && styles.todayText]}>{d}</Text>
+                      <Text style={[styles.dayNum, isToday && styles.todayText]}>{dayNum ?? ''}</Text>
                     </View>
                   );
                 })}
               </View>
 
-              {/* Habit rows */}
-              {habits.length === 0 ? (
-                <Text style={styles.emptyGrid}>Tap + to add your first habit</Text>
-              ) : (
-                habits.map(habit => {
-                  const completedSet = new Set(habit.completedDays || []);
-                  return (
-                    <View key={habit.id} style={styles.habitGridRow}>
-                      <TouchableOpacity
-                        style={styles.habitNameCell}
-                        onLongPress={() => deleteHabit(habit.id, habit.name)}
-                      >
-                        <Ionicons name={habit.icon || 'checkmark-circle-outline'} size={12} color={habit.color} />
-                        <Text style={styles.habitNameText} numberOfLines={2}>{habit.name}</Text>
-                      </TouchableOpacity>
+              {habits.map((habit, hi) => {
+                const doneSet = new Set(habit.completedDays || []);
+                return (
+                  <View key={habit.id} style={[styles.habitRow, hi > 0 && styles.divider]}>
+                    <AnimatedPressable
+                      containerStyle={styles.nameCol}
+                      style={styles.nameCell}
+                      onLongPress={() => confirmDelete(habit)}
+                      scaleTo={0.97}
+                      accessibilityHint="Long press to delete"
+                    >
+                      <View style={[styles.habitIcon, { backgroundColor: (habit.color || Palette.violet) + '1F' }]}>
+                        <Ionicons name={habit.icon || 'checkmark-circle-outline'} size={13} color={habit.color || Palette.violet} />
+                      </View>
+                      <Text style={styles.habitName} numberOfLines={2}>{habit.name}</Text>
+                    </AnimatedPressable>
+                    {currentWeek.map((dayNum, i) => {
+                      const done = !!dayNum && doneSet.has(dayNum);
+                      const isToday = !!todayDate && dayNum === todayDate;
+                      const c = habit.color || Palette.violet;
+                      return (
+                        <View key={i} style={[styles.dayCol, isToday && styles.todayCol]}>
+                          {dayNum ? (
+                            <AnimatedPressable
+                              onPress={() => toggle(habit, dayNum)}
+                              scaleTo={0.85}
+                              style={[styles.check, done && { backgroundColor: c, borderColor: c }]}
+                              accessibilityRole="checkbox"
+                              accessibilityState={{ checked: done }}
+                              accessibilityLabel={`${habit.name}, day ${dayNum}`}
+                            >
+                              {done && <Ionicons name="checkmark" size={14} color={Palette.ink} />}
+                            </AnimatedPressable>
+                          ) : <View style={styles.checkEmpty} />}
+                        </View>
+                      );
+                    })}
+                  </View>
+                );
+              })}
+              <Text style={styles.hint}>Tap a box to tick it off · long press a habit to delete it</Text>
+            </Card>
 
-                      {currentWeek.map((dayNum, i) => {
-                        const done = dayNum && completedSet.has(dayNum);
-                        return (
-                          <TouchableOpacity
-                            key={i}
-                            style={[styles.checkCell, done && { borderColor: habit.color, backgroundColor: habit.color + '22' }]}
-                            onPress={() => toggle(habit.id, dayNum)}
-                            disabled={!dayNum}
-                            activeOpacity={0.6}
-                          >
-                            {done && <Ionicons name="checkmark" size={12} color={habit.color} />}
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  );
-                })
-              )}
-            </View>
+            <CompletionChart habits={habits} year={year} month={month} weeks={weeks} />
 
-            {/* ── Metrics Table ── */}
-            {habits.length > 0 && (
-              <View style={styles.metricsCard}>
-                {/* Header */}
-                <View style={styles.metricsHeaderRow}>
-                  <Text style={[styles.metricsCell, styles.metricsLabel]}>Metrics</Text>
-                  <Text style={[styles.metricsCell, styles.metricsColHeader]}>Day</Text>
-                  <Text style={[styles.metricsCell, styles.metricsColHeader]}>Week</Text>
-                </View>
-                {/* Progress */}
-                <View style={styles.metricsRow}>
-                  <Text style={[styles.metricsCell, styles.metricsRowLabel]}>Progress</Text>
-                  <Text style={[styles.metricsCell, styles.metricsValue, { color: Colors.accentGold }]}>{dayPct}%</Text>
-                  <Text style={[styles.metricsCell, styles.metricsValue, { color: Colors.accentPurple }]}>{weekPct}%</Text>
-                </View>
-                {/* Done */}
-                <View style={styles.metricsRow}>
-                  <Text style={[styles.metricsCell, styles.metricsRowLabel]}>Done</Text>
-                  <Text style={[styles.metricsCell, styles.metricsValue, { color: Colors.success }]}>{dayDone}</Text>
-                  <Text style={[styles.metricsCell, styles.metricsValue, { color: Colors.success }]}>{weekDoneHabits}</Text>
-                </View>
-                {/* Not Done */}
-                <View style={[styles.metricsRow, { borderBottomWidth: 0 }]}>
-                  <Text style={[styles.metricsCell, styles.metricsRowLabel]}>Not Done</Text>
-                  <Text style={[styles.metricsCell, styles.metricsValue, { color: '#E74C3C' }]}>{dayNotDone}</Text>
-                  <Text style={[styles.metricsCell, styles.metricsValue, { color: '#E74C3C' }]}>{totalHabits - weekDoneHabits}</Text>
-                </View>
-              </View>
-            )}
-
-            {/* ── Progress Chart ── */}
-            {habits.length > 0 && (
-              <ProgressChart
-                habits={habits}
-                monthData={monthData}
-                year={year}
-                month={month}
-                weeks={weeks}
-                weekIndex={weekIndex}
-              />
-            )}
+            <PrimaryButton title="New habit" subtitle="Add something to track every day" icon="add" onPress={() => setShowAdd(true)} />
           </>
         )}
-
-        <Text style={styles.hintText}>Long press a habit to delete it</Text>
-        <View style={{ height: 40 }} />
       </ScrollView>
 
-      <AddHabitModal
-        visible={showModal}
-        onClose={() => setShowModal(false)}
-        onAdd={addHabit}
-      />
+      <AddHabitSheet visible={showAdd} onClose={() => setShowAdd(false)} onAdd={addHabit} />
     </SafeAreaView>
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
-const HABIT_COL_W = 100;
-const DAY_COL_W   = 38;
-const CHECK_SIZE  = 28;
+const CHECK = 28;
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.background },
-  scroll: { flex: 1, paddingHorizontal: 16 },
+  safe:     { flex: 1, backgroundColor: Palette.ink },
+  content:  { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xl, gap: Spacing.md },
+  row:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  label:    { ...Type.label, color: Palette.textSub },
+  meta:     { ...Type.small, color: Palette.textSub },
+  divider:  { borderTopWidth: 1, borderTopColor: Palette.lineSoft },
+  disabled: { opacity: 0.35 },
+  stretch:  { alignSelf: 'stretch' },
 
-  // Month header
-  monthHeader: { flexDirection: 'row', alignItems: 'center', paddingTop: 16, paddingBottom: 12, gap: 10 },
-  monthTitle: { flex: 1, textAlign: 'center', fontSize: 20, fontWeight: '700', color: Colors.text },
-  addFab: { backgroundColor: Colors.accentGold, borderRadius: 8, padding: 6 },
+  monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.xs },
+  month:    { fontFamily: Fonts.display, fontSize: 18, color: Palette.text },
 
-  // Grid card
-  gridCard: { backgroundColor: Colors.card, borderRadius: 16, borderWidth: 1, borderColor: Colors.cardBorder, padding: 14, marginBottom: 12 },
+  // Empty
+  emptyCard:  { alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.xl },
+  emptyTitle: { ...Type.h2, color: Palette.text },
+  emptyText:  { ...Type.body, color: Palette.textSub, textAlign: 'center', marginBottom: Spacing.md },
 
-  weekNavRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 12 },
-  weekLabel: { fontSize: 13, fontWeight: '600', color: Colors.textSub },
+  // Summary
+  summary:        { flexDirection: 'row' },
+  summaryCol:     { flex: 1, gap: 2 },
+  summaryDivider: { width: 1, backgroundColor: Palette.lineSoft, marginHorizontal: Spacing.lg },
+  big:            { fontFamily: Fonts.numHeavy, fontSize: 40, lineHeight: 44, color: Palette.text, marginTop: Spacing.xs },
+  bigOf:          { fontFamily: Fonts.num, fontSize: 18, color: Palette.textSub },
+  summaryBar:     { marginTop: Spacing.lg },
 
-  gridHeaderRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 8 },
-  habitsColHeader: { width: HABIT_COL_W, fontSize: 12, fontWeight: '700', color: Colors.text },
-  dayColHeader: { width: DAY_COL_W, alignItems: 'center' },
-  dayColLabel: { fontSize: 11, fontWeight: '700', color: Colors.textSub },
-  dayColDate: { fontSize: 10, color: Colors.textMuted, marginTop: 2 },
-
-  habitGridRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  habitNameCell: { width: HABIT_COL_W, flexDirection: 'row', alignItems: 'center', gap: 4, paddingRight: 4 },
-  habitNameText: { flex: 1, fontSize: 11, color: Colors.text, fontWeight: '500' },
-
-  checkCell: { width: CHECK_SIZE, height: CHECK_SIZE, borderRadius: 6, borderWidth: 1.5, borderColor: Colors.cardBorder, marginRight: (DAY_COL_W - CHECK_SIZE) / 2, marginLeft: (DAY_COL_W - CHECK_SIZE) / 2, alignItems: 'center', justifyContent: 'center' },
-
-  emptyGrid: { textAlign: 'center', color: Colors.textMuted, fontSize: 13, paddingVertical: 20 },
-
-  // Metrics
-  metricsCard: { backgroundColor: Colors.card, borderRadius: 16, borderWidth: 1, borderColor: Colors.cardBorder, marginBottom: 12, overflow: 'hidden' },
-  metricsHeaderRow: { flexDirection: 'row', backgroundColor: Colors.cardBorder, paddingVertical: 10, paddingHorizontal: 16 },
-  metricsRow: { flexDirection: 'row', paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: Colors.cardBorder },
-  metricsCell: { flex: 1, textAlign: 'center' },
-  metricsLabel: { textAlign: 'left', fontSize: 13, fontWeight: '700', color: Colors.text },
-  metricsColHeader: { fontSize: 13, fontWeight: '700', color: Colors.text },
-  metricsRowLabel: { textAlign: 'left', fontSize: 13, color: Colors.textSub, fontWeight: '600' },
-  metricsValue: { fontSize: 15, fontWeight: '800' },
+  // Grid
+  gridCard:   { paddingHorizontal: Spacing.md },
+  weekRow:    { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.md },
+  weekCenter: { flex: 1, alignItems: 'center' },
+  weekTitle:  { ...Type.bodyB, color: Palette.text },
+  gridHead:   { flexDirection: 'row', alignItems: 'flex-end', paddingBottom: Spacing.sm },
+  nameCol:    { flex: 1, minWidth: 0 },
+  dayCol:     { width: 34, alignItems: 'center', justifyContent: 'center', paddingVertical: 6, borderRadius: 10 },
+  todayCol:   { backgroundColor: 'rgba(255,255,255,0.05)' },
+  dayLabel:   { fontFamily: Fonts.bodyBold, fontSize: 10, color: Palette.textSub },
+  dayNum:     { fontFamily: Fonts.num, fontSize: 13, color: Palette.textDim, marginTop: 1 },
+  todayText:  { color: Palette.text },
+  habitRow:   { flexDirection: 'row', alignItems: 'center' },
+  nameCell:   { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingRight: Spacing.xs, paddingVertical: Spacing.sm },
+  habitIcon:  { width: 24, height: 24, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  habitName:  { ...Type.small, fontFamily: Fonts.bodySemi, color: Palette.text, flex: 1 },
+  check:      { width: CHECK, height: CHECK, borderRadius: 9, borderWidth: 1.5, borderColor: Palette.line, alignItems: 'center', justifyContent: 'center' },
+  checkEmpty: { width: CHECK, height: CHECK },
+  hint:       { ...Type.small, color: Palette.textDim, textAlign: 'center', marginTop: Spacing.md },
 
   // Chart
-  chartCard: { backgroundColor: Colors.card, borderRadius: 16, borderWidth: 1, borderColor: Colors.cardBorder, padding: 16, marginBottom: 12 },
-  chartTabRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  chartTab: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: Colors.cardBorder },
-  chartTabActive: { backgroundColor: Colors.accentGold, borderColor: Colors.accentGold },
-  chartTabText: { fontSize: 12, color: Colors.textSub, fontWeight: '600' },
-  chartTabTextActive: { color: Colors.background },
-  chartArea: { flexDirection: 'row', height: 120 },
-  yAxis: { width: 36, justifyContent: 'space-between', paddingBottom: 20 },
-  yLabel: { fontSize: 10, color: Colors.textMuted },
-  barsArea: { flex: 1, position: 'relative' },
-  gridLine: { position: 'absolute', left: 0, right: 0, height: 1, backgroundColor: Colors.cardBorder },
-  barsRow: { position: 'absolute', left: 0, right: 0, bottom: 20, top: 0, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around' },
-  barWrapper: { alignItems: 'center', flex: 1 },
-  barTrack: { width: 18, height: 90, backgroundColor: Colors.cardBorder, borderRadius: 4, overflow: 'hidden', justifyContent: 'flex-end' },
-  barFill: { width: '100%', backgroundColor: Colors.accentGold, borderRadius: 4 },
-  barLabel: { fontSize: 9, color: Colors.textMuted, marginTop: 4 },
+  tabs:        { flexDirection: 'row', gap: 6 },
+  tabChip:     { paddingHorizontal: Spacing.md, paddingVertical: 5 },
+  chart:       { flexDirection: 'row', height: 120, marginTop: Spacing.lg },
+  yAxis:       { width: 36, justifyContent: 'space-between', marginTop: -6, marginBottom: -6 },
+  yAxisSpacer: { width: 36 },
+  yLabel:      { fontFamily: Fonts.bodySemi, fontSize: 10, color: Palette.textDim },
+  barsArea:    { flex: 1 },
+  gridLine:    { position: 'absolute', left: 0, right: 0, height: 1, backgroundColor: Palette.lineSoft },
+  barsRow:     { ...StyleSheet.absoluteFillObject, flexDirection: 'row', alignItems: 'flex-end' },
+  barCol:      { flex: 1, alignItems: 'center', height: '100%', justifyContent: 'flex-end' },
+  barTrack:    { width: 16, height: '100%', justifyContent: 'flex-end' },
+  barFill:     { width: '100%', backgroundColor: Palette.success, borderRadius: 5, minHeight: 2 },
+  barLabels:   { flexDirection: 'row', marginTop: Spacing.sm },
+  barLabel:    { flex: 1, textAlign: 'center', fontFamily: Fonts.bodySemi, fontSize: 10, color: Palette.textDim },
+  barLabelOn:  { color: Palette.text },
 
-  hintText: { textAlign: 'center', color: Colors.textMuted, fontSize: 11, marginTop: 4 },
-
-  // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  modalCard: { backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: Colors.cardBorder, padding: 24, paddingBottom: 40 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: Colors.text, marginBottom: 16 },
-  nameInput: { backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.cardBorder, borderRadius: 12, padding: 14, color: Colors.text, fontSize: 15, marginBottom: 20 },
-  modalSection: { fontSize: 12, color: Colors.textSub, fontWeight: '600', marginBottom: 10 },
-  colorRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  colorDot: { width: 32, height: 32, borderRadius: 16 },
-  colorDotSelected: { borderWidth: 3, borderColor: Colors.text },
-  iconRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
-  iconBtn: { width: 44, height: 44, borderRadius: 10, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.cardBorder, alignItems: 'center', justifyContent: 'center' },
-  addBtn: { borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 10 },
-  addBtnText: { fontSize: 16, fontWeight: '800', color: Colors.background },
-  cancelBtn: { alignItems: 'center', padding: 10 },
-  cancelText: { fontSize: 14, color: Colors.textSub },
+  // Sheet
+  sheetBody:   { gap: Spacing.md, paddingBottom: Spacing.sm },
+  sheetLabel:  { ...Type.label, color: Palette.textSub, marginTop: Spacing.xs },
+  preview:     { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md, borderRadius: Radius.md, backgroundColor: Palette.surface2 },
+  previewIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  previewName: { ...Type.bodyB, color: Palette.text, flex: 1 },
+  swatches:    { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  swatchRing:  { padding: 2, borderRadius: 20, borderWidth: 2, borderColor: 'transparent' },
+  swatch:      { width: 28, height: 28, borderRadius: 14 },
+  icons:       { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.sm },
+  iconBtn:     { width: 46, height: 46, borderRadius: 14, backgroundColor: Palette.surface2, borderWidth: 1, borderColor: Palette.lineSoft, alignItems: 'center', justifyContent: 'center' },
 });

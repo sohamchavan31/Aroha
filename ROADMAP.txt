@@ -42,10 +42,9 @@ Done
   [x] Progress screen: weight hero + goal bar, SVG trend chart, weekly tiles, macro split, weigh-in sheet
   [x] Profile + Edit Profile + Avatar picker
   [x] Settings + Legal screens
+  [x] Habits + Planner
 
 Next, in this order
-  [ ] Habits screen (keep weekly grid, restyle)
-  [ ] Planner screen (restyle time blocks, to-do, carry forward)
   [ ] AI screen (chat bubbles, meal plan, insights)
   [ ] WellnessModal (sleep + voice reminders) -> rebuild on Sheet
   [ ] Onboarding (5 steps) -> one question per screen, progress bar,
