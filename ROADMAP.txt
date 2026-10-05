@@ -39,13 +39,9 @@ Done
   [x] Food screen (+ serving sheet, recipe builder)
   [x] Train screen: library, log-set sheet, PR banner, history chart
   [x] Workout generator + live session: 3-step flow, rest ring, auto-save, done screen with kcal
+  [x] Progress screen: weight hero + goal bar, SVG trend chart, weekly tiles, macro split, weigh-in sheet
 
 Next, in this order
-  [ ] Progress screen
-        - Goal progress hero (start / current / target)
-        - Weight chart: replace react-native-chart-kit with custom SVG
-          (area fill, faint grid, highlighted last point)
-        - Weekly stats tiles, macro split bars, weigh-in sheet restyle
   [ ] Profile screen + Edit Profile + Avatar picker
   [ ] Settings + Legal screens
   [ ] Habits screen (keep weekly grid, restyle)
