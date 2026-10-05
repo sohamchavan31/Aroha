@@ -46,14 +46,13 @@ Done
   [x] AI screen: coach chat, meal plan cards, numbered insights, honest offline samples
   [x] Sleep & voice sheet (WellnessModal) rebuilt on Sheet
   [x] Login + Register: matte layout, show/hide password, email checks, real server errors
+  [x] Onboarding: one question per screen, progress bar, review, calculated plan screen
+  [x] Removed constants/colors.js (every screen is on theme.js now)
 
 Next, in this order
-  [ ] Onboarding (5 steps) -> one question per screen, progress bar,
-      show calculated macro targets on the last step
   [ ] Stage-up celebration: full-screen moment (+ Lottie later)
   [ ] Replace assets/icon.png (current one has construction guides baked in)
         and update the Android adaptive icon background (#E6F4FE -> ink)
-  [ ] Remove constants/colors.js once no screen imports it (left: Onboarding, Skeleton)
   [ ] Later: light mode as a second theme (tokens already make this possible)
   [ ] Later: react-native-reanimated for smoother rings and sheets
   [ ] After merging PR #24: make a new EAS dev build (expo-haptics is native)
@@ -94,6 +93,7 @@ Next, in this order
 ======================================================================
   [ ] Body measurements: chest, waist, hips, arms, thighs (entity, API,
       Progress card, trend chart)
+  [ ] Recalculate macro targets when a new weigh-in is logged (today only on profile edit)
   [ ] Goal date: targetDate on User, collected in onboarding + edit profile;
       Progress shows "X kg left · Y days", required kg/week, On track / Behind
   [ ] Barcode scanner: expo-camera + Open Food Facts; the "scan" entry point

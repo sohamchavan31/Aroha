@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
-import Colors from '../constants/colors';
-import { Radius } from '../constants/theme';
+import { Palette, Radius } from '../constants/theme';
 
 export default function Skeleton({ width = '100%', height = 16, radius = Radius.sm, style }) {
   const pulse = useRef(new Animated.Value(0.4)).current;
@@ -53,16 +52,16 @@ export function SkeletonStatCard() {
 
 const styles = StyleSheet.create({
   base: {
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Palette.line,
   },
 });
 
 const cardStyles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.card,
+    backgroundColor: Palette.surface,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Palette.line,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -72,10 +71,10 @@ const cardStyles = StyleSheet.create({
   left: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   statCard: {
     flex: 1,
-    backgroundColor: Colors.card,
+    backgroundColor: Palette.surface,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Palette.line,
     padding: 14,
     alignItems: 'center',
   },
