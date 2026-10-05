@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  Switch, StatusBar,
-} from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Switch, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Colors from '../constants/colors';
+import Card from '../components/ui/Card';
+import IconButton from '../components/ui/IconButton';
+import AnimatedPressable from '../components/AnimatedPressable';
 import { useLanguage } from '../context/LanguageContext';
+import AppInfo from '../constants/appInfo';
+import { Palette, Fonts, Type, Spacing } from '../constants/theme';
+import { tap } from '../utils/haptics';
 import {
   scheduleWaterReminders,
   scheduleMealReminders,
@@ -22,36 +24,22 @@ const DEFAULT_SETTINGS = {
   mealReminders:    true,
   workoutReminder:  true,
   missionReminders: true,
-  sleepReminders:   true,
   language:         'en',
 };
 
 const LANGUAGES = [
-  { code: 'en', label: 'English' },
-  { code: 'hi', label: 'हिन्दी (Hindi)' },
-  { code: 'mr', label: 'मराठी (Marathi)' },
+  { code: 'en', label: 'English',  native: 'English' },
+  { code: 'hi', label: 'Hindi',    native: 'हिन्दी' },
+  { code: 'mr', label: 'Marathi',  native: 'मराठी' },
 ];
 
-// Maps setting key → notification schedule function
+// Setting key → notification schedule function
 const NOTIF_HANDLERS = {
   waterReminders:   scheduleWaterReminders,
   mealReminders:    scheduleMealReminders,
   workoutReminder:  scheduleWorkoutReminder,
   missionReminders: scheduleMissionReminder,
 };
-
-function SettingRow({ icon, label, sub, children }) {
-  return (
-    <View style={styles.row}>
-      <Ionicons name={icon} size={20} color={Colors.accentGold} style={styles.rowIcon} />
-      <View style={styles.rowText}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        {sub ? <Text style={styles.rowSub}>{sub}</Text> : null}
-      </View>
-      <View style={styles.rowControl}>{children}</View>
-    </View>
-  );
-}
 
 export default function SettingsScreen({ visible, onClose }) {
   const { language, setLanguage, t } = useLanguage();
@@ -69,139 +57,132 @@ export default function SettingsScreen({ visible, onClose }) {
   }
 
   async function updateSetting(key, value) {
+    tap();
     const next = { ...settings, [key]: value };
     setSettings(next);
     try {
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
     } catch {}
-    // Fire notification schedule function if one is mapped to this key
     const handler = NOTIF_HANDLERS[key];
     if (handler) handler(value).catch(() => {});
   }
 
   if (!visible) return null;
 
+  const reminders = [
+    { key: 'waterReminders',   icon: 'water-outline',      color: Palette.water,   label: t('waterReminders'),   sub: 'Every 2 hours' },
+    { key: 'mealReminders',    icon: 'restaurant-outline', color: Palette.kcal,    label: 'Meal reminders',      sub: '8 AM · 1 PM · 7 PM' },
+    { key: 'workoutReminder',  icon: 'barbell-outline',    color: Palette.protein, label: 'Workout reminder',    sub: 'Daily at 6:30 PM' },
+    { key: 'missionReminders', icon: 'flag-outline',       color: Palette.success, label: t('missionReminders'), sub: 'Daily at 8 PM' },
+  ];
+
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={Palette.ink} />
 
       <View style={styles.header}>
+        <View style={styles.headerSpacer} />
         <Text style={styles.headerTitle}>{t('settings')}</Text>
-        <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="close" size={24} color={Colors.textSub} />
-        </TouchableOpacity>
+        <IconButton name="close" onPress={onClose} accessibilityLabel="Close settings" />
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-
-        {/* Notifications */}
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.section}>{t('notifications')}</Text>
-        <View style={styles.card}>
-          <SettingRow icon="water-outline" label={t('waterReminders')} sub="Every 2 hours">
-            <Switch
-              value={settings.waterReminders}
-              onValueChange={v => updateSetting('waterReminders', v)}
-              trackColor={{ false: Colors.cardBorder, true: Colors.accentGold }}
-              thumbColor={Colors.text}
-            />
-          </SettingRow>
-          <View style={styles.divider} />
-          <SettingRow icon="restaurant-outline" label="Meal Reminders" sub="8 AM · 1 PM · 7 PM">
-            <Switch
-              value={settings.mealReminders}
-              onValueChange={v => updateSetting('mealReminders', v)}
-              trackColor={{ false: Colors.cardBorder, true: Colors.accentGold }}
-              thumbColor={Colors.text}
-            />
-          </SettingRow>
-          <View style={styles.divider} />
-          <SettingRow icon="barbell-outline" label="Workout Reminder" sub="Daily at 6:30 PM">
-            <Switch
-              value={settings.workoutReminder}
-              onValueChange={v => updateSetting('workoutReminder', v)}
-              trackColor={{ false: Colors.cardBorder, true: Colors.accentGold }}
-              thumbColor={Colors.text}
-            />
-          </SettingRow>
-          <View style={styles.divider} />
-          <SettingRow icon="flag-outline" label={t('missionReminders')} sub="Daily at 8 PM">
-            <Switch
-              value={settings.missionReminders}
-              onValueChange={v => updateSetting('missionReminders', v)}
-              trackColor={{ false: Colors.cardBorder, true: Colors.accentGold }}
-              thumbColor={Colors.text}
-            />
-          </SettingRow>
-          <View style={styles.divider} />
-          <SettingRow icon="moon-outline" label={t('sleepReminders')}>
-            <Switch
-              value={settings.sleepReminders}
-              onValueChange={v => updateSetting('sleepReminders', v)}
-              trackColor={{ false: Colors.cardBorder, true: Colors.accentGold }}
-              thumbColor={Colors.text}
-            />
-          </SettingRow>
-        </View>
+        <Card style={styles.list}>
+          {reminders.map((r, i) => (
+            <View key={r.key} style={[styles.row, i > 0 && styles.divider]}>
+              <View style={[styles.icon, { backgroundColor: r.color + '1F' }]}>
+                <Ionicons name={r.icon} size={17} color={r.color} />
+              </View>
+              <View style={styles.rowText}>
+                <Text style={styles.rowLabel}>{r.label}</Text>
+                <Text style={styles.rowSub}>{r.sub}</Text>
+              </View>
+              <Switch
+                value={!!settings[r.key]}
+                onValueChange={v => updateSetting(r.key, v)}
+                trackColor={{ false: Palette.line, true: Palette.violet }}
+                thumbColor={Palette.text}
+                ios_backgroundColor={Palette.line}
+                accessibilityLabel={r.label}
+              />
+            </View>
+          ))}
+          <View style={[styles.row, styles.divider, styles.disabled]}>
+            <View style={[styles.icon, { backgroundColor: Palette.violet + '1F' }]}>
+              <Ionicons name="moon-outline" size={17} color={Palette.violet} />
+            </View>
+            <View style={styles.rowText}>
+              <Text style={styles.rowLabel}>{t('sleepReminders')}</Text>
+              <Text style={styles.rowSub}>Coming soon</Text>
+            </View>
+          </View>
+        </Card>
 
-        {/* Language */}
         <Text style={styles.section}>{t('language')}</Text>
-        <View style={styles.card}>
-          {LANGUAGES.map((lang, idx) => {
+        <Card style={styles.list}>
+          {LANGUAGES.map((lang, i) => {
             const selected = language === lang.code;
             return (
-              <View key={lang.code}>
-                <TouchableOpacity style={styles.langRow} onPress={() => setLanguage(lang.code)} activeOpacity={0.7}>
-                  <Text style={[styles.langLabel, selected && styles.langLabelActive]}>{lang.label}</Text>
-                  {selected && <Ionicons name="checkmark-circle" size={20} color={Colors.accentGold} />}
-                </TouchableOpacity>
-                {idx < LANGUAGES.length - 1 && <View style={styles.divider} />}
-              </View>
+              <AnimatedPressable
+                key={lang.code}
+                scaleTo={0.98}
+                onPress={() => { tap(); setLanguage(lang.code); }}
+                style={[styles.row, i > 0 && styles.divider]}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+              >
+                <View style={styles.rowText}>
+                  <Text style={styles.rowLabel}>{lang.native}</Text>
+                  {lang.native !== lang.label && <Text style={styles.rowSub}>{lang.label}</Text>}
+                </View>
+                <View style={[styles.radio, selected && styles.radioOn]}>
+                  {selected && <Ionicons name="checkmark" size={12} color={Palette.onIvory} />}
+                </View>
+              </AnimatedPressable>
             );
           })}
-        </View>
+        </Card>
+        <Text style={styles.hint}>Language applies to screens that are translated so far.</Text>
 
-        {/* About */}
         <Text style={styles.section}>{t('about')}</Text>
-        <View style={styles.card}>
-          <SettingRow icon="leaf-outline" label={t('app')}>
-            <Text style={styles.aboutValue}>Aroha</Text>
-          </SettingRow>
-          <View style={styles.divider} />
-          <SettingRow icon="code-slash-outline" label={t('version')}>
-            <Text style={styles.aboutValue}>1.0.0</Text>
-          </SettingRow>
-          <View style={styles.divider} />
-          <SettingRow icon="person-outline" label={t('builtBy')}>
-            <Text style={styles.aboutValue}>Soham</Text>
-          </SettingRow>
-        </View>
-
-        <View style={{ height: 40 }} />
+        <Card style={styles.list}>
+          <InfoRow label={t('app')} value="Aroha" first />
+          <InfoRow label={t('version')} value={AppInfo.displayVersion} />
+          <InfoRow label={t('builtBy')} value="Soham" />
+        </Card>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+function InfoRow({ label, value, first }) {
+  return (
+    <View style={[styles.row, !first && styles.divider]}>
+      <Text style={[styles.rowLabel, styles.rowText]}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  safe:        { flex: 1, backgroundColor: Colors.background },
-  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.text },
-  scroll:      { flex: 1, paddingHorizontal: 20 },
+  safe:         { flex: 1, backgroundColor: Palette.ink },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.md },
+  headerSpacer: { width: 38 },
+  headerTitle:  { fontFamily: Fonts.display, fontSize: 17, color: Palette.text },
+  content:      { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
+  section:      { ...Type.label, color: Palette.textSub, marginTop: Spacing.lg, marginBottom: Spacing.sm },
+  hint:         { ...Type.small, color: Palette.textDim, marginTop: Spacing.sm },
 
-  section: { fontSize: 13, fontWeight: '700', color: Colors.textSub, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 24, marginBottom: 10 },
-  card:    { backgroundColor: Colors.card, borderRadius: 16, borderWidth: 1, borderColor: Colors.cardBorder, overflow: 'hidden' },
-  divider: { height: 1, backgroundColor: Colors.cardBorder, marginHorizontal: 16 },
-
-  row:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
-  rowIcon:    { marginRight: 12 },
-  rowText:    { flex: 1 },
-  rowLabel:   { fontSize: 15, color: Colors.text, fontWeight: '500' },
-  rowSub:     { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
-  rowControl: { alignItems: 'flex-end' },
-
-  langRow:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16 },
-  langLabel:      { fontSize: 15, color: Colors.textSub, fontWeight: '500' },
-  langLabelActive:{ color: Colors.text, fontWeight: '700' },
-
-  aboutValue: { fontSize: 14, color: Colors.textSub, fontWeight: '600' },
+  list:     { paddingVertical: 0, paddingHorizontal: Spacing.lg },
+  row:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.md + 2, minHeight: 56 },
+  divider:  { borderTopWidth: 1, borderTopColor: Palette.lineSoft },
+  disabled: { opacity: 0.55 },
+  icon:     { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  rowText:  { flex: 1 },
+  rowLabel: { ...Type.body, color: Palette.text },
+  rowSub:   { ...Type.small, color: Palette.textSub, marginTop: 1 },
+  radio:    { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: Palette.textDim, alignItems: 'center', justifyContent: 'center' },
+  radioOn:  { backgroundColor: Palette.ivory, borderColor: Palette.ivory },
+  infoValue:{ ...Type.bodyB, color: Palette.textSub },
 });
