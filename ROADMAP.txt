@@ -41,9 +41,9 @@ Done
   [x] Workout generator + live session: 3-step flow, rest ring, auto-save, done screen with kcal
   [x] Progress screen: weight hero + goal bar, SVG trend chart, weekly tiles, macro split, weigh-in sheet
   [x] Profile + Edit Profile + Avatar picker
+  [x] Settings + Legal screens
 
 Next, in this order
-  [ ] Settings + Legal screens
   [ ] Habits screen (keep weekly grid, restyle)
   [ ] Planner screen (restyle time blocks, to-do, carry forward)
   [ ] AI screen (chat bubbles, meal plan, insights)
@@ -84,6 +84,8 @@ Next, in this order
   [ ] AuthContext keeps the user object from login forever.
         Refresh it from /profile on app start so name/stage/avatar stay current.
   [ ] client.js production API URL is still a TODO (needed before release).
+  [ ] Sleep reminder toggle in Settings had no scheduler behind it; it now shows
+        "Coming soon". Add scheduleSleepReminder() in utils/notifications.js.
 
 
 ======================================================================
