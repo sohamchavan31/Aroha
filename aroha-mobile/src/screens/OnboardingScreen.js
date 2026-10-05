@@ -1,502 +1,516 @@
-import React, { useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, StatusBar,
-  TextInput, ScrollView, ActivityIndicator,
-} from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, StatusBar, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Colors from '../constants/colors';
 import client from '../api/client';
-import { apiError } from '../utils/apiError';
 import { useAuth } from '../context/AuthContext';
+import Card from '../components/ui/Card';
+import Chip from '../components/ui/Chip';
+import IconButton from '../components/ui/IconButton';
+import PrimaryButton from '../components/ui/PrimaryButton';
+import SegmentBar from '../components/ui/SegmentBar';
+import Segmented from '../components/ui/Segmented';
+import Stepper from '../components/ui/Stepper';
+import AnimatedPressable from '../components/AnimatedPressable';
+import FormError from '../components/auth/FormError';
+import { ALL_GOALS, LOSS_SPEEDS, GAIN_SPEEDS, LOSS_GOALS, GAIN_GOALS } from '../constants/profile';
+import { Palette, Fonts, Type, Spacing, Radius, Motion } from '../constants/theme';
+import { apiError } from '../utils/apiError';
+import { tap, success, warn } from '../utils/haptics';
 
+// ── Options ─────────────────────────────────────────────────────────────────
 const GENDERS = [
-  { key: 'male',   label: 'Male',            icon: 'male-outline' },
-  { key: 'female', label: 'Female',          icon: 'female-outline' },
-  { key: 'other',  label: 'Prefer not to say', icon: 'person-outline' },
+  { key: 'male',              label: 'Male',              icon: 'male-outline' },
+  { key: 'female',            label: 'Female',            icon: 'female-outline' },
+  { key: 'prefer_not_to_say', label: 'Prefer not to say', icon: 'person-outline' },
 ];
 
-const ACTIVITY_LEVELS = [
-  { key: 'sedentary',         label: 'Sedentary',         desc: 'Little to no exercise',               icon: 'bed-outline',     color: '#95A5A6' },
-  { key: 'lightly_active',    label: 'Lightly Active',    desc: 'Light exercise 1–3 days/week',        icon: 'walk-outline',    color: '#3498DB' },
-  { key: 'moderately_active', label: 'Moderately Active', desc: 'Moderate exercise 3–5 days/week',     icon: 'bicycle-outline', color: '#2ECC71' },
-  { key: 'very_active',       label: 'Very Active',       desc: 'Hard exercise 6–7 days/week',         icon: 'barbell-outline', color: '#E67E22' },
-  { key: 'athlete',           label: 'Athlete',           desc: 'Twice daily training or physical job',icon: 'trophy-outline',  color: Colors.accentGold },
+const ACTIVITY = [
+  { key: 'sedentary',         label: 'Mostly sitting',     sub: 'Desk job, little exercise',       icon: 'desktop-outline' },
+  { key: 'lightly_active',    label: 'Lightly active',     sub: 'Exercise 1–3 days a week',        icon: 'walk-outline' },
+  { key: 'moderately_active', label: 'Moderately active',  sub: 'Exercise 3–5 days a week',        icon: 'bicycle-outline' },
+  { key: 'very_active',       label: 'Very active',        sub: 'Hard training 6–7 days a week',   icon: 'barbell-outline' },
+  { key: 'athlete',           label: 'Athlete',            sub: 'Twice a day, or a physical job',  icon: 'trophy-outline' },
 ];
 
-const HEALTH_GOALS = [
-  { key: 'lose_weight',         label: 'Lose Weight',            desc: 'Calorie deficit, burn fat',                 icon: 'trending-down-outline',    color: '#E74C3C' },
-  { key: 'reduce_body_fat',     label: 'Reduce Body Fat %',      desc: 'Lower fat %, preserve muscle',              icon: 'body-outline',             color: '#E74C3C' },
-  { key: 'gain_muscle',         label: 'Gain Muscle Mass',       desc: 'Calorie surplus, build muscle',             icon: 'barbell-outline',          color: '#E67E22' },
-  { key: 'gain_weight',         label: 'Gain Weight',            desc: 'Increase overall body weight',              icon: 'trending-up-outline',      color: '#F39C12' },
-  { key: 'increase_strength',   label: 'Increase Strength',      desc: 'Get stronger, improve performance',         icon: 'fitness-outline',          color: '#9B59B6' },
-  { key: 'general_fitness',     label: 'General Fitness',        desc: 'Improve overall health & wellbeing',        icon: 'heart-outline',            color: '#2ECC71' },
-  { key: 'maintain',            label: 'Maintain Weight',        desc: 'Eat at maintenance calories',               icon: 'checkmark-circle-outline', color: '#3498DB' },
-  { key: 'endurance',           label: 'Improve Endurance',      desc: 'Build stamina & cardiovascular fitness',    icon: 'pulse-outline',            color: '#1ABC9C' },
-  { key: 'improve_flexibility', label: 'Flexibility & Mobility', desc: 'Reduce stiffness, improve range of motion', icon: 'body-outline',             color: '#2E86AB' },
+const GOALS = [
+  { key: 'lose_weight',         sub: 'Eat in a deficit and burn fat',       icon: 'trending-down-outline' },
+  { key: 'reduce_body_fat',     sub: 'Lose fat, keep your muscle',          icon: 'body-outline' },
+  { key: 'gain_muscle',         sub: 'Small surplus, build muscle',         icon: 'barbell-outline' },
+  { key: 'gain_weight',         sub: 'Put on healthy weight',               icon: 'trending-up-outline' },
+  { key: 'increase_strength',   sub: 'Lift heavier, perform better',        icon: 'fitness-outline' },
+  { key: 'general_fitness',     sub: 'Feel better day to day',              icon: 'heart-outline' },
+  { key: 'maintain',            sub: 'Stay where you are',                  icon: 'checkmark-circle-outline' },
+  { key: 'endurance',           sub: 'Build stamina and cardio',            icon: 'pulse-outline' },
+  { key: 'improve_flexibility', sub: 'Move freely, less stiffness',         icon: 'accessibility-outline' },
+].map(g => ({ ...g, label: ALL_GOALS[g.key].label, color: ALL_GOALS[g.key].color }));
+
+const EXPERIENCE = [
+  { key: 'beginner',     label: 'Beginner',     sub: 'Less than a year of training', icon: 'leaf-outline' },
+  { key: 'intermediate', label: 'Intermediate', sub: '1–3 years, fairly consistent',  icon: 'flame-outline' },
+  { key: 'advanced',     label: 'Advanced',     sub: '3+ years of serious training',  icon: 'trophy-outline' },
 ];
 
-const LOSS_SPEEDS = [
-  { key: 'slow_cut',       label: 'Slow Cut',       desc: '−200 kcal/day · ~0.2 kg/week',  color: '#3498DB' },
-  { key: 'moderate_cut',   label: 'Moderate Cut',   desc: '−400 kcal/day · ~0.4 kg/week',  color: '#E67E22' },
-  { key: 'aggressive_cut', label: 'Aggressive Cut', desc: '−600 kcal/day · ~0.6 kg/week',  color: '#E74C3C' },
+const DIETS = [
+  { key: 'vegetarian',     label: 'Vegetarian',     sub: 'No meat, fish or egg', icon: 'leaf-outline' },
+  { key: 'eggetarian',     label: 'Eggetarian',     sub: 'Vegetarian plus eggs', icon: 'egg-outline' },
+  { key: 'non_vegetarian', label: 'Non-vegetarian', sub: 'Everything',           icon: 'restaurant-outline' },
+  { key: 'vegan',          label: 'Vegan',          sub: 'No animal products',   icon: 'flower-outline' },
+  { key: 'jain',           label: 'Jain',           sub: 'No root vegetables',   icon: 'hand-left-outline' },
 ];
 
-const GAIN_SPEEDS = [
-  { key: 'slow_bulk',       label: 'Slow Bulk',       desc: '+150 kcal/day · minimal fat gain', color: '#3498DB' },
-  { key: 'lean_bulk',       label: 'Lean Bulk',       desc: '+250 kcal/day · balanced gain',    color: '#2ECC71' },
-  { key: 'aggressive_bulk', label: 'Aggressive Bulk', desc: '+400 kcal/day · max muscle gain',  color: '#E67E22' },
-];
+// Expected weekly change for each pace, from the kcal delta (≈ 7700 kcal per kg).
+const PACE_KCAL = { slow_cut: 200, moderate_cut: 400, aggressive_cut: 600, slow_bulk: 150, lean_bulk: 250, aggressive_bulk: 400 };
+const kgPerWeek = pace => (PACE_KCAL[pace] || 0) * 7 / 7700;
 
-const EXPERIENCE_LEVELS = [
-  { key: 'beginner',     label: 'Beginner',     desc: 'Less than 1 year of training',    icon: 'leaf-outline',    color: '#2ECC71' },
-  { key: 'intermediate', label: 'Intermediate', desc: '1–3 years of consistent training',icon: 'flame-outline',   color: '#E67E22' },
-  { key: 'advanced',     label: 'Advanced',     desc: '3+ years of serious training',    icon: 'trophy-outline',  color: Colors.accentGold },
-];
+// ── Small pieces ────────────────────────────────────────────────────────────
+function Option({ item, selected, onPress, color }) {
+  const tint = color || item.color || Palette.text;
+  return (
+    <AnimatedPressable
+      scaleTo={0.98}
+      onPress={onPress}
+      style={[styles.option, selected && styles.optionOn]}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+    >
+      {!!item.icon && (
+        <View style={[styles.optionIcon, { backgroundColor: tint + '1F' }]}>
+          <Ionicons name={item.icon} size={19} color={tint} />
+        </View>
+      )}
+      <View style={styles.flex}>
+        <Text style={styles.optionLabel}>{item.label}</Text>
+        {!!item.sub && <Text style={styles.optionSub}>{item.sub}</Text>}
+      </View>
+      <View style={[styles.radio, selected && styles.radioOn]}>
+        {selected && <Ionicons name="checkmark" size={13} color={Palette.onIvory} />}
+      </View>
+    </AnimatedPressable>
+  );
+}
 
-const DIETARY_PREFS = [
-  { key: 'non_vegetarian', label: 'Non-Vegetarian', icon: 'restaurant-outline' },
-  { key: 'vegetarian',     label: 'Vegetarian',     icon: 'leaf-outline' },
-  { key: 'eggetarian',     label: 'Eggetarian',     icon: 'egg-outline' },
-  { key: 'vegan',          label: 'Vegan',          icon: 'flower-outline' },
-  { key: 'jain',           label: 'Jain',           icon: 'hand-left-outline' },
-];
+function BigValue({ value, unit, note }) {
+  return (
+    <View style={styles.bigWrap}>
+      <Text style={styles.bigValue}>{value}<Text style={styles.bigUnit}> {unit}</Text></Text>
+      {!!note && <Text style={styles.bigNote}>{note}</Text>}
+    </View>
+  );
+}
 
-const WATER_GOALS = [6, 7, 8, 10, 12];
-const TOTAL_STEPS = 5;
+function Row({ label, value, first }) {
+  return (
+    <View style={[styles.row, !first && styles.rowDivider]}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <Text style={styles.rowValue}>{value}</Text>
+    </View>
+  );
+}
 
-const LOSS_GOALS = new Set(['lose_weight', 'reduce_body_fat']);
-const GAIN_GOALS = new Set(['gain_muscle', 'gain_weight']);
-
+// ── Screen ──────────────────────────────────────────────────────────────────
 export default function OnboardingScreen({ onComplete }) {
   const { token, user, login } = useAuth();
-  const [step, setStep]             = useState(1);
+  const firstName = (user?.name || '').trim().split(/\s+/)[0];
 
-  // Step 1
-  const [gender, setGender]         = useState('');
-  const [age, setAge]               = useState('');
-  const [weight, setWeight]         = useState('');
-  const [height, setHeight]         = useState('');
+  const [gender, setGender]       = useState('');
+  const [age, setAge]             = useState(25);
   const [heightUnit, setHeightUnit] = useState('cm');
-  const [feet, setFeet]             = useState('');
-  const [inches, setInches]         = useState('');
+  const [heightCm, setHeightCm]   = useState(170);
+  const [weight, setWeight]       = useState(70);
+  const [activity, setActivity]   = useState('');
+  const [goal, setGoal]           = useState('');
+  const [target, setTarget]       = useState(null);
+  const [pace, setPace]           = useState('');
+  const [experience, setExperience] = useState('');
+  const [diet, setDiet]           = useState('');
+  const [water, setWater]         = useState(8);
 
-  // Step 2
-  const [activityLevel, setActivityLevel] = useState('');
-
-  // Step 3
-  const [healthGoal, setHealthGoal] = useState('');
-
-  // Step 4
-  const [targetWeight, setTargetWeight]         = useState('');
-  const [weightChangeSpeed, setWeightChangeSpeed] = useState('');
-  const [experienceLevel, setExperienceLevel]   = useState('');
-  const [dietaryPreference, setDietaryPreference] = useState('');
-
-  // Step 5
-  const [waterGoal, setWaterGoal]   = useState(8);
-
+  const [index, setIndex]   = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
+  const [plan, setPlan]     = useState(null);   // profile returned by PATCH /profile
 
-  function getHeightCm() {
-    if (heightUnit === 'cm') return parseFloat(height);
-    const f = parseFloat(feet) || 0;
-    const i = parseFloat(inches) || 0;
-    return Math.round((f * 30.48 + i * 2.54) * 10) / 10;
-  }
+  const isLoss = LOSS_GOALS.has(goal);
+  const isGain = GAIN_GOALS.has(goal);
 
-  const needsSpeed  = LOSS_GOALS.has(healthGoal) || GAIN_GOALS.has(healthGoal);
-  const speedOptions = LOSS_GOALS.has(healthGoal) ? LOSS_SPEEDS : GAIN_SPEEDS;
+  // Height in ft / in is edited as two steppers but stored in cm.
+  const totalIn = Math.round(heightCm / 2.54);
+  const ft = Math.floor(totalIn / 12);
+  const inch = totalIn % 12;
+  const setFtIn = (f, i) => setHeightCm(Math.round((f * 12 + i) * 2.54));
 
-  function nextStep() {
-    setError('');
-    if (step === 1) {
-      if (!gender) { setError('Please select your gender.'); return; }
-      if (!age || !weight) { setError('Fill in age and weight.'); return; }
-      if (heightUnit === 'cm' && !height) { setError('Fill in your height.'); return; }
-      if (heightUnit === 'ft' && !feet) { setError('Fill in your height in feet.'); return; }
-      const hCm = getHeightCm();
-      if (isNaN(parseFloat(age)) || isNaN(parseFloat(weight)) || !hCm || isNaN(hCm) || hCm < 50) {
-        setError('Check your values — height must be at least 50 cm.');
-        return;
-      }
-      setStep(2);
-    } else if (step === 2) {
-      if (!activityLevel) { setError('Select your activity level.'); return; }
-      setStep(3);
-    } else if (step === 3) {
-      if (!healthGoal) { setError('Pick a goal.'); return; }
-      // Reset speed if goal type changed
-      setWeightChangeSpeed('');
-      setStep(4);
-    } else if (step === 4) {
-      if (needsSpeed && !weightChangeSpeed) { setError('Choose your pace.'); return; }
-      if (!experienceLevel) { setError('Select your experience level.'); return; }
-      if (!dietaryPreference) { setError('Select your dietary preference.'); return; }
-      setStep(5);
+  const steps = useMemo(() => [
+    'gender', 'age', 'height', 'weight', 'activity', 'goal',
+    ...(isLoss || isGain ? ['target'] : []),
+    'experience', 'diet', 'water', 'review',
+  ], [isLoss, isGain]);
+  const step = plan ? 'plan' : steps[Math.min(index, steps.length - 1)];
+
+  // Fade + slide each new question in.
+  const enter = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    enter.setValue(0);
+    Animated.timing(enter, { toValue: 1, duration: Motion.base, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [step, enter]);
+
+  // Default the target 5 kg in the goal's direction when the goal changes.
+  useEffect(() => {
+    if (isLoss) { setTarget(Math.max(30, Math.round(weight - 5))); setPace('moderate_cut'); }
+    else if (isGain) { setTarget(Math.min(250, Math.round(weight + 5))); setPace('lean_bulk'); }
+    else { setTarget(null); setPace(''); }
+  }, [goal]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function stepError() {
+    switch (step) {
+      case 'gender':     return gender ? '' : 'Pick one to continue.';
+      case 'activity':   return activity ? '' : 'Pick your activity level.';
+      case 'goal':       return goal ? '' : 'Pick a goal.';
+      case 'experience': return experience ? '' : 'Pick your experience level.';
+      case 'diet':       return diet ? '' : 'Pick how you eat.';
+      case 'target':
+        if (isLoss && target >= weight) return 'Your target should be below your current weight.';
+        if (isGain && target <= weight) return 'Your target should be above your current weight.';
+        return pace ? '' : 'Pick a pace.';
+      default: return '';
     }
   }
 
-  async function finish() {
+  function next() {
+    const e = stepError();
+    if (e) { warn(); setError(e); return; }
+    setError('');
+    if (step === 'review') { save(); return; }
+    setIndex(i => Math.min(i + 1, steps.length - 1));
+  }
+
+  function back() {
+    setError('');
+    if (plan) { setPlan(null); return; }
+    setIndex(i => Math.max(0, i - 1));
+  }
+
+  // Single-choice questions move on by themselves after a short beat.
+  function pick(setter, value) {
+    tap();
+    setter(value);
+    setError('');
+    setTimeout(() => setIndex(i => Math.min(i + 1, steps.length - 1)), 220);
+  }
+
+  async function save() {
+    if (saving) return;
     setSaving(true);
     setError('');
     try {
       const payload = {
-        gender,
-        age:              parseInt(age),
-        weightKg:         parseFloat(weight),
-        heightCm:         getHeightCm(),
-        activityLevel,
-        healthGoal,
-        experienceLevel,
-        dietaryPreference,
-        waterGoalGlasses: waterGoal,
+        gender, age, weightKg: weight, heightCm,
+        activityLevel: activity, healthGoal: goal,
+        experienceLevel: experience, dietaryPreference: diet,
+        waterGoalGlasses: water,
       };
-      if (targetWeight) payload.targetWeightKg = parseFloat(targetWeight);
-      if (weightChangeSpeed) payload.weightChangeSpeed = weightChangeSpeed;
-
-      await client.patch('/profile', payload);
-      await login(token, { ...user, profileComplete: true, waterGoalGlasses: waterGoal });
-      onComplete();
+      if (target != null && (isLoss || isGain)) payload.targetWeightKg = target;
+      if (pace) payload.weightChangeSpeed = pace;
+      const { data } = await client.patch('/profile', payload);
+      setPlan(data);
+      success();
     } catch (err) {
-      setError(apiError(err, 'Could not save. Try again.'));
+      warn();
+      setError(apiError(err, 'Could not save your profile. Try again.'));
     } finally {
       setSaving(false);
     }
   }
 
-  const goalObj     = HEALTH_GOALS.find(g => g.key === healthGoal);
-  const activityObj = ACTIVITY_LEVELS.find(a => a.key === activityLevel);
-  const speedObj    = [...LOSS_SPEEDS, ...GAIN_SPEEDS].find(s => s.key === weightChangeSpeed);
-  const expObj      = EXPERIENCE_LEVELS.find(e => e.key === experienceLevel);
-  const dietObj     = DIETARY_PREFS.find(d => d.key === dietaryPreference);
+  async function start() {
+    tap();
+    await login(token, {
+      ...user,
+      profileComplete: true,
+      waterGoalGlasses: water,
+      evolutionStage: plan?.evolutionStage ?? user?.evolutionStage,
+      evolutionPoints: plan?.evolutionPoints ?? user?.evolutionPoints,
+    });
+    onComplete?.();
+  }
+
+  const paces = isLoss ? LOSS_SPEEDS : GAIN_SPEEDS;
+  const weeks = target != null && pace ? Math.ceil(Math.abs(weight - target) / kgPerWeek(pace)) : null;
+  const label = (list, key) => list.find(o => o.key === key)?.label ?? '';
+
+  // ── Question bodies ──────────────────────────────────────────────────────
+  const Q = {
+    gender: {
+      title: firstName ? `Hi ${firstName}. Let's set up your plan.` : "Let's set up your plan.",
+      sub: 'A few quick questions so your calories and macros fit you. First, your sex for the calorie maths.',
+      body: <View style={styles.list}>{GENDERS.map(g => <Option key={g.key} item={g} selected={gender === g.key} onPress={() => pick(setGender, g.key)} />)}</View>,
+    },
+    age: {
+      title: 'How old are you?',
+      sub: 'Your metabolism slows a little with age.',
+      body: (
+        <>
+          <BigValue value={age} unit="years" />
+          <View style={styles.stepperRow}><Stepper value={age} onChange={setAge} step={1} min={13} max={100} unit="years" /></View>
+        </>
+      ),
+    },
+    height: {
+      title: 'How tall are you?',
+      sub: 'Used with your weight for BMR and BMI.',
+      body: (
+        <>
+          <Segmented options={[{ key: 'cm', label: 'cm' }, { key: 'ft', label: 'ft / in' }]} value={heightUnit} onChange={setHeightUnit} style={styles.unitSwitch} />
+          <BigValue value={heightUnit === 'cm' ? heightCm : `${ft}′${inch}″`} unit={heightUnit === 'cm' ? 'cm' : ''} note={heightUnit === 'cm' ? `${ft}′${inch}″` : `${heightCm} cm`} />
+          <View style={styles.stepperRow}>
+            {heightUnit === 'cm'
+              ? <Stepper value={heightCm} onChange={setHeightCm} step={1} min={120} max={230} unit="cm" />
+              : <>
+                  <Stepper label="Feet" value={ft} onChange={f => setFtIn(f, inch)} step={1} min={4} max={7} unit="ft" />
+                  <Stepper label="Inches" value={inch} onChange={i => setFtIn(ft, i)} step={1} min={0} max={11} unit="in" />
+                </>}
+          </View>
+        </>
+      ),
+    },
+    weight: {
+      title: 'What do you weigh?',
+      sub: 'Your weight today. You can log new weigh-ins any time.',
+      body: (
+        <>
+          <BigValue value={weight} unit="kg" note={`BMI ${(weight / Math.pow(heightCm / 100, 2)).toFixed(1)}`} />
+          <View style={styles.stepperRow}><Stepper value={weight} onChange={setWeight} step={0.5} min={30} max={250} decimals={1} unit="kg" /></View>
+        </>
+      ),
+    },
+    activity: {
+      title: 'How active is a normal week?',
+      sub: 'Not counting what you plan to do. Be honest; it sets your daily burn.',
+      body: <View style={styles.list}>{ACTIVITY.map(a => <Option key={a.key} item={a} color={Palette.carbs} selected={activity === a.key} onPress={() => pick(setActivity, a.key)} />)}</View>,
+    },
+    goal: {
+      title: "What's your main goal?",
+      sub: 'Your calories, protein, carbs and fat are built around this.',
+      body: <View style={styles.list}>{GOALS.map(g => <Option key={g.key} item={g} selected={goal === g.key} onPress={() => pick(setGoal, g.key)} />)}</View>,
+    },
+    target: {
+      title: isLoss ? 'Where do you want to get to?' : 'How much do you want to gain?',
+      sub: 'Pick a target and a pace. A steady pace is easier to stick to.',
+      body: (
+        <>
+          <View style={styles.targetRow}>
+            <View style={styles.targetFrom}>
+              <Text style={styles.label}>Now</Text>
+              <Text style={styles.targetNow}>{weight}<Text style={styles.bigUnit}> kg</Text></Text>
+            </View>
+            <Ionicons name="arrow-forward" size={18} color={Palette.textDim} style={{ marginTop: 18 }} />
+            <View style={styles.flex}>
+              <View style={styles.stepperRow}><Stepper label="Target" value={target ?? weight} onChange={setTarget} step={0.5} min={30} max={250} decimals={1} unit="kg" /></View>
+            </View>
+          </View>
+          <Text style={[styles.label, styles.section]}>Pace</Text>
+          <View style={styles.list}>
+            {paces.map(p => (
+              <Option key={p.key} color={isLoss ? Palette.kcal : Palette.success}
+                item={{ ...p, sub: `${p.sub} · about ${kgPerWeek(p.key).toFixed(2)} kg a week` }}
+                selected={pace === p.key}
+                onPress={() => { tap(); setPace(p.key); setError(''); }} />
+            ))}
+          </View>
+          {!!weeks && weeks < 520 && <Text style={styles.hint}>At this pace you'd reach {target} kg in about {weeks} weeks.</Text>}
+        </>
+      ),
+    },
+    experience: {
+      title: 'How long have you been training?',
+      sub: 'Sets the sets, reps and rest in your generated workouts.',
+      body: <View style={styles.list}>{EXPERIENCE.map(e => <Option key={e.key} item={e} color={Palette.protein} selected={experience === e.key} onPress={() => pick(setExperience, e.key)} />)}</View>,
+    },
+    diet: {
+      title: 'How do you eat?',
+      sub: 'Your AI meal plans will stick to this.',
+      body: <View style={styles.list}>{DIETS.map(d => <Option key={d.key} item={d} color={Palette.success} selected={diet === d.key} onPress={() => pick(setDiet, d.key)} />)}</View>,
+    },
+    water: {
+      title: 'How much water a day?',
+      sub: 'One glass is about 250 ml. Most adults do well with 8–10.',
+      body: (
+        <>
+          <BigValue value={water} unit="glasses" note={`about ${(water * 0.25).toFixed(1)} litres`} />
+          <View style={styles.stepperRow}><Stepper value={water} onChange={setWater} step={1} min={4} max={20} unit="glasses" /></View>
+          <View style={styles.chips}>
+            {[6, 8, 10, 12].map(n => <Chip key={n} label={`${n}`} selected={water === n} color={Palette.water} onPress={() => setWater(n)} />)}
+          </View>
+        </>
+      ),
+    },
+    review: {
+      title: 'All set. Look right?',
+      sub: 'Tap a row to change it.',
+      body: (
+        <Card style={styles.review}>
+          {[
+            ['gender', 'Sex', label(GENDERS, gender)],
+            ['age', 'Age', `${age} years`],
+            ['height', 'Height', `${heightCm} cm`],
+            ['weight', 'Weight', `${weight} kg`],
+            ['activity', 'Activity', label(ACTIVITY, activity)],
+            ['goal', 'Goal', label(GOALS, goal)],
+            ...(isLoss || isGain ? [['target', 'Target', `${target} kg · ${label(paces, pace).toLowerCase()}`]] : []),
+            ['experience', 'Experience', label(EXPERIENCE, experience)],
+            ['diet', 'Diet', label(DIETS, diet)],
+            ['water', 'Water', `${water} glasses`],
+          ].map(([key, k, v], i) => (
+            <AnimatedPressable key={key} scaleTo={0.99} onPress={() => { tap(); setIndex(steps.indexOf(key)); }}
+              style={[styles.row, i > 0 && styles.rowDivider]} accessibilityRole="button" accessibilityLabel={`Change ${k}`}>
+              <Text style={styles.rowLabel}>{k}</Text>
+              <Text style={styles.rowValue}>{v}</Text>
+              <Ionicons name="chevron-forward" size={14} color={Palette.textDim} />
+            </AnimatedPressable>
+          ))}
+        </Card>
+      ),
+    },
+  };
+
+  // ── Result: the calculated plan from the backend ────────────────────────
+  function PlanView() {
+    const kcal = plan.dailyCalorieGoal || 0;
+    const macros = [
+      { key: 'Protein', g: plan.dailyProteinGoal || 0, per: 4, color: Palette.protein },
+      { key: 'Carbs',   g: plan.dailyCarbGoal || 0,    per: 4, color: Palette.carbs },
+      { key: 'Fat',     g: plan.dailyFatGoal || 0,     per: 9, color: Palette.fat },
+    ];
+    const diff = plan.tdee ? kcal - plan.tdee : 0;
+    return (
+      <>
+        <Card variant="hero" style={styles.planHero}>
+          <Text style={styles.label}>Daily target</Text>
+          <Text style={styles.planKcal}>{kcal.toLocaleString('en-IN')}<Text style={styles.planUnit}> kcal</Text></Text>
+          {!!plan.tdee && (
+            <Text style={styles.planWhy}>
+              You burn about {plan.tdee.toLocaleString('en-IN')} kcal a day.{' '}
+              {diff < 0 ? `Eating ${Math.abs(diff)} less` : diff > 0 ? `Eating ${diff} more` : 'Eating the same'} gets you to your goal.
+            </Text>
+          )}
+          <View style={styles.split}>
+            {macros.map(m => (
+              <View key={m.key} style={{ flex: Math.max(1, m.g * m.per), height: 6, borderRadius: 3, backgroundColor: m.color }} />
+            ))}
+          </View>
+          <View style={styles.macroRow}>
+            {macros.map(m => (
+              <View key={m.key} style={styles.macro}>
+                <Text style={[styles.macroNum, { color: m.color }]}>{m.g}g</Text>
+                <Text style={styles.macroLabel}>{m.key}</Text>
+              </View>
+            ))}
+          </View>
+        </Card>
+        <Card style={styles.review}>
+          {!!plan.bmi && <Row first label="BMI" value={`${plan.bmi} · ${plan.bmiCategory}`} />}
+          <Row first={!plan.bmi} label="Water" value={`${plan.waterGoalGlasses} glasses a day`} />
+          {plan.targetWeightKg != null && (isLoss || isGain) && <Row label="Target" value={`${plan.targetWeightKg} kg${weeks ? ` · ~${weeks} weeks` : ''}`} />}
+        </Card>
+        <Text style={styles.hint}>You can change any of this later in Profile → Edit, and your targets are recalculated.</Text>
+      </>
+    );
+  }
+
+  const q = Q[step];
+  const position = plan ? steps.length : index + 1;
+  const showBack = plan || index > 0;
+  const translateY = enter.interpolate({ inputRange: [0, 1], outputRange: [16, 0] });
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={Palette.ink} />
 
-      {/* Progress dots */}
-      <View style={styles.dots}>
-        {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map(s => (
-          <View key={s} style={[styles.dot, step >= s && styles.dotActive]} />
-        ))}
+      <View style={styles.header}>
+        {showBack
+          ? <IconButton name="chevron-back" onPress={back} accessibilityLabel="Back" />
+          : <View style={styles.headerSpacer} />}
+        <View style={styles.progress}>
+          <SegmentBar progress={position / steps.length} segments={steps.length} color={Palette.text} height={4} />
+        </View>
+        <Text style={styles.count}>{plan ? 'Done' : `${position}/${steps.length}`}</Text>
       </View>
 
-      <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-
-        {/* ── Step 1: Body Stats ── */}
-        {step === 1 && (
-          <>
-            <Text style={styles.stepTitle}>Your Body Stats</Text>
-            <Text style={styles.stepSub}>Used to calculate your personalised BMR and daily calorie needs.</Text>
-
-            <Text style={styles.label}>Gender</Text>
-            <View style={styles.genderRow}>
-              {GENDERS.map(g => (
-                <TouchableOpacity
-                  key={g.key}
-                  style={[styles.genderBtn, gender === g.key && styles.genderBtnActive]}
-                  onPress={() => setGender(g.key)}
-                  activeOpacity={0.7}>
-                  <Ionicons name={g.icon} size={22} color={gender === g.key ? Colors.background : Colors.textSub} />
-                  <Text style={[styles.genderLabel, gender === g.key && styles.genderLabelActive]}>{g.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={styles.label}>Age</Text>
-            <TextInput style={styles.input} placeholder="e.g. 22" placeholderTextColor={Colors.textMuted}
-              value={age} onChangeText={setAge} keyboardType="numeric" />
-
-            <Text style={styles.label}>Weight (kg)</Text>
-            <TextInput style={styles.input} placeholder="e.g. 70" placeholderTextColor={Colors.textMuted}
-              value={weight} onChangeText={setWeight} keyboardType="decimal-pad" />
-
-            <View style={styles.heightHeader}>
-              <Text style={styles.label}>Height</Text>
-              <View style={styles.unitToggle}>
-                <TouchableOpacity style={[styles.unitBtn, heightUnit === 'cm' && styles.unitBtnActive]} onPress={() => setHeightUnit('cm')}>
-                  <Text style={[styles.unitBtnText, heightUnit === 'cm' && styles.unitBtnTextActive]}>cm</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.unitBtn, heightUnit === 'ft' && styles.unitBtnActive]} onPress={() => setHeightUnit('ft')}>
-                  <Text style={[styles.unitBtnText, heightUnit === 'ft' && styles.unitBtnTextActive]}>ft / in</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            {heightUnit === 'cm' ? (
-              <TextInput style={styles.input} placeholder="e.g. 175" placeholderTextColor={Colors.textMuted}
-                value={height} onChangeText={setHeight} keyboardType="decimal-pad" />
-            ) : (
-              <View style={styles.ftRow}>
-                <TextInput style={[styles.input, styles.ftInput]} placeholder="5" placeholderTextColor={Colors.textMuted}
-                  value={feet} onChangeText={setFeet} keyboardType="numeric" />
-                <Text style={styles.ftLabel}>ft</Text>
-                <TextInput style={[styles.input, styles.ftInput]} placeholder="9" placeholderTextColor={Colors.textMuted}
-                  value={inches} onChangeText={setInches} keyboardType="numeric" />
-                <Text style={styles.ftLabel}>in</Text>
-              </View>
-            )}
-          </>
-        )}
-
-        {/* ── Step 2: Activity Level ── */}
-        {step === 2 && (
-          <>
-            <Text style={styles.stepTitle}>Activity Level</Text>
-            <Text style={styles.stepSub}>How active are you on a typical week? This sets your TDEE multiplier.</Text>
-            {ACTIVITY_LEVELS.map(a => (
-              <TouchableOpacity key={a.key}
-                style={[styles.optionCard, activityLevel === a.key && { borderColor: a.color, backgroundColor: a.color + '15' }]}
-                onPress={() => setActivityLevel(a.key)} activeOpacity={0.7}>
-                <View style={[styles.optionIcon, { backgroundColor: a.color + '22' }]}>
-                  <Ionicons name={a.icon} size={22} color={a.color} />
-                </View>
-                <View style={styles.optionText}>
-                  <Text style={[styles.optionLabel, activityLevel === a.key && { color: a.color }]}>{a.label}</Text>
-                  <Text style={styles.optionDesc}>{a.desc}</Text>
-                </View>
-                {activityLevel === a.key && <Ionicons name="checkmark-circle" size={20} color={a.color} />}
-              </TouchableOpacity>
-            ))}
-          </>
-        )}
-
-        {/* ── Step 3: Health Goal ── */}
-        {step === 3 && (
-          <>
-            <Text style={styles.stepTitle}>Your Health Goal</Text>
-            <Text style={styles.stepSub}>We'll calculate your calories, protein, carbs and fat around this.</Text>
-            {HEALTH_GOALS.map(g => (
-              <TouchableOpacity key={g.key}
-                style={[styles.optionCard, healthGoal === g.key && { borderColor: g.color, backgroundColor: g.color + '15' }]}
-                onPress={() => setHealthGoal(g.key)} activeOpacity={0.7}>
-                <View style={[styles.optionIcon, { backgroundColor: g.color + '22' }]}>
-                  <Ionicons name={g.icon} size={22} color={g.color} />
-                </View>
-                <View style={styles.optionText}>
-                  <Text style={[styles.optionLabel, healthGoal === g.key && { color: g.color }]}>{g.label}</Text>
-                  <Text style={styles.optionDesc}>{g.desc}</Text>
-                </View>
-                {healthGoal === g.key && <Ionicons name="checkmark-circle" size={20} color={g.color} />}
-              </TouchableOpacity>
-            ))}
-          </>
-        )}
-
-        {/* ── Step 4: Target Weight + Speed + Experience + Diet ── */}
-        {step === 4 && (
-          <>
-            <Text style={styles.stepTitle}>Your Preferences</Text>
-            <Text style={styles.stepSub}>Help us personalise your meal plans and workout recommendations.</Text>
-
-            {/* Target weight — for gain/loss goals */}
-            {(LOSS_GOALS.has(healthGoal) || GAIN_GOALS.has(healthGoal)) && (
-              <>
-                <Text style={styles.label}>
-                  Target Weight (kg) <Text style={styles.labelOptional}>optional</Text>
-                </Text>
-                <View style={styles.targetWeightRow}>
-                  <View style={styles.targetWeightCurrent}>
-                    <Text style={styles.targetWeightSub}>Current</Text>
-                    <Text style={styles.targetWeightVal}>{weight} kg</Text>
-                  </View>
-                  <Ionicons name="arrow-forward" size={20} color={Colors.textMuted} />
-                  <TextInput
-                    style={[styles.input, styles.targetWeightInput]}
-                    placeholder={GAIN_GOALS.has(healthGoal) ? 'e.g. 80' : 'e.g. 65'}
-                    placeholderTextColor={Colors.textMuted}
-                    value={targetWeight}
-                    onChangeText={setTargetWeight}
-                    keyboardType="decimal-pad"
-                  />
-                </View>
-              </>
-            )}
-
-            {/* Speed — for gain/loss goals only */}
-            {needsSpeed && (
-              <>
-                <Text style={styles.label}>
-                  {LOSS_GOALS.has(healthGoal) ? 'Weight Loss Pace' : 'Muscle Gain Pace'}
-                </Text>
-                {speedOptions.map(s => (
-                  <TouchableOpacity key={s.key}
-                    style={[styles.speedCard, weightChangeSpeed === s.key && { borderColor: s.color, backgroundColor: s.color + '18' }]}
-                    onPress={() => setWeightChangeSpeed(s.key)} activeOpacity={0.7}>
-                    <View style={styles.optionText}>
-                      <Text style={[styles.optionLabel, weightChangeSpeed === s.key && { color: s.color }]}>{s.label}</Text>
-                      <Text style={styles.optionDesc}>{s.desc}</Text>
-                    </View>
-                    {weightChangeSpeed === s.key && <Ionicons name="checkmark-circle" size={20} color={s.color} />}
-                  </TouchableOpacity>
-                ))}
-              </>
-            )}
-
-            {/* Experience level */}
-            <Text style={styles.label}>Workout Experience</Text>
-            {EXPERIENCE_LEVELS.map(e => (
-              <TouchableOpacity key={e.key}
-                style={[styles.optionCard, experienceLevel === e.key && { borderColor: e.color, backgroundColor: e.color + '15' }]}
-                onPress={() => setExperienceLevel(e.key)} activeOpacity={0.7}>
-                <View style={[styles.optionIcon, { backgroundColor: e.color + '22' }]}>
-                  <Ionicons name={e.icon} size={22} color={e.color} />
-                </View>
-                <View style={styles.optionText}>
-                  <Text style={[styles.optionLabel, experienceLevel === e.key && { color: e.color }]}>{e.label}</Text>
-                  <Text style={styles.optionDesc}>{e.desc}</Text>
-                </View>
-                {experienceLevel === e.key && <Ionicons name="checkmark-circle" size={20} color={e.color} />}
-              </TouchableOpacity>
-            ))}
-
-            {/* Dietary preference */}
-            <Text style={[styles.label, { marginTop: 8 }]}>Dietary Preference</Text>
-            <View style={styles.dietRow}>
-              {DIETARY_PREFS.map(d => (
-                <TouchableOpacity key={d.key}
-                  style={[styles.dietChip, dietaryPreference === d.key && styles.dietChipActive]}
-                  onPress={() => setDietaryPreference(d.key)} activeOpacity={0.7}>
-                  <Ionicons name={d.icon} size={16} color={dietaryPreference === d.key ? Colors.background : Colors.accentGold} />
-                  <Text style={[styles.dietChipText, dietaryPreference === d.key && styles.dietChipTextActive]}>{d.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </>
-        )}
-
-        {/* ── Step 5: Water + Summary ── */}
-        {step === 5 && (
-          <>
-            <Text style={styles.stepTitle}>Daily Water Goal</Text>
-            <Text style={styles.stepSub}>How many glasses of water do you aim to drink each day?</Text>
-
-            <View style={styles.waterOptions}>
-              {WATER_GOALS.map(g => (
-                <TouchableOpacity key={g}
-                  style={[styles.waterChip, waterGoal === g && styles.waterChipActive]}
-                  onPress={() => setWaterGoal(g)}>
-                  <Ionicons name="water" size={14} color={waterGoal === g ? Colors.background : '#2E86AB'} />
-                  <Text style={[styles.waterChipText, waterGoal === g && styles.waterChipTextActive]}>{g} glasses</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryTitle}>Your Profile</Text>
-              {[
-                ['Gender',   GENDERS.find(g => g.key === gender)?.label],
-                ['Age',      `${age} years`],
-                ['Weight',   `${weight} kg${targetWeight ? `  →  ${targetWeight} kg` : ''}`],
-                ['Height',   `${getHeightCm()} cm`],
-                ['Activity', activityObj?.label],
-                ['Goal',     goalObj?.label],
-                speedObj ? ['Pace', speedObj.label] : null,
-                ['Experience', expObj?.label],
-                ['Diet',     dietObj?.label],
-                ['Water',    `${waterGoal} glasses/day`],
-              ].filter(Boolean).map(([k, v], i, arr) => (
-                <View key={k} style={[styles.summaryRow, i === arr.length - 1 && { borderBottomWidth: 0 }]}>
-                  <Text style={styles.summaryKey}>{k}</Text>
-                  <Text style={styles.summaryVal}>{v}</Text>
-                </View>
-              ))}
-            </View>
-          </>
-        )}
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        {step < TOTAL_STEPS ? (
-          <TouchableOpacity style={styles.nextBtn} onPress={nextStep} activeOpacity={0.8}>
-            <Text style={styles.nextBtnText}>Continue</Text>
-            <Ionicons name="arrow-forward" size={18} color={Colors.background} />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={[styles.nextBtn, saving && { opacity: 0.6 }]}
-            onPress={finish}
-            disabled={saving}
-            activeOpacity={0.8}>
-            {saving
-              ? <ActivityIndicator color={Colors.background} />
-              : <>
-                  <Text style={styles.nextBtnText}>Begin Your Evolution</Text>
-                  <Ionicons name="flash" size={18} color={Colors.background} />
-                </>
-            }
-          </TouchableOpacity>
-        )}
-
-        <View style={{ height: 40 }} />
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <Animated.View style={{ opacity: enter, transform: [{ translateY }] }}>
+          <Text style={styles.title}>{plan ? 'Your plan is ready' : q.title}</Text>
+          <Text style={styles.sub}>{plan ? `Built from your answers${firstName ? `, ${firstName}` : ''}. This is what a day looks like.` : q.sub}</Text>
+          <View style={styles.body}>{plan ? <PlanView /> : q.body}</View>
+        </Animated.View>
       </ScrollView>
+
+      <View style={styles.footer}>
+        <FormError message={error} />
+        {plan
+          ? <PrimaryButton title="Start my journey" icon="flash" onPress={start} />
+          : <PrimaryButton
+              title={step === 'review' ? (saving ? 'Calculating…' : 'Calculate my plan') : 'Continue'}
+              icon={step === 'review' ? 'calculator-outline' : 'arrow-forward'}
+              onPress={next}
+            />}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe:  { flex: 1, backgroundColor: Colors.background },
-  dots:  { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingTop: 20, paddingBottom: 8 },
-  dot:   { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.cardBorder },
-  dotActive: { backgroundColor: Colors.accentGold, width: 24 },
-  scroll: { flex: 1, paddingHorizontal: 24 },
+  safe: { flex: 1, backgroundColor: Palette.ink },
+  flex: { flex: 1 },
 
-  stepTitle: { fontSize: 24, fontWeight: '800', color: Colors.text, marginTop: 24, marginBottom: 8 },
-  stepSub:   { fontSize: 14, color: Colors.textSub, marginBottom: 28, lineHeight: 20 },
-  label:     { fontSize: 13, color: Colors.textSub, fontWeight: '600', marginBottom: 8 },
-  labelOptional: { fontWeight: '400', color: Colors.textMuted, fontSize: 12 },
-  input:     { backgroundColor: Colors.card, borderWidth: 1, borderColor: Colors.cardBorder, borderRadius: 12, padding: 14, color: Colors.text, fontSize: 16, marginBottom: 18 },
+  header:       { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.sm },
+  headerSpacer: { width: 38, height: 38 },
+  progress:     { flex: 1 },
+  count:        { fontFamily: Fonts.num, fontSize: 14, color: Palette.textSub, minWidth: 34, textAlign: 'right' },
 
-  genderRow:        { flexDirection: 'row', gap: 10, marginBottom: 18 },
-  genderBtn:        { flex: 1, alignItems: 'center', paddingVertical: 14, backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1.5, borderColor: Colors.cardBorder, gap: 6 },
-  genderBtnActive:  { backgroundColor: Colors.accentGold, borderColor: Colors.accentGold },
-  genderLabel:      { fontSize: 12, fontWeight: '600', color: Colors.textSub, textAlign: 'center' },
-  genderLabelActive:{ color: Colors.background },
+  content: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.lg, paddingBottom: Spacing.xl },
+  title:   { fontFamily: Fonts.display, fontSize: 24, lineHeight: 32, color: Palette.text },
+  sub:     { ...Type.body, fontSize: 15, lineHeight: 22, color: Palette.textSub, marginTop: Spacing.sm },
+  body:    { marginTop: Spacing.xl },
+  label:   { ...Type.label, color: Palette.textSub },
+  section: { marginTop: Spacing.xl, marginBottom: Spacing.sm },
+  hint:    { ...Type.small, color: Palette.textDim, marginTop: Spacing.md, lineHeight: 18 },
 
-  optionCard:  { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1.5, borderColor: Colors.cardBorder, padding: 14, marginBottom: 10, gap: 12 },
-  optionIcon:  { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  optionText:  { flex: 1 },
-  optionLabel: { fontSize: 15, fontWeight: '600', color: Colors.text, marginBottom: 2 },
-  optionDesc:  { fontSize: 12, color: Colors.textMuted, lineHeight: 16 },
+  list:        { gap: Spacing.sm },
+  option:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: Palette.surface, borderWidth: 1, borderColor: Palette.lineSoft, borderRadius: Radius.md + 2, paddingHorizontal: Spacing.md + 2, paddingVertical: Spacing.md },
+  optionOn:    { borderColor: Palette.text + '66', backgroundColor: Palette.surface2 },
+  optionIcon:  { width: 38, height: 38, borderRadius: Radius.sm + 4, alignItems: 'center', justifyContent: 'center' },
+  optionLabel: { ...Type.bodyB, fontSize: 15, color: Palette.text },
+  optionSub:   { ...Type.small, color: Palette.textSub, marginTop: 2 },
+  radio:       { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: Palette.textDim, alignItems: 'center', justifyContent: 'center' },
+  radioOn:     { backgroundColor: Palette.ivory, borderColor: Palette.ivory },
 
-  speedCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card, borderRadius: 12, borderWidth: 1.5, borderColor: Colors.cardBorder, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 8, gap: 12 },
+  bigWrap:   { alignItems: 'center', paddingVertical: Spacing.xl },
+  bigValue:  { fontFamily: Fonts.numHeavy, fontSize: 72, lineHeight: 80, color: Palette.text },
+  bigUnit:   { fontFamily: Fonts.bodySemi, fontSize: 16, color: Palette.textSub },
+  bigNote:   { ...Type.small, color: Palette.textDim, marginTop: 2 },
+  stepperRow:{ flexDirection: 'row', gap: Spacing.md },
+  unitSwitch:{ alignSelf: 'center', width: 180 },
+  chips:     { flexDirection: 'row', justifyContent: 'center', gap: Spacing.sm, marginTop: Spacing.lg },
 
-  targetWeightRow:    { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18 },
-  targetWeightCurrent:{ alignItems: 'center' },
-  targetWeightSub:    { fontSize: 10, color: Colors.textMuted, marginBottom: 2 },
-  targetWeightVal:    { fontSize: 16, fontWeight: '700', color: Colors.textSub },
-  targetWeightInput:  { flex: 1, marginBottom: 0 },
+  targetRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md },
+  targetFrom: { width: 76 },
+  targetNow:  { fontFamily: Fonts.numHeavy, fontSize: 30, color: Palette.textSub, marginTop: Spacing.sm },
 
-  dietRow:         { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 },
-  dietChip:        { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1.5, borderColor: Colors.accentGold + '66', backgroundColor: Colors.card },
-  dietChipActive:  { backgroundColor: Colors.accentGold, borderColor: Colors.accentGold },
-  dietChipText:    { fontSize: 13, color: Colors.accentGold, fontWeight: '600' },
-  dietChipTextActive: { color: Colors.background },
+  review:     { paddingVertical: 0, paddingHorizontal: Spacing.lg },
+  row:        { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.md + 1 },
+  rowDivider: { borderTopWidth: 1, borderTopColor: Palette.lineSoft },
+  rowLabel:   { ...Type.body, fontSize: 14, color: Palette.textSub, flex: 1 },
+  rowValue:   { ...Type.bodyB, fontSize: 14, color: Palette.text, textAlign: 'right', flexShrink: 1 },
 
-  heightHeader:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  unitToggle:       { flexDirection: 'row', backgroundColor: Colors.card, borderRadius: 8, borderWidth: 1, borderColor: Colors.cardBorder, overflow: 'hidden' },
-  unitBtn:          { paddingHorizontal: 12, paddingVertical: 5 },
-  unitBtnActive:    { backgroundColor: Colors.accentGold },
-  unitBtnText:      { fontSize: 12, color: Colors.textMuted, fontWeight: '600' },
-  unitBtnTextActive:{ color: Colors.background },
-  ftRow:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 18 },
-  ftInput: { flex: 1, marginBottom: 0 },
-  ftLabel: { fontSize: 15, color: Colors.textSub, fontWeight: '600' },
+  planHero:  { marginBottom: Spacing.md },
+  planKcal:  { fontFamily: Fonts.numHeavy, fontSize: 56, lineHeight: 62, color: Palette.kcal, marginTop: Spacing.xs },
+  planUnit:  { fontFamily: Fonts.bodySemi, fontSize: 15, color: Palette.textSub },
+  planWhy:   { ...Type.small, fontSize: 13, lineHeight: 19, color: Palette.textSub, marginTop: Spacing.xs },
+  split:     { flexDirection: 'row', gap: 3, marginTop: Spacing.lg },
+  macroRow:  { flexDirection: 'row', marginTop: Spacing.md },
+  macro:     { flex: 1 },
+  macroNum:  { fontFamily: Fonts.numHeavy, fontSize: 26 },
+  macroLabel:{ ...Type.small, color: Palette.textSub },
 
-  waterOptions:       { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
-  waterChip:          { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, borderWidth: 1.5, borderColor: '#2E86AB', backgroundColor: Colors.card },
-  waterChipActive:    { backgroundColor: '#2E86AB', borderColor: '#2E86AB' },
-  waterChipText:      { fontSize: 13, color: '#2E86AB', fontWeight: '600' },
-  waterChipTextActive:{ color: Colors.background },
-
-  summaryCard:  { backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1, borderColor: Colors.cardBorder, padding: 16, marginBottom: 20 },
-  summaryTitle: { fontSize: 14, fontWeight: '700', color: Colors.text, marginBottom: 12 },
-  summaryRow:   { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Colors.cardBorder },
-  summaryKey:   { fontSize: 13, color: Colors.textSub },
-  summaryVal:   { fontSize: 13, color: Colors.text, fontWeight: '600', maxWidth: '60%', textAlign: 'right' },
-
-  error:       { color: '#E74C3C', fontSize: 13, textAlign: 'center', marginBottom: 12 },
-  nextBtn:     { flexDirection: 'row', backgroundColor: Colors.accentGold, borderRadius: 14, padding: 16, alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8 },
-  nextBtnText: { fontSize: 16, fontWeight: '800', color: Colors.background },
+  footer: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.sm, paddingBottom: Spacing.lg, gap: Spacing.md, borderTopWidth: 1, borderTopColor: Palette.lineSoft },
 });
