@@ -34,32 +34,34 @@ public class MissionService {
     private static final int[] EP_THRESHOLDS = {0, 1000, 3000, 6000, 11000, 18000, 28000};
     private static final String[] STAGES = {"Spark", "Awakened", "Ascender", "Guardian", "Titan", "Apex", "Legend"};
 
-    // ── Mission pool: category → list of [title, epReward] ──────────────────
+    // ── Mission pool: category → list of [title, epReward, autoKey?] ─────────
+    // Entries with an autoKey complete themselves when AutoMissionService sees
+    // the matching activity; the rest are ticked off by the user.
     private static final Map<String, List<String[]>> POOL = Map.of(
         "STRENGTH", List.of(
-            new String[]{"Complete a 20-minute workout", "40"},
+            new String[]{"Complete a 20-minute workout", "40", AutoMission.WORKOUT_20},
             new String[]{"Do 3 sets of push-ups", "30"},
             new String[]{"Walk 5,000 steps", "35"},
-            new String[]{"Complete a full workout session", "45"},
+            new String[]{"Complete a full workout session", "45", AutoMission.SESSION_DONE},
             new String[]{"Do 10 minutes of stretching", "25"}
         ),
         "DISCIPLINE", List.of(
-            new String[]{"Complete all your habits today", "50"},
+            new String[]{"Complete all your habits today", "50", AutoMission.ALL_HABITS},
             new String[]{"Meditate for 5 minutes", "30"},
             new String[]{"No screen time after 10 PM", "30"},
             new String[]{"Wake up before 8 AM", "30"},
             new String[]{"Journal for 5 minutes", "25"}
         ),
         "RECOVERY", List.of(
-            new String[]{"Sleep 7+ hours tonight", "40"},
-            new String[]{"Take a 10-minute rest break", "25"},
+            new String[]{"Log 7+ hours of sleep", "40", AutoMission.SLEEP_7H},
+            new String[]{"Hit your water goal", "30", AutoMission.WATER_GOAL},
             new String[]{"Do 5 minutes of deep breathing", "25"},
-            new String[]{"Log your sleep tonight", "20"},
+            new String[]{"Log last night's sleep", "20", AutoMission.SLEEP_LOGGED},
             new String[]{"Go screen-free for 30 minutes", "30"}
         ),
         "NUTRITION", List.of(
-            new String[]{"Log all your meals today", "40"},
-            new String[]{"Eat a protein-rich breakfast", "35"},
+            new String[]{"Log breakfast, lunch and dinner", "40", AutoMission.MEALS_LOGGED},
+            new String[]{"Eat a protein-rich breakfast (20 g+)", "35", AutoMission.BREAKFAST_PROTEIN},
             new String[]{"No junk food today", "45"},
             new String[]{"Stay within your calorie goal", "50"},
             new String[]{"Add fruit or vegetables to a meal", "30"}
@@ -95,7 +97,13 @@ public class MissionService {
         if (mission.isCompleted()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Mission already completed");
         }
+        return complete(user, mission);
+    }
 
+    // ── Mark done, award EP, bump the attribute and log a stage-up if any ────
+    // Shared by the manual endpoint and AutoMissionService. Saves the user.
+    @Transactional
+    public CompleteResponse complete(User user, Mission mission) {
         mission.setCompleted(true);
         mission.setCompletedAt(LocalDateTime.now());
         missionRepository.save(mission);
@@ -120,7 +128,7 @@ public class MissionService {
         }
 
         return CompleteResponse.builder()
-                .missionId(missionId)
+                .missionId(mission.getId())
                 .epEarned(mission.getEpReward())
                 .totalEP(user.getEvolutionPoints())
                 .evolutionStage(newStage)
@@ -165,6 +173,7 @@ public class MissionService {
                     .epReward(Integer.parseInt(entry[1]))
                     .completed(false)
                     .missionDate(date)
+                    .autoKey(entry.length > 2 ? entry[2] : null)
                     .build());
         }
         return missions;
@@ -211,6 +220,7 @@ public class MissionService {
                         .category(m.getCategory())
                         .epReward(m.getEpReward())
                         .completed(m.isCompleted())
+                        .auto(m.getAutoKey() != null)
                         .build())
                 .toList();
     }

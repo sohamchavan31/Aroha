@@ -1,5 +1,6 @@
 package com.aroha.controller;
 
+import com.aroha.service.ActivityService;
 import com.aroha.dto.CompleteResponse;
 import com.aroha.dto.MissionResponse;
 import com.aroha.model.User;
@@ -17,6 +18,7 @@ import java.util.List;
 public class MissionController {
 
     private final MissionService missionService;
+    private final ActivityService activityService;
 
     @GetMapping("/today")
     public ResponseEntity<List<MissionResponse>> getToday(@AuthenticationPrincipal User user) {
@@ -27,6 +29,8 @@ public class MissionController {
     public ResponseEntity<CompleteResponse> complete(
             @PathVariable Long id,
             @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(missionService.completeMission(id, user.getEmail()));
+        CompleteResponse res = missionService.completeMission(id, user.getEmail());
+        activityService.recordActivity(user);
+        return ResponseEntity.ok(res);
     }
 }

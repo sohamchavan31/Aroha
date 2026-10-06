@@ -1,5 +1,6 @@
 package com.aroha.controller;
 
+import com.aroha.service.ActivityService;
 import com.aroha.dto.WorkoutLogRequest;
 import com.aroha.model.Exercise;
 import com.aroha.model.User;
@@ -23,6 +24,7 @@ public class WorkoutController {
 
     private final WorkoutService workoutService;
     private final ExerciseRepository exerciseRepository;
+    private final ActivityService activityService;
 
     @GetMapping("/exercises")
     public ResponseEntity<List<Exercise>> getAllExercises() {
@@ -38,7 +40,9 @@ public class WorkoutController {
     public ResponseEntity<WorkoutLog> logExercise(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody WorkoutLogRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(workoutService.logExercise(user, request));
+        WorkoutLog saved = workoutService.logExercise(user, request);
+        activityService.recordActivity(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @GetMapping("/today")

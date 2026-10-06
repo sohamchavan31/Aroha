@@ -1,5 +1,6 @@
 package com.aroha.controller;
 
+import com.aroha.service.ActivityService;
 import com.aroha.dto.WorkoutPlanRequest;
 import com.aroha.dto.WorkoutPlanResponse;
 import com.aroha.dto.WorkoutSessionRequest;
@@ -39,6 +40,7 @@ public class WorkoutGeneratorController {
 
     private final WorkoutGeneratorService workoutGeneratorService;
     private final WorkoutSessionRepository workoutSessionRepository;
+    private final ActivityService activityService;
 
     @PostMapping("/generate")
     public ResponseEntity<WorkoutPlanResponse> generate(@Valid @RequestBody WorkoutPlanRequest request) {
@@ -66,7 +68,9 @@ public class WorkoutGeneratorController {
                 .caloriesBurned(caloriesBurned)
                 .completedAt(LocalDateTime.now())
                 .build();
-        return ResponseEntity.status(HttpStatus.CREATED).body(workoutSessionRepository.save(session));
+        WorkoutSession saved = workoutSessionRepository.save(session);
+        activityService.recordActivity(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @GetMapping("/sessions/recent")

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -36,6 +37,10 @@ public class User {
 
     @Column(nullable = false)
     private int streak;
+
+    // Last day the user did something that counts toward the streak (log food,
+    // train, drink water, tick a habit...). Drives streak = consecutive days.
+    private LocalDate lastActiveDate;
 
     // ── Health profile (set during onboarding) ───────────────────────────────
     private String gender;              // male | female | other

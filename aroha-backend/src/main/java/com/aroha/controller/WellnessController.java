@@ -4,7 +4,9 @@ import com.aroha.model.SleepLog;
 import com.aroha.model.User;
 import com.aroha.model.WaterLog;
 import com.aroha.repository.SleepLogRepository;
+import com.aroha.repository.UserRepository;
 import com.aroha.repository.WaterLogRepository;
+import com.aroha.service.ActivityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,51 +26,48 @@ public class WellnessController {
 
     private final WaterLogRepository waterLogRepository;
     private final SleepLogRepository sleepLogRepository;
+    private final UserRepository userRepository;
+    private final ActivityService activityService;
+
+    private static final int DEFAULT_WATER_GOAL = 8;
+
+    // The user's own goal from their profile; today's log always follows it.
+    private static int waterGoal(User user) {
+        Integer g = user.getWaterGoalGlasses();
+        return g != null && g > 0 ? g : DEFAULT_WATER_GOAL;
+    }
+
+    private WaterLog todayWater(User user) {
+        WaterLog log = waterLogRepository
+                .findByUserIdAndLogDate(user.getId(), LocalDate.now())
+                .orElse(WaterLog.builder()
+                        .userId(user.getId())
+                        .logDate(LocalDate.now())
+                        .glasses(0)
+                        .build());
+        log.setDailyGoal(waterGoal(user));
+        return log;
+    }
 
     // ── Water ─────────────────────────────────────────────────────────────────
 
     @GetMapping("/water/today")
     public ResponseEntity<WaterLog> getWaterToday(@AuthenticationPrincipal User user) {
-        WaterLog log = waterLogRepository
-                .findByUserIdAndLogDate(user.getId(), LocalDate.now())
-                .orElse(WaterLog.builder()
-                        .userId(user.getId())
-                        .logDate(LocalDate.now())
-                        .glasses(0)
-                        .dailyGoal(8)
-                        .build());
-        return ResponseEntity.ok(log);
+        return ResponseEntity.ok(todayWater(user));
     }
 
     @PostMapping("/water/add")
-    public ResponseEntity<WaterLog> addGlass(
-            @AuthenticationPrincipal User user,
-            @RequestParam(defaultValue = "8") int goal) {
-
-        WaterLog log = waterLogRepository
-                .findByUserIdAndLogDate(user.getId(), LocalDate.now())
-                .orElse(WaterLog.builder()
-                        .userId(user.getId())
-                        .logDate(LocalDate.now())
-                        .glasses(0)
-                        .dailyGoal(goal)
-                        .build());
-
+    public ResponseEntity<WaterLog> addGlass(@AuthenticationPrincipal User user) {
+        WaterLog log = todayWater(user);
         log.setGlasses(log.getGlasses() + 1);
-        return ResponseEntity.ok(waterLogRepository.save(log));
+        WaterLog saved = waterLogRepository.save(log);
+        activityService.recordActivity(user);
+        return ResponseEntity.ok(saved);
     }
 
     @PostMapping("/water/remove")
     public ResponseEntity<WaterLog> removeGlass(@AuthenticationPrincipal User user) {
-        WaterLog log = waterLogRepository
-                .findByUserIdAndLogDate(user.getId(), LocalDate.now())
-                .orElse(WaterLog.builder()
-                        .userId(user.getId())
-                        .logDate(LocalDate.now())
-                        .glasses(0)
-                        .dailyGoal(8)
-                        .build());
-
+        WaterLog log = todayWater(user);
         log.setGlasses(Math.max(0, log.getGlasses() - 1));
         return ResponseEntity.ok(waterLogRepository.save(log));
     }
@@ -77,18 +76,13 @@ public class WellnessController {
     public ResponseEntity<WaterLog> updateGoal(
             @AuthenticationPrincipal User user,
             @RequestParam int goal) {
-
-        WaterLog log = waterLogRepository
-                .findByUserIdAndLogDate(user.getId(), LocalDate.now())
-                .orElse(WaterLog.builder()
-                        .userId(user.getId())
-                        .logDate(LocalDate.now())
-                        .glasses(0)
-                        .dailyGoal(goal)
-                        .build());
-
-        log.setDailyGoal(goal);
-        return ResponseEntity.ok(waterLogRepository.save(log));
+        if (goal < 1 || goal > 30) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "goal must be between 1 and 30");
+        }
+        // Keep the profile and today's log in step.
+        user.setWaterGoalGlasses(goal);
+        userRepository.save(user);
+        return ResponseEntity.ok(waterLogRepository.save(todayWater(user)));
     }
 
     // ── Sleep ─────────────────────────────────────────────────────────────────
@@ -137,7 +131,9 @@ public class WellnessController {
         log.setQualityRating(qualityRating);
         log.setDurationHours(duration);
 
-        return ResponseEntity.ok(sleepLogRepository.save(log));
+        SleepLog saved = sleepLogRepository.save(log);
+        activityService.recordActivity(user);
+        return ResponseEntity.ok(saved);
     }
 
     private double calcDuration(String sleepTime, String wakeTime) {

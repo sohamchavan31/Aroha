@@ -1,5 +1,6 @@
 package com.aroha.controller;
 
+import com.aroha.service.ActivityService;
 import com.aroha.dto.HabitRequest;
 import com.aroha.model.Habit;
 import com.aroha.model.User;
@@ -22,6 +23,7 @@ import java.util.Map;
 public class HabitController {
 
     private final HabitService habitService;
+    private final ActivityService activityService;
 
     @PostMapping
     public ResponseEntity<Habit> create(
@@ -49,6 +51,7 @@ public class HabitController {
             @PathVariable Long id,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         boolean completed = habitService.toggle(user, id, date);
+        if (completed) activityService.recordActivity(user);
         return ResponseEntity.ok(Map.of("completed", completed));
     }
 

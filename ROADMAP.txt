@@ -62,24 +62,20 @@ Next, in this order
 ======================================================================
 2. BUGS AND LOGIC FIXES FOUND (do soon, small)
 ======================================================================
-  [ ] Day streak never changes.
-        User.streak exists but nothing in the backend ever updates it.
-        Add: on first activity of a day (food log, mission, workout, water),
-        streak +1 if last active day was yesterday, reset to 1 if older.
-        Store lastActiveDate on User.
-  [ ] Water goal ignores the user's setting.
-        WellnessController /water/add uses ?goal default 8 and /water/remove
-        hard-codes 8 when creating today's row. Use user.waterGoalGlasses.
+  [x] Day streak: ActivityService updates it on any logged activity
+        (lastActiveDate on User); shows 0 once a day is missed.
+  [x] Water goal follows the user's profile setting.
   [ ] Generated sessions don't record weights or per-exercise sets, so they never
         feed exercise history or PR detection. Let the live session log each
         set (kg x reps) through /workouts/log, then show "Last" per exercise.
-  [ ] Persist WorkoutLog.newPR (currently @Transient) so PR tags survive.
-  [ ] Mission categories are STRENGTH / DISCIPLINE / RECOVERY / NUTRITION.
-        Missions are never auto-completed: link them to real actions
-        (food logged -> NUTRITION, workout saved -> STRENGTH, etc.)
-        instead of manual tap only.
-  [ ] AuthContext keeps the user object from login forever.
-        Refresh it from /profile on app start so name/stage/avatar stay current.
+  [x] WorkoutLog.newPR is stored, so PR tags survive a reload.
+  [x] Verifiable missions complete themselves (Mission.autoKey): meals logged,
+        protein breakfast, 20-min / any session, all habits, sleep logged / 7 h+,
+        water goal. The rest stay tap-to-complete.
+  [ ] Weekly missions (type WEEKLY exists but nothing generates them)
+  [x] AuthContext refreshes the user from /profile on app start
+        (and drops to Login if the token is no longer valid).
+  [x] A weigh-in updates the user's weight and recalculates calorie / macro targets.
   [ ] client.js production API URL is still a TODO (needed before release).
   [ ] Sleep reminder toggle in Settings had no scheduler behind it; it now shows
         "Coming soon". Add scheduleSleepReminder() in utils/notifications.js.
@@ -94,7 +90,6 @@ Next, in this order
 ======================================================================
   [ ] Body measurements: chest, waist, hips, arms, thighs (entity, API,
       Progress card, trend chart)
-  [ ] Recalculate macro targets when a new weigh-in is logged (today only on profile edit)
   [ ] Goal date: targetDate on User, collected in onboarding + edit profile;
       Progress shows "X kg left · Y days", required kg/week, On track / Behind
   [ ] Barcode scanner: expo-camera + Open Food Facts; the "scan" entry point
@@ -129,8 +124,8 @@ Next, in this order
 ======================================================================
 5. QUALITY AND SAFETY
 ======================================================================
-  [ ] Backend unit tests: BMR/TDEE/macro maths, PR detection, EP and
-      stage-up, streak logic, auth
+  [~] Backend unit tests: macro maths + streak done; still PR detection,
+      EP and stage-up, auth
   [ ] Switch spring.jpa.hibernate.ddl-auto=update -> Flyway migrations
       before real users exist
   [ ] Account deletion (Play Store / GDPR) + export my data

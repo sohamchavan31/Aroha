@@ -94,11 +94,19 @@ export default function HomeScreen({ navigation }) {
     setLoading(false);
   }, [loadWater]);
 
+  // Missions, streak and EP can change on the server after any log
+  // (auto-completed missions), so re-read them after actions taken here.
+  const refreshProgress = useCallback(async () => {
+    const [p, m] = await Promise.allSettled([client.get('/profile'), client.get('/missions/today')]);
+    if (p.status === 'fulfilled') setProfile(p.value.data);
+    if (m.status === 'fulfilled') setMissions(m.value.data || []);
+  }, []);
+
   // Refresh whenever Home comes back into focus (e.g. after logging food)
   useFocusEffect(useCallback(() => { loadAll(); }, [loadAll]));
 
   // Water added from the quick-log sheet
-  useEffect(() => on('water-changed', loadWater), [loadWater]);
+  useEffect(() => on('water-changed', () => { loadWater(); refreshProgress(); }), [loadWater, refreshProgress]);
 
   async function onRefresh() {
     setRefreshing(true);
@@ -151,6 +159,7 @@ export default function HomeScreen({ navigation }) {
     setWater(w => ({ ...w, glasses: w.glasses + delta }));
     try {
       await client.post(delta > 0 ? '/wellness/water/add' : '/wellness/water/remove');
+      if (delta > 0) refreshProgress();
     } catch {
       setWater(w => ({ ...w, glasses: w.glasses - delta }));
     }
@@ -285,7 +294,7 @@ export default function HomeScreen({ navigation }) {
                   <AnimatedPressable
                     key={m.id}
                     scaleTo={0.98}
-                    disabled={m.completed}
+                    disabled={m.completed || m.auto}
                     onPress={() => completeMission(m.id)}
                     style={[styles.mission, i > 0 && styles.missionDivider]}
                     accessibilityRole="checkbox"
@@ -299,9 +308,12 @@ export default function HomeScreen({ navigation }) {
                       size={14}
                       color={m.completed ? Palette.textDim : Palette.textSub}
                     />
-                    <Text style={[styles.missionTitle, m.completed && styles.missionTitleDone]} numberOfLines={2}>
-                      {m.title}
-                    </Text>
+                    <View style={styles.missionText}>
+                      <Text style={[styles.missionTitle, m.completed && styles.missionTitleDone]} numberOfLines={2}>
+                        {m.title}
+                      </Text>
+                      {m.auto && !m.completed && <Text style={styles.missionAuto}>Ticks itself when you log it</Text>}
+                    </View>
                     <Text style={[styles.missionEp, m.completed && styles.missionEpDone]}>+{m.epReward} EP</Text>
                   </AnimatedPressable>
                 ))
@@ -411,7 +423,9 @@ const styles = StyleSheet.create({
   missionDivider: { borderTopWidth: 1, borderTopColor: Palette.lineSoft },
   check:        { width: 20, height: 20, borderRadius: 7, borderWidth: 1.5, borderColor: Palette.textDim, alignItems: 'center', justifyContent: 'center' },
   checkOn:      { backgroundColor: Palette.violet, borderColor: Palette.violet },
-  missionTitle: { ...Type.body, color: Palette.text, flex: 1 },
+  missionText:  { flex: 1 },
+  missionTitle: { ...Type.body, color: Palette.text },
+  missionAuto:  { ...Type.small, fontSize: 11, color: Palette.textDim, marginTop: 1 },
   missionTitleDone: { color: Palette.textDim, textDecorationLine: 'line-through' },
   missionEp:    { fontFamily: Fonts.num, fontSize: 15, color: Palette.brass },
   missionEpDone:{ color: Palette.textDim },
