@@ -1,5 +1,6 @@
 package com.aroha.repository;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.aroha.model.HabitLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -12,4 +13,9 @@ public interface HabitLogRepository extends JpaRepository<HabitLog, Long> {
     List<HabitLog> findByUserIdAndLogDateBetween(Long userId, LocalDate start, LocalDate end);
 
     Optional<HabitLog> findByHabitIdAndLogDate(Long habitId, LocalDate date);
+
+    List<HabitLog> findByUserId(Long userId);
+
+    @Transactional
+    void deleteByUserId(Long userId);
 }

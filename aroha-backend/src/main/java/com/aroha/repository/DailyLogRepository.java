@@ -1,5 +1,6 @@
 package com.aroha.repository;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.aroha.model.DailyLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,4 +16,9 @@ public interface DailyLogRepository extends JpaRepository<DailyLog, Long> {
     double sumCaloriesByUserIdAndDate(Long userId, LocalDate date);
 
     List<DailyLog> findByUserIdAndLogDateBetween(Long userId, LocalDate start, LocalDate end);
+
+    List<DailyLog> findByUserId(Long userId);
+
+    @Transactional
+    void deleteByUserId(Long userId);
 }

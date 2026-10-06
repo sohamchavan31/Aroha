@@ -1,5 +1,6 @@
 package com.aroha.repository;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.aroha.model.WorkoutLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,4 +14,9 @@ public interface WorkoutLogRepository extends JpaRepository<WorkoutLog, Long> {
     List<WorkoutLog> findByUserIdOrderByLogDateDescLoggedAtDesc(Long userId);
 
     List<WorkoutLog> findByUserIdAndExerciseIdOrderByLogDateAscLoggedAtAsc(Long userId, Long exerciseId);
+
+    List<WorkoutLog> findByUserId(Long userId);
+
+    @Transactional
+    void deleteByUserId(Long userId);
 }

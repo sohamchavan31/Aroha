@@ -1,5 +1,6 @@
 package com.aroha.repository;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.aroha.model.SleepLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -12,4 +13,9 @@ public interface SleepLogRepository extends JpaRepository<SleepLog, Long> {
     Optional<SleepLog> findByUserIdAndLogDate(Long userId, LocalDate date);
 
     List<SleepLog> findByUserIdAndLogDateBetweenOrderByLogDateAsc(Long userId, LocalDate start, LocalDate end);
+
+    List<SleepLog> findByUserId(Long userId);
+
+    @Transactional
+    void deleteByUserId(Long userId);
 }
