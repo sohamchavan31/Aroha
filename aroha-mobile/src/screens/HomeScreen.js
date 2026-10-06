@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -31,7 +31,9 @@ import SegmentBar from '../components/ui/SegmentBar';
 import PrimaryButton from '../components/ui/PrimaryButton';
 import IconButton from '../components/ui/IconButton';
 import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
-import { stageInfo } from '../constants/stages';
+import { stageInfo, STAGES } from '../constants/stages';
+import StageUpCelebration from '../components/StageUpCelebration';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { formatNumber } from '../utils/format';
 import { on } from '../utils/events';
 import { tap, success, warn } from '../utils/haptics';
@@ -52,6 +54,8 @@ const MISSION_ICON = {
   STRENGTH: 'barbell', DISCIPLINE: 'flag', RECOVERY: 'moon', NUTRITION: 'restaurant',
 };
 
+const LAST_STAGE_KEY = 'aroha_last_stage';
+
 export default function HomeScreen({ navigation }) {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -65,9 +69,7 @@ export default function HomeScreen({ navigation }) {
 
   const [showProfile, setShowProfile] = useState(false);
   const [showAi, setShowAi]           = useState(false);
-  const [stageUp, setStageUp]         = useState(null); // { oldStage, newStage }
-
-  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const [stageUp, setStageUp]         = useState(null); // { oldStage, newStage, ep }
 
   // ── Data ────────────────────────────────────────────────────────────────────
   const loadWater = useCallback(async () => {
@@ -104,12 +106,22 @@ export default function HomeScreen({ navigation }) {
     setRefreshing(false);
   }
 
+  // Catch a stage-up from anywhere (not just missions): compare against the
+  // last stage this device saw. The first load only records it.
   useEffect(() => {
-    if (stageUp) {
-      scaleAnim.setValue(0.85);
-      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, tension: 60, friction: 8 }).start();
-    }
-  }, [stageUp]);
+    const stage = profile?.evolutionStage;
+    if (!stage) return;
+    (async () => {
+      try {
+        const seen = await AsyncStorage.getItem(LAST_STAGE_KEY);
+        await AsyncStorage.setItem(LAST_STAGE_KEY, stage);
+        const rank = name => STAGES.findIndex(st => st.name === name);
+        if (seen && rank(stage) > rank(seen)) {
+          setStageUp(cur => cur || { oldStage: seen, newStage: stage, ep: profile.evolutionPoints || 0 });
+        }
+      } catch {}
+    })();
+  }, [profile?.evolutionStage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Actions ─────────────────────────────────────────────────────────────────
   async function completeMission(id) {
@@ -119,7 +131,11 @@ export default function HomeScreen({ navigation }) {
     try {
       const { data } = await client.post(`/missions/${id}/complete`);
       setProfile(p => (p ? { ...p, evolutionPoints: data.totalEP, evolutionStage: data.evolutionStage } : p));
-      if (data.stagedUp) setStageUp({ oldStage, newStage: data.newStage || data.evolutionStage });
+      if (data.stagedUp) {
+        const newStage = data.newStage || data.evolutionStage;
+        AsyncStorage.setItem(LAST_STAGE_KEY, newStage).catch(() => {});
+        setStageUp({ oldStage, newStage, ep: data.totalEP || 0 });
+      }
     } catch (err) {
       setMissions(ms => ms.map(m => (m.id === id ? { ...m, completed: false } : m)));
       warn();
@@ -313,18 +329,13 @@ export default function HomeScreen({ navigation }) {
       </Modal>
 
       {/* Stage-up celebration */}
-      <Modal visible={!!stageUp} transparent animationType="fade" onRequestClose={() => setStageUp(null)}>
-        <View style={styles.overlay}>
-          <Animated.View style={[styles.stageUpCard, { transform: [{ scale: scaleAnim }] }]}>
-            <Text style={styles.label}>Evolution complete</Text>
-            <Text style={styles.stageUpOld}>{stageUp?.oldStage}</Text>
-            <Ionicons name="arrow-down" size={18} color={Palette.textDim} style={{ marginVertical: Spacing.sm }} />
-            <Text style={styles.stageUpNew}>{(stageUp?.newStage || '').toUpperCase()}</Text>
-            <Text style={styles.stageUpSub}>You reached a new stage. Keep going.</Text>
-            <PrimaryButton title="Continue" icon="checkmark" onPress={() => setStageUp(null)} containerStyle={{ alignSelf: 'stretch' }} />
-          </Animated.View>
-        </View>
-      </Modal>
+      <StageUpCelebration
+        visible={!!stageUp}
+        oldStage={stageUp?.oldStage}
+        newStage={stageUp?.newStage}
+        ep={stageUp?.ep}
+        onClose={() => setStageUp(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -417,9 +428,4 @@ const styles = StyleSheet.create({
   tileSub:   { ...Type.small, color: Palette.textSub, marginTop: 2 },
 
   // Stage-up
-  overlay:     { flex: 1, backgroundColor: 'rgba(5,4,8,0.85)', alignItems: 'center', justifyContent: 'center', padding: Spacing.xl },
-  stageUpCard: { width: '100%', maxWidth: 360, backgroundColor: Palette.hero, borderRadius: Radius.xl, borderWidth: 1, borderColor: Palette.line, padding: Spacing.xl, alignItems: 'center' },
-  stageUpOld:  { ...Type.body, color: Palette.textSub, marginTop: Spacing.lg },
-  stageUpNew:  { fontFamily: Fonts.display, fontSize: 28, letterSpacing: 1, color: Palette.brass },
-  stageUpSub:  { ...Type.body, color: Palette.textSub, textAlign: 'center', marginTop: Spacing.sm, marginBottom: Spacing.xl },
 });

@@ -48,9 +48,10 @@ Done
   [x] Login + Register: matte layout, show/hide password, email checks, real server errors
   [x] Onboarding: one question per screen, progress bar, review, calculated plan screen
   [x] Removed constants/colors.js (every screen is on theme.js now)
+  [x] Stage-up celebration: full-screen moment, brass rings, stage track, EP to next stage
 
 Next, in this order
-  [ ] Stage-up celebration: full-screen moment (+ Lottie later)
+  [ ] Later: Lottie / sound for the stage-up moment
   [ ] Replace assets/icon.png (current one has construction guides baked in)
         and update the Android adaptive icon background (#E6F4FE -> ink)
   [ ] Later: light mode as a second theme (tokens already make this possible)
