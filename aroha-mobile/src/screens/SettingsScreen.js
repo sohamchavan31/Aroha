@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, Switch, StatusBar } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Switch, StatusBar, Share, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,6 +8,9 @@ import IconButton from '../components/ui/IconButton';
 import AnimatedPressable from '../components/AnimatedPressable';
 import { useLanguage } from '../context/LanguageContext';
 import AppInfo from '../constants/appInfo';
+import client from '../api/client';
+import DeleteAccountSheet from '../components/settings/DeleteAccountSheet';
+import { apiError } from '../utils/apiError';
 import { Palette, Fonts, Type, Spacing } from '../constants/theme';
 import { tap } from '../utils/haptics';
 import {
@@ -44,6 +47,8 @@ const NOTIF_HANDLERS = {
 export default function SettingsScreen({ visible, onClose }) {
   const { language, setLanguage, t } = useLanguage();
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [exporting, setExporting] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
 
   useEffect(() => {
     if (visible) loadSettings();
@@ -65,6 +70,21 @@ export default function SettingsScreen({ visible, onClose }) {
     } catch {}
     const handler = NOTIF_HANDLERS[key];
     if (handler) handler(value).catch(() => {});
+  }
+
+  // A copy of everything the server holds about the user, shared as JSON.
+  async function exportData() {
+    if (exporting) return;
+    tap();
+    setExporting(true);
+    try {
+      const { data } = await client.get('/account/export');
+      await Share.share({ title: 'Aroha data export', message: JSON.stringify(data, null, 2) });
+    } catch (err) {
+      Alert.alert("Couldn't export your data", apiError(err, 'Try again in a moment.'));
+    } finally {
+      setExporting(false);
+    }
   }
 
   if (!visible) return null;
@@ -145,6 +165,30 @@ export default function SettingsScreen({ visible, onClose }) {
         </Card>
         <Text style={styles.hint}>Language applies to screens that are translated so far.</Text>
 
+        <Text style={styles.section}>Your data</Text>
+        <Card style={styles.list}>
+          <AnimatedPressable scaleTo={0.98} onPress={exportData} style={styles.row} accessibilityRole="button">
+            <View style={[styles.icon, { backgroundColor: Palette.carbs + '1F' }]}>
+              <Ionicons name="download-outline" size={17} color={Palette.carbs} />
+            </View>
+            <View style={styles.rowText}>
+              <Text style={styles.rowLabel}>{exporting ? 'Preparing export…' : 'Export my data'}</Text>
+              <Text style={styles.rowSub}>Everything you've logged, as a JSON file</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Palette.textDim} />
+          </AnimatedPressable>
+          <AnimatedPressable scaleTo={0.98} onPress={() => { tap(); setShowDelete(true); }} style={[styles.row, styles.divider]} accessibilityRole="button">
+            <View style={[styles.icon, { backgroundColor: Palette.danger + '1F' }]}>
+              <Ionicons name="trash-outline" size={17} color={Palette.danger} />
+            </View>
+            <View style={styles.rowText}>
+              <Text style={[styles.rowLabel, { color: Palette.danger }]}>Delete account</Text>
+              <Text style={styles.rowSub}>Permanently remove your account and data</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Palette.textDim} />
+          </AnimatedPressable>
+        </Card>
+
         <Text style={styles.section}>{t('about')}</Text>
         <Card style={styles.list}>
           <InfoRow label={t('app')} value="Aroha" first />
@@ -152,6 +196,7 @@ export default function SettingsScreen({ visible, onClose }) {
           <InfoRow label={t('builtBy')} value="Soham" />
         </Card>
       </ScrollView>
+      <DeleteAccountSheet visible={showDelete} onClose={() => setShowDelete(false)} />
     </SafeAreaView>
   );
 }

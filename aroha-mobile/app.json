@@ -8,14 +8,15 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0B0A10",
     "ios": {
-      "supportsTablet": true,
-      "buildNumber": "1"
+      "supportsTablet": false,
+      "buildNumber": "1",
+      "bundleIdentifier": "com.sohrexlabs.aroha"
     },
     "android": {
-      "package": "com.aroha",
+      "package": "com.sohrexlabs.aroha",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0B0A10",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"

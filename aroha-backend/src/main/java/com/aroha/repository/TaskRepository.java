@@ -1,5 +1,6 @@
 package com.aroha.repository;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.aroha.model.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -11,4 +12,9 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByUserIdAndTaskDateOrderByScheduledTimeAscCreatedAtAsc(Long userId, LocalDate date);
 
     List<Task> findByUserIdAndTaskDateAndCompleted(Long userId, LocalDate date, boolean completed);
+
+    List<Task> findByUserId(Long userId);
+
+    @Transactional
+    void deleteByUserId(Long userId);
 }

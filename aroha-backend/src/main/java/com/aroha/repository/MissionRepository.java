@@ -1,5 +1,6 @@
 package com.aroha.repository;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.aroha.model.Mission;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -11,4 +12,9 @@ public interface MissionRepository extends JpaRepository<Mission, Long> {
     List<Mission> findByUserIdAndMissionDate(Long userId, LocalDate date);
 
     List<Mission> findByUserIdAndMissionDateBetween(Long userId, LocalDate start, LocalDate end);
+
+    List<Mission> findByUserId(Long userId);
+
+    @Transactional
+    void deleteByUserId(Long userId);
 }

@@ -135,10 +135,43 @@ Next, in this order
 
 
 ======================================================================
-6. LAUNCH
+6. STORE LAUNCH — v1 = Android / Google Play only (iOS later)
 ======================================================================
-  [ ] Merge dev -> main (main currently has only the initial commit)
-  [ ] AWS EC2 + Nginx + Let's Encrypt, api.arohaapp.in
-  [ ] GitHub Actions auto-deploy for the backend
-  [ ] EAS release build, Play Store listing ($25 account)
-  [ ] Internal test with 10–20 real users, then public release
+Identity
+  Lab:      SOHREX Labs  ·  domain sohrexlabs.com (buy later)
+  App ID:   com.sohrexlabs.aroha  (Android package + iOS bundle id — permanent)
+  Web:      aroha.sohrexlabs.com (landing + privacy policy)
+  API:      api.aroha.sohrexlabs.com
+
+Store compliance
+  [x] In-app account deletion (Settings → Delete account, password confirm)
+  [x] Export my data (Settings → Export my data, JSON)
+  [x] App ID com.sohrexlabs.aroha, iPad off, adaptive icon background = ink
+  [x] API URL from EXPO_PUBLIC_API_URL (production build points at the API domain)
+  [ ] Web page for account deletion requests (Play asks for a URL too)
+  [ ] Privacy policy + terms: real text, hosted on aroha.sohrexlabs.com, linked
+      in Legal screens and the store listing
+  [ ] Health disclaimer on onboarding plan screen ("not medical advice")
+  [ ] Notification permission asked at a sensible moment, not on first launch
+
+Production backend
+  [ ] Host Spring backend on Render (always-on instance) — HTTPS via custom domain
+  [ ] Flyway migrations instead of ddl-auto=update
+  [ ] Secrets from environment variables only; CORS and rate limits checked
+  [ ] Sentry crash reporting (mobile + backend)
+  [ ] JWT refresh tokens
+
+Assets + listing
+  [ ] Clean 1024×1024 icon, adaptive icon layers, splash screen
+  [ ] Play listing: short + full description, 1024×500 feature graphic,
+      phone screenshots, content rating, Data safety form, Health apps declaration
+
+Release
+  [ ] Google Play developer account ($25) — personal, developer name "SOHREX Labs"
+  [ ] Closed test: 12+ testers for 14 days (new personal accounts must)
+  [ ] Production release
+  [ ] Merge dev -> main for each release (main = what's in the store)
+
+Later updates
+  [ ] AI on a hosted model (replace local Ollama) + AI upgrades in section 4
+  [ ] iOS / App Store ($99/yr, Sign in with Apple if Google login is added)

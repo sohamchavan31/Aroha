@@ -1,5 +1,6 @@
 package com.aroha.repository;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.aroha.model.Meal;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,4 +20,9 @@ public interface MealRepository extends JpaRepository<Meal, Long> {
     List<Meal> findByCategory(String category);
 
     List<Meal> findByRegion(String region);
+
+    List<Meal> findByCreatedBy(Long userId);
+
+    @Transactional
+    void deleteByCreatedBy(Long userId);
 }

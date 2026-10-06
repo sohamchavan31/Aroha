@@ -1,5 +1,6 @@
 package com.aroha.repository;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.aroha.model.WorkoutSession;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -10,4 +11,9 @@ public interface WorkoutSessionRepository extends JpaRepository<WorkoutSession, 
     List<WorkoutSession> findTop5ByUserIdOrderByCompletedAtDesc(Long userId);
     long countByUserIdAndCompletedAtAfter(Long userId, LocalDateTime after);
     List<WorkoutSession> findByUserIdAndCompletedAtBetween(Long userId, LocalDateTime start, LocalDateTime end);
+
+    List<WorkoutSession> findByUserId(Long userId);
+
+    @Transactional
+    void deleteByUserId(Long userId);
 }

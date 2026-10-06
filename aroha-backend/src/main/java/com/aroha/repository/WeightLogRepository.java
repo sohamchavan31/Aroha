@@ -1,5 +1,6 @@
 package com.aroha.repository;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.aroha.model.WeightLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -12,4 +13,9 @@ public interface WeightLogRepository extends JpaRepository<WeightLog, Long> {
     List<WeightLog> findByUserIdAndLoggedDateAfterOrderByLoggedDateAsc(Long userId, LocalDate after);
     Optional<WeightLog> findFirstByUserIdOrderByLoggedDateDesc(Long userId);
     Optional<WeightLog> findFirstByUserIdAndLoggedDateBeforeOrderByLoggedDateDesc(Long userId, LocalDate before);
+
+    List<WeightLog> findByUserId(Long userId);
+
+    @Transactional
+    void deleteByUserId(Long userId);
 }
