@@ -31,6 +31,13 @@ public class WorkoutGeneratorService {
         "CORE",      new Config(3, 15, 45, 2, List.of("strength"),         Set.of("core"))
     );
 
+    // Kit most people have at home; anything else needs a gym.
+    private static final Set<String> HOME_EQUIPMENT = Set.of("none", "mat", "pullup_bar", "rope");
+
+    private static boolean isGymKit(Exercise e) {
+        return e.getEquipment() != null && !HOME_EQUIPMENT.contains(e.getEquipment());
+    }
+
     private static final int WARMUP_BUFFER_SECONDS = 300; // 5-min warmup reserve
     private static final int TRANSITION_SECONDS     = 30;  // between exercises
 
@@ -49,9 +56,17 @@ public class WorkoutGeneratorService {
                     .toList();
         }
 
-        // Shuffle for variety
+        String location = request.getLocation() != null ? request.getLocation().toUpperCase() : "";
+        if (location.equals("HOME")) {
+            pool = pool.stream().filter(e -> !isGymKit(e)).toList();
+        }
+
+        // Shuffle for variety; at the gym, weights and machines come first.
         List<Exercise> shuffled = new ArrayList<>(pool);
         Collections.shuffle(shuffled);
+        if (location.equals("GYM")) {
+            shuffled.sort(Comparator.comparing((Exercise e) -> !isGymKit(e)));
+        }
 
         List<WorkoutExerciseDto> selected = new ArrayList<>();
         int usedSeconds = 0;

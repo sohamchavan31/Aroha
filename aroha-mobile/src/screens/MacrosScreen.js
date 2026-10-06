@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, StatusBar, ActivityIndicator, Alert, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, StatusBar, ActivityIndicator, Alert, RefreshControl, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,7 @@ import AnimatedPressable from '../components/AnimatedPressable';
 import AnimatedCounter from '../components/AnimatedCounter';
 import ServingSheet from '../components/food/ServingSheet';
 import RecipeBuilderSheet from '../components/food/RecipeBuilderSheet';
+import LabelFoodSheet from '../components/food/LabelFoodSheet';
 import { DEFAULT_GOALS, SLOTS, isUnitFood, macrosFor } from '../constants/food';
 import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
 import { formatNumber } from '../utils/format';
@@ -41,6 +42,7 @@ export default function MacrosScreen() {
 
   const [pendingMeal, setPendingMeal] = useState(null);
   const [showBuilder, setShowBuilder] = useState(false);
+  const [showLabel, setShowLabel]     = useState(false);
 
   const scrollRef   = useRef(null);
   const searchRef   = useRef(null);
@@ -120,24 +122,56 @@ export default function MacrosScreen() {
     setTimeout(() => searchRef.current?.focus(), 250);
   }
 
+  // Open the serving sheet only once the keyboard is down: on Android, opening
+  // a modal sheet while the search keyboard is still closing leaves ghost
+  // copies of the sheet on screen.
+  function pickMeal(meal) {
+    tap();
+    if (!Keyboard.isVisible?.()) { setPendingMeal(meal); return; }
+    let done = false;
+    const open = () => { if (done) return; done = true; sub.remove(); setPendingMeal(meal); };
+    const sub = Keyboard.addListener('keyboardDidHide', open);
+    Keyboard.dismiss();
+    setTimeout(open, 350); // fallback if the event never fires
+  }
+
   // ── Log actions ─────────────────────────────────────────────────────────────
+  // Shows the food on the meter straight away, then syncs with the server.
   async function addEntry(meal, grams, slot) {
+    const m = macrosFor(meal, grams);
+    const temp = {
+      id: `tmp-${Date.now()}`, pending: true, mealName: meal.name, mealSlot: slot,
+      servingGrams: grams, calories: m.cal, protein: m.p, carbs: m.c, fat: m.f,
+    };
+    const bump = sign => setTotals(t => ({
+      ...t,
+      calories: t.calories + sign * m.cal,
+      protein:  t.protein  + sign * m.p,
+      carbs:    t.carbs    + sign * m.c,
+      fat:      t.fat      + sign * m.f,
+    }));
+
+    success();
+    setLog(l => [...l, temp]);
+    bump(1);
+    setPendingMeal(null);
+    clearSearch();
+    setCollapsed(c => ({ ...c, [slot]: false }));
+
     try {
       await client.post('/logs', { mealId: meal.id, servingGrams: grams, mealSlot: slot });
-      success();
-      setPendingMeal(null);
-      clearSearch();
-      setCollapsed(c => ({ ...c, [slot]: false }));
       loadTodayLog();
-      return true;
     } catch {
       warn();
-      Alert.alert("Couldn't add food", 'Check your connection and try again.');
-      return false;
+      setLog(l => l.filter(e => e.id !== temp.id));
+      bump(-1);
+      Alert.alert("Couldn't add food", `${meal.name} wasn't saved. Check your connection and try again.`);
     }
+    return true;
   }
 
   function confirmRemove(item) {
+    if (item.pending) return; // still saving
     tap();
     Alert.alert('Remove from log?', `${item.mealName} · ${Math.round(item.calories)} kcal`, [
       { text: 'Cancel', style: 'cancel' },
@@ -184,7 +218,10 @@ export default function MacrosScreen() {
             <Text style={styles.title}>Food</Text>
             <Text style={styles.date}>{todayLabel()}</Text>
           </View>
-          <IconButton name="create-outline" onPress={() => setShowBuilder(true)} accessibilityLabel="Create a recipe" />
+          <View style={styles.headerBtns}>
+            <IconButton name="pricetag-outline" onPress={() => setShowLabel(true)} accessibilityLabel="Add a packaged food from its label" />
+            <IconButton name="create-outline" onPress={() => setShowBuilder(true)} accessibilityLabel="Create a recipe" />
+          </View>
         </FadeInView>
 
         {/* Summary */}
@@ -249,13 +286,13 @@ export default function MacrosScreen() {
                 <AnimatedPressable
                   key={meal.id}
                   scaleTo={0.98}
-                  onPress={() => { tap(); setPendingMeal(meal); }}
+                  onPress={() => pickMeal(meal)}
                   style={[styles.resultRow, i > 0 && styles.divider]}
                 >
                   <View style={styles.resultInfo}>
                     <View style={styles.resultNameRow}>
-                      <Text style={styles.resultName} numberOfLines={1}>{meal.name}</Text>
-                      {meal.isCustom && <Text style={styles.mine}>MINE</Text>}
+                      <Text style={styles.resultName} numberOfLines={1}>{meal.brand ? `${meal.brand} ` : ''}{meal.name}</Text>
+                      {(meal.custom || meal.isCustom) && <Text style={styles.mine}>MINE</Text>}
                     </View>
                     <Text style={styles.resultMeta}>
                       {isUnitFood(meal) ? `1 ${meal.servingUnit} · ` : ''}{meal.typicalServing} g · P {Math.round(m.p)} · C {Math.round(m.c)} · F {Math.round(m.f)}
@@ -272,6 +309,9 @@ export default function MacrosScreen() {
         {query.trim().length >= 2 && !searching && results.length === 0 && (
           <Card variant="dashed" style={styles.noResults}>
             <Text style={styles.noResultsText}>No foods match "{query.trim()}".</Text>
+            <AnimatedPressable onPress={() => { tap(); Keyboard.dismiss(); setShowLabel(true); }}>
+              <Text style={styles.link}>Add it from the pack label</Text>
+            </AnimatedPressable>
             <AnimatedPressable onPress={() => { tap(); setShowBuilder(true); }}>
               <Text style={styles.link}>Create it as a recipe</Text>
             </AnimatedPressable>
@@ -354,6 +394,12 @@ export default function MacrosScreen() {
         onAdd={addEntry}
       />
       <RecipeBuilderSheet visible={showBuilder} onClose={() => setShowBuilder(false)} />
+      <LabelFoodSheet
+        visible={showLabel}
+        initialName={query.trim()}
+        onClose={() => setShowLabel(false)}
+        onSaved={meal => { setShowLabel(false); setTimeout(() => setPendingMeal(meal), 350); }}
+      />
     </SafeAreaView>
   );
 }
@@ -368,6 +414,7 @@ const styles = StyleSheet.create({
   // Header
   header:     { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.xs },
   headerText: { flex: 1 },
+  headerBtns: { flexDirection: 'row', gap: Spacing.sm },
   title:      { fontFamily: Fonts.display, fontSize: 22, color: Palette.text },
   date:       { ...Type.small, color: Palette.textSub, marginTop: 2 },
 

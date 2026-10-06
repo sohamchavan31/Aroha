@@ -92,8 +92,9 @@ Next, in this order
       Progress card, trend chart)
   [ ] Goal date: targetDate on User, collected in onboarding + edit profile;
       Progress shows "X kg left · Y days", required kg/week, On track / Behind
-  [ ] Barcode scanner: expo-camera + Open Food Facts; the "scan" entry point
-      goes in the Food search bar
+  [x] Packaged foods from the label (brand + per 100 g / per serving)
+  [ ] Barcode scanner: expo-camera + Open Food Facts; fills the label form
+  [ ] Shared brand catalogue: popular Indian brands verified from labels
   [ ] Progress photos: date-stamped, Day 1 / 30 / 60 / 90 prompts,
       side-by-side compare
   [ ] Forgot password (email reset link)
@@ -102,8 +103,10 @@ Next, in this order
   [ ] Meal templates: save a named combo, log it in one tap
   [ ] Dietary preference filter in food search (veg / vegan / jain users
       don't see non-veg foods)
-  [ ] Workout builder: pick your own exercises/sets/reps; gym machine
-      exercises; expand library to 100+
+  [x] Gym library: barbell, dumbbell, cable, machine, Smith (100+ exercises),
+      kit filter in Train, Gym / Home in the generator
+  [ ] Workout builder: pick your own exercises/sets/reps
+  [ ] Cardio machines (treadmill, bike, rower) logged by time, not reps
   [ ] Step counter (expo-sensors Pedometer) -> EP reward
   [ ] Habits: consistency score per habit, streak freeze (bought with EP),
       monthly badges

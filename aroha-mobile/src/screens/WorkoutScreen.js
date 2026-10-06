@@ -25,6 +25,15 @@ const CATEGORIES = [
   { key: 'flexibility', label: 'Flexibility' },
 ];
 
+// Equipment groups for the library filter.
+const KIT = [
+  { key: 'all',      label: 'Any kit' },
+  { key: 'body',     label: 'Bodyweight', match: ['none', 'mat', 'pullup_bar', 'rope'] },
+  { key: 'free',     label: 'Free weights', match: ['barbell', 'dumbbell', 'ez_bar', 'kettlebell', 'bench'] },
+  { key: 'machines', label: 'Machines & cables', match: ['machine', 'cable', 'smith_machine', 'ab_wheel'] },
+];
+const kitLabel = k => (k && k !== 'none' ? k.replace(/_/g, ' ') : 'bodyweight');
+
 const CATEGORY_ICON = {
   strength: 'barbell-outline', cardio: 'heart-outline', yoga: 'body-outline', flexibility: 'leaf-outline',
 };
@@ -38,6 +47,7 @@ export default function WorkoutScreen() {
   const [loadingEx, setLoadingEx]   = useState(true);
   const [exError, setExError]       = useState(false);
   const [category, setCategory]     = useState('all');
+  const [kit, setKit]               = useState('all');
   const [query, setQuery]           = useState('');
 
   const [today, setToday]           = useState({ entries: [], exerciseCount: 0, totalSets: 0, totalReps: 0 });
@@ -143,7 +153,8 @@ export default function WorkoutScreen() {
   const q = query.trim().toLowerCase();
   const visible = exercises.filter(e =>
     (category === 'all' || e.category === category) &&
-    (!q || e.name?.toLowerCase().includes(q) || e.muscleGroup?.toLowerCase().includes(q))
+    (kit === 'all' || KIT.find(k => k.key === kit)?.match.includes(e.equipment)) &&
+    (!q || e.name?.toLowerCase().includes(q) || e.muscleGroup?.toLowerCase().includes(q) || kitLabel(e.equipment).includes(q))
   );
 
   return (
@@ -234,6 +245,11 @@ export default function WorkoutScreen() {
               <Chip key={c.key} label={c.label} selected={category === c.key} onPress={() => setCategory(c.key)} />
             ))}
           </ScrollView>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+            {KIT.map(k => (
+              <Chip key={k.key} label={k.label} capitalize={false} color={Palette.carbs} selected={kit === k.key} onPress={() => setKit(k.key)} />
+            ))}
+          </ScrollView>
         </FadeInView>
 
         {loadingEx ? (
@@ -264,7 +280,7 @@ export default function WorkoutScreen() {
                 </View>
                 <View style={styles.exInfo}>
                   <Text style={styles.exName} numberOfLines={1}>{ex.name}</Text>
-                  <Text style={styles.exMeta} numberOfLines={1}>{[ex.muscleGroup, ex.equipment].filter(Boolean).join(' · ')}</Text>
+                  <Text style={styles.exMeta} numberOfLines={1}>{[ex.muscleGroup?.replace(/_/g, ' '), kitLabel(ex.equipment)].filter(Boolean).join(' · ')}</Text>
                 </View>
                 <Text style={styles.exDefault}>{ex.defaultSets}×{ex.defaultReps}</Text>
                 <AnimatedPressable

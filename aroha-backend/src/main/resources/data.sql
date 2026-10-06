@@ -230,3 +230,88 @@ SELECT * FROM (VALUES
 ('Seated Twist',      'flexibility', 'mat',            'back',       'Seated spinal rotation stretch', 1, 30)
 ) AS v(name, category, equipment, muscle_group, description, default_sets, default_reps)
 WHERE NOT EXISTS (SELECT 1 FROM exercises LIMIT 1);
+
+-- Gym library: barbell, dumbbell, cable, machine and Smith variants.
+-- Inserted per name, so new rows reach existing databases too.
+INSERT INTO exercises (name, category, equipment, muscle_group, description, default_sets, default_reps)
+SELECT * FROM (VALUES
+-- Chest
+('Barbell Bench Press',          'strength', 'barbell',       'chest',     'Flat bench, lower bar to mid-chest, press up', 4, 8),
+('Incline Barbell Bench Press',  'strength', 'barbell',       'chest',     'Bench at 30-45 degrees, targets upper chest', 4, 8),
+('Decline Bench Press',          'strength', 'barbell',       'chest',     'Head-down bench, targets lower chest', 3, 10),
+('Dumbbell Bench Press',         'strength', 'dumbbell',      'chest',     'Flat bench press with dumbbells', 4, 10),
+('Incline Dumbbell Press',       'strength', 'dumbbell',      'chest',     'Incline bench press with dumbbells', 4, 10),
+('Dumbbell Flyes',               'strength', 'dumbbell',      'chest',     'Wide arc with soft elbows, stretch the chest', 3, 12),
+('Cable Crossover',              'strength', 'cable',         'chest',     'High pulleys, bring handles together in front', 3, 12),
+('Low-to-High Cable Fly',        'strength', 'cable',         'chest',     'Low pulleys, sweep up to shoulder height', 3, 12),
+('Pec Deck Fly',                 'strength', 'machine',       'chest',     'Seated fly machine, squeeze at the middle', 3, 12),
+('Chest Press Machine',          'strength', 'machine',       'chest',     'Seated machine press', 3, 12),
+('Smith Machine Bench Press',    'strength', 'smith_machine', 'chest',     'Bench press on a guided bar', 4, 10),
+('Smith Machine Incline Press',  'strength', 'smith_machine', 'chest',     'Incline press on a guided bar', 3, 10),
+-- Back
+('Deadlift',                     'strength', 'barbell',       'back',      'Hinge at hips, flat back, drive through heels', 4, 5),
+('Barbell Row',                  'strength', 'barbell',       'back',      'Bent over, pull bar to lower ribs', 4, 8),
+('T-Bar Row',                    'strength', 'barbell',       'back',      'Landmine or T-bar row, chest over the bar', 4, 10),
+('One-Arm Dumbbell Row',         'strength', 'dumbbell',      'back',      'Knee on bench, row dumbbell to hip', 3, 10),
+('Lat Pulldown',                 'strength', 'cable',         'back',      'Wide grip, pull bar to upper chest', 4, 10),
+('Close-Grip Lat Pulldown',      'strength', 'cable',         'back',      'V-handle pulldown to chest', 3, 10),
+('Seated Cable Row',             'strength', 'cable',         'back',      'Pull handle to stomach, squeeze shoulder blades', 4, 10),
+('Straight-Arm Pulldown',        'strength', 'cable',         'back',      'Arms straight, sweep bar down to thighs', 3, 12),
+('Machine Row',                  'strength', 'machine',       'back',      'Chest-supported row machine', 3, 12),
+('Assisted Pull-up Machine',     'strength', 'machine',       'back',      'Kneel on pad, pull chin over bar', 3, 10),
+('Back Extension',               'strength', 'bench',         'back',      'Hyperextension bench, hinge and lift to neutral', 3, 15),
+-- Shoulders
+('Overhead Barbell Press',       'strength', 'barbell',       'shoulders', 'Standing press from collarbone to overhead', 4, 8),
+('Seated Dumbbell Shoulder Press','strength','dumbbell',      'shoulders', 'Seated, press dumbbells overhead', 4, 10),
+('Arnold Press',                 'strength', 'dumbbell',      'shoulders', 'Rotate palms out as you press up', 3, 10),
+('Dumbbell Lateral Raise',       'strength', 'dumbbell',      'shoulders', 'Raise arms to the side to shoulder height', 3, 15),
+('Cable Lateral Raise',          'strength', 'cable',         'shoulders', 'Single-arm lateral raise from low pulley', 3, 15),
+('Dumbbell Front Raise',         'strength', 'dumbbell',      'shoulders', 'Raise dumbbells in front to eye level', 3, 12),
+('Rear Delt Fly',                'strength', 'dumbbell',      'shoulders', 'Bent over, raise arms out to the side', 3, 15),
+('Reverse Pec Deck',             'strength', 'machine',       'shoulders', 'Face the pec deck, open arms back', 3, 15),
+('Face Pull',                    'strength', 'cable',         'shoulders', 'Rope to forehead, elbows high', 3, 15),
+('Shoulder Press Machine',       'strength', 'machine',       'shoulders', 'Seated machine overhead press', 3, 12),
+('Smith Machine Shoulder Press', 'strength', 'smith_machine', 'shoulders', 'Seated overhead press on a guided bar', 3, 10),
+('Barbell Shrug',                'strength', 'barbell',       'shoulders', 'Lift shoulders to ears, hold, lower', 3, 12),
+-- Arms
+('Barbell Curl',                 'strength', 'barbell',       'arms',      'Standing curl, elbows fixed at sides', 3, 10),
+('EZ-Bar Curl',                  'strength', 'ez_bar',        'arms',      'Curl with angled grip, easier on wrists', 3, 10),
+('Dumbbell Curl',                'strength', 'dumbbell',      'arms',      'Alternating or both arms', 3, 12),
+('Hammer Curl',                  'strength', 'dumbbell',      'arms',      'Neutral grip curl, works forearms too', 3, 12),
+('Preacher Curl',                'strength', 'ez_bar',        'arms',      'Arms on preacher pad, full stretch at bottom', 3, 10),
+('Cable Curl',                   'strength', 'cable',         'arms',      'Curl from low pulley, constant tension', 3, 12),
+('Concentration Curl',           'strength', 'dumbbell',      'arms',      'Seated, elbow on inner thigh', 3, 12),
+('Tricep Pushdown',              'strength', 'cable',         'arms',      'Rope or bar, push down until arms are straight', 3, 12),
+('Overhead Cable Tricep Extension','strength','cable',        'arms',      'Face away from pulley, extend rope overhead', 3, 12),
+('Skull Crushers',               'strength', 'ez_bar',        'arms',      'Lying, lower bar to forehead, extend', 3, 10),
+('Close-Grip Bench Press',       'strength', 'barbell',       'arms',      'Hands shoulder-width, elbows tucked', 3, 8),
+('Dumbbell Tricep Kickback',     'strength', 'dumbbell',      'arms',      'Bent over, extend arm straight back', 3, 12),
+('Tricep Dip Machine',           'strength', 'machine',       'arms',      'Seated dip machine', 3, 12),
+-- Legs
+('Barbell Back Squat',           'strength', 'barbell',       'legs',      'Bar on upper back, squat to parallel or below', 4, 8),
+('Front Squat',                  'strength', 'barbell',       'legs',      'Bar on front of shoulders, upright torso', 4, 6),
+('Romanian Deadlift',            'strength', 'barbell',       'legs',      'Soft knees, hinge until hamstrings stretch', 4, 8),
+('Leg Press',                    'strength', 'machine',       'legs',      'Feet shoulder-width on platform, lower with control', 4, 12),
+('Hack Squat',                   'strength', 'machine',       'legs',      'Back on pad, squat on the sled', 4, 10),
+('Smith Machine Squat',          'strength', 'smith_machine', 'legs',      'Squat on a guided bar', 4, 10),
+('Bulgarian Split Squat',        'strength', 'dumbbell',      'legs',      'Rear foot on bench, lunge down', 3, 10),
+('Dumbbell Walking Lunges',      'strength', 'dumbbell',      'legs',      'Long steps holding dumbbells', 3, 12),
+('Goblet Squat',                 'strength', 'dumbbell',      'legs',      'Hold one dumbbell at chest, squat deep', 3, 12),
+('Leg Extension',                'strength', 'machine',       'legs',      'Seated, straighten knees against pad', 3, 12),
+('Lying Leg Curl',               'strength', 'machine',       'legs',      'Face down, curl heels to glutes', 3, 12),
+('Seated Leg Curl',              'strength', 'machine',       'legs',      'Seated hamstring curl machine', 3, 12),
+('Barbell Hip Thrust',           'strength', 'barbell',       'legs',      'Upper back on bench, drive hips up', 4, 10),
+('Standing Calf Raise',          'strength', 'machine',       'legs',      'Rise onto toes, pause at top', 4, 15),
+('Seated Calf Raise',            'strength', 'machine',       'legs',      'Knees under pad, raise heels', 3, 15),
+('Hip Abductor Machine',         'strength', 'machine',       'legs',      'Push knees outward against pads', 3, 15),
+('Hip Adductor Machine',         'strength', 'machine',       'legs',      'Squeeze knees together against pads', 3, 15),
+('Cable Pull-Through',           'strength', 'cable',         'legs',      'Face away from low pulley, hinge and drive hips', 3, 12),
+-- Core
+('Cable Crunch',                 'strength', 'cable',         'core',      'Kneel, crunch rope down toward knees', 3, 15),
+('Hanging Leg Raise',            'strength', 'pullup_bar',    'core',      'Hang from bar, raise legs to hip height', 3, 12),
+('Ab Crunch Machine',            'strength', 'machine',       'core',      'Seated crunch machine', 3, 15),
+('Cable Woodchopper',            'strength', 'cable',         'core',      'Rotate and pull diagonally across body', 3, 12),
+('Russian Twist',                'strength', 'dumbbell',      'core',      'Seated, lean back, rotate weight side to side', 3, 20),
+('Ab Wheel Rollout',             'strength', 'ab_wheel',      'core',      'Roll out from knees, keep back flat', 3, 10)
+) AS v(name, category, equipment, muscle_group, description, default_sets, default_reps)
+WHERE NOT EXISTS (SELECT 1 FROM exercises e WHERE e.name = v.name);

@@ -11,4 +11,7 @@ public class WorkoutPlanRequest {
 
     @NotBlank
     private String workoutType;   // PUSH / PULL / LEGS / CARDIO / FULL_BODY / CROSSFIT / YOGA / CORE
+
+    // Optional: GYM (prefer weights and machines) or HOME (bodyweight-friendly kit only).
+    private String location;
 }

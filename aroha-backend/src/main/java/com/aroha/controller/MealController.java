@@ -46,7 +46,8 @@ public class MealController {
             @AuthenticationPrincipal User user,
             @Valid @RequestBody CustomMealRequest req) {
         Meal meal = Meal.builder()
-                .name(req.getName())
+                .name(req.getName().trim())
+                .brand(req.getBrand() != null && !req.getBrand().isBlank() ? req.getBrand().trim() : null)
                 .category(req.getCategory() != null ? req.getCategory() : "custom")
                 .region("custom")
                 .caloriesPer100g(req.getCaloriesPer100g())

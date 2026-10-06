@@ -9,6 +9,7 @@ import Chip from '../components/ui/Chip';
 import Sheet from '../components/ui/Sheet';
 import Field from '../components/ui/Field';
 import Stepper from '../components/ui/Stepper';
+import Segmented from '../components/ui/Segmented';
 import SegmentBar from '../components/ui/SegmentBar';
 import IconButton from '../components/ui/IconButton';
 import PrimaryButton from '../components/ui/PrimaryButton';
@@ -340,6 +341,7 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
   const [step, setStep]               = useState(1);
   const [duration, setDuration]       = useState(null);
   const [workoutType, setWorkoutType] = useState(null);
+  const [location, setLocation]       = useState('GYM');
   const [plan, setPlan]               = useState(null);
   const [isSample, setIsSample]       = useState(false);
   const [loading, setLoading]         = useState(false);
@@ -359,7 +361,7 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
   async function generate() {
     setLoading(true);
     try {
-      const { data } = await client.post('/workout/generate', { durationMinutes: duration, workoutType });
+      const { data } = await client.post('/workout/generate', { durationMinutes: duration, workoutType, location });
       setPlan(data);
       setIsSample(false);
     } catch {
@@ -416,7 +418,13 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
 
         {step === 1 && (
           <>
-            <Text style={styles.hint}>Aroha builds a plan that fits your time.</Text>
+            <Text style={styles.hint}>Aroha builds a plan that fits your time and kit.</Text>
+            <Segmented
+              options={[{ key: 'GYM', label: 'At the gym', icon: 'barbell-outline' }, { key: 'HOME', label: 'At home', icon: 'home-outline' }]}
+              value={location}
+              onChange={setLocation}
+              style={styles.where}
+            />
             <View style={styles.durations}>
               {DURATIONS.map(d => {
                 const sel = duration === d.value;
@@ -441,7 +449,7 @@ export default function WorkoutGeneratorScreen({ visible, onClose }) {
 
         {step === 2 && (
           <>
-            <Text style={styles.hint}>{duration} minutes. Pick a focus.</Text>
+            <Text style={styles.hint}>{duration} minutes {location === 'HOME' ? 'at home' : 'at the gym'}. Pick a focus.</Text>
             <View style={styles.types}>
               {WORKOUT_TYPES.map(t => {
                 const sel = workoutType === t.key;
@@ -572,6 +580,7 @@ const styles = StyleSheet.create({
   nextUp:           { ...Type.small, color: Palette.textSub, textAlign: 'center' },
   addBody:          { gap: Spacing.lg },
   addSteppers:      { flexDirection: 'row', gap: Spacing.sm },
+  where:            { marginBottom: Spacing.lg },
 
   // Done
   doneWrap:      { padding: Spacing.lg, paddingTop: Spacing.xxl, gap: Spacing.lg },
