@@ -52,11 +52,10 @@ public class WorkoutService {
                 .reps(request.getReps())
                 .weightKg(request.getWeightKg())
                 .logDate(LocalDate.now())
+                .newPR(newPR)
                 .build();
 
-        WorkoutLog saved = workoutLogRepository.save(log);
-        saved.setNewPR(newPR);
-        return saved;
+        return workoutLogRepository.save(log);
     }
 
     public Map<String, Object> getExerciseHistory(User user, Long exerciseId) {

@@ -192,7 +192,7 @@ export default function WorkoutScreen() {
                 <View style={styles.entryInfo}>
                   <View style={styles.entryNameRow}>
                     <Text style={styles.entryName} numberOfLines={1}>{entry.exerciseName}</Text>
-                    {prIds.has(entry.id) && <Text style={styles.prTag}>PR</Text>}
+                    {(entry.newPR || prIds.has(entry.id)) && <Text style={styles.prTag}>PR</Text>}
                   </View>
                   <Text style={styles.entryMeta}>{entry.weightKg > 0 ? `${fmtKg(entry.weightKg)} kg` : 'Bodyweight'}</Text>
                 </View>

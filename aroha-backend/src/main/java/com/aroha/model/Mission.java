@@ -43,4 +43,7 @@ public class Mission {
     private LocalDate missionDate;
 
     private LocalDateTime completedAt;
+
+    // Set when the app can verify the mission itself (see AutoMission). Null = tap to complete.
+    private String autoKey;
 }

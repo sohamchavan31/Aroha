@@ -1,5 +1,6 @@
 package com.aroha.controller;
 
+import com.aroha.service.ActivityService;
 import com.aroha.dto.DailyLogRequest;
 import com.aroha.model.DailyLog;
 import com.aroha.model.User;
@@ -19,12 +20,15 @@ import java.util.Map;
 public class DailyLogController {
 
     private final DailyLogService dailyLogService;
+    private final ActivityService activityService;
 
     @PostMapping
     public ResponseEntity<DailyLog> addEntry(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody DailyLogRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(dailyLogService.addEntry(user, request));
+        DailyLog saved = dailyLogService.addEntry(user, request);
+        activityService.recordActivity(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @GetMapping("/today")

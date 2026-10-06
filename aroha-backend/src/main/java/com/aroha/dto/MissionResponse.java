@@ -16,4 +16,6 @@ public class MissionResponse {
     private String category;
     private int epReward;
     private boolean completed;
+    // true when the app completes it automatically from your activity
+    private boolean auto;
 }

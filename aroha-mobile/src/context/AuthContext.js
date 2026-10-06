@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import client from '../api/client';
 
 const AuthContext = createContext(null);
 
@@ -27,6 +28,37 @@ export function AuthProvider({ children }) {
     }
     loadStoredAuth();
   }, []);
+
+  // The user object is cached from login; refresh it from the server once per
+  // app start so name, stage, EP, avatar and onboarding state stay current.
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    client.get('/profile').then(async ({ data }) => {
+      if (cancelled || !data) return;
+      const fresh = {
+        name: data.name,
+        evolutionStage: data.evolutionStage,
+        evolutionPoints: data.evolutionPoints,
+        profileComplete: data.profileComplete,
+        avatarKey: data.avatarKey,
+        waterGoalGlasses: data.waterGoalGlasses,
+      };
+      setUser(prev => {
+        const next = { ...(prev || {}), ...fresh };
+        AsyncStorage.setItem('aroha_user', JSON.stringify(next)).catch(() => {});
+        return next;
+      });
+    }).catch(err => {
+      // Expired or deleted account: the client already cleared storage, so go to Login.
+      const status = err?.response?.status;
+      if (!cancelled && (status === 401 || status === 403)) {
+        setToken(null);
+        setUser(null);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [token]);
 
   async function login(tokenValue, userData) {
     await SecureStore.setItemAsync('aroha_token', tokenValue);

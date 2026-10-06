@@ -44,8 +44,8 @@ public class WorkoutLog {
     @CreationTimestamp
     private LocalDateTime loggedAt;
 
-    // true if this entry beats the user's previous best for this exercise — not persisted
-    @Transient
+    // true if this entry beat the user's previous best for this exercise when it was logged
+    @Column(name = "new_pr", columnDefinition = "boolean default false")
     @Builder.Default
     private boolean newPR = false;
 }

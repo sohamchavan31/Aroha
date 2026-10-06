@@ -1,5 +1,8 @@
 package com.aroha.controller;
 
+import com.aroha.repository.UserRepository;
+import com.aroha.service.ActivityService;
+import com.aroha.service.MacroCalculator;
 import com.aroha.model.User;
 import com.aroha.model.WeightLog;
 import com.aroha.repository.WeightLogRepository;
@@ -20,6 +23,8 @@ import java.util.Map;
 public class WeightLogController {
 
     private final WeightLogRepository weightLogRepository;
+    private final UserRepository userRepository;
+    private final ActivityService activityService;
 
     @PostMapping
     public ResponseEntity<WeightLog> logWeight(
@@ -44,7 +49,14 @@ public class WeightLogController {
                         .weightKg(kg)
                         .loggedDate(today)
                         .build());
-        return ResponseEntity.ok(weightLogRepository.save(log));
+        WeightLog saved = weightLogRepository.save(log);
+
+        // Today's weigh-in is the user's current weight: update it and the targets built on it.
+        user.setWeightKg(kg);
+        MacroCalculator.apply(user);
+        userRepository.save(user);
+        activityService.recordActivity(user);
+        return ResponseEntity.ok(saved);
     }
 
     @GetMapping("/history")

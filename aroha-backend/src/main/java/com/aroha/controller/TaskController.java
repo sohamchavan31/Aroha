@@ -1,5 +1,6 @@
 package com.aroha.controller;
 
+import com.aroha.service.ActivityService;
 import com.aroha.dto.TaskRequest;
 import com.aroha.model.Task;
 import com.aroha.model.User;
@@ -21,6 +22,7 @@ import java.util.Map;
 public class TaskController {
 
     private final TaskService taskService;
+    private final ActivityService activityService;
 
     @PostMapping
     public ResponseEntity<Task> create(
@@ -41,7 +43,9 @@ public class TaskController {
     public ResponseEntity<Task> toggle(
             @AuthenticationPrincipal User user,
             @PathVariable Long id) {
-        return ResponseEntity.ok(taskService.toggleTask(user, id));
+        Task task = taskService.toggleTask(user, id);
+        if (task.isCompleted()) activityService.recordActivity(user);
+        return ResponseEntity.ok(task);
     }
 
     @DeleteMapping("/{id}")
