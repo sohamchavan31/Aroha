@@ -93,6 +93,9 @@ Next, in this order
   [ ] Goal date: targetDate on User, collected in onboarding + edit profile;
       Progress shows "X kg left · Y days", required kg/week, On track / Behind
   [x] Packaged foods from the label (brand + per 100 g / per serving)
+  [x] 126 more Indian dishes: Maharashtrian, Gujarati, Rajasthani, Punjabi, Bengali,
+      Bihari, North-East, South Indian, Hyderabadi, street food, Indo-Chinese
+  [ ] Hindi / Marathi names for the new dishes (name_hindi) so search works in both
   [ ] Barcode scanner: expo-camera + Open Food Facts; fills the label form
   [ ] Shared brand catalogue: popular Indian brands verified from labels
   [ ] Progress photos: date-stamped, Day 1 / 30 / 60 / 90 prompts,

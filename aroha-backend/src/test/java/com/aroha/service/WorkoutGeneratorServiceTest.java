@@ -4,6 +4,7 @@ import com.aroha.dto.WorkoutExerciseDto;
 import com.aroha.dto.WorkoutPlanRequest;
 import com.aroha.model.Exercise;
 import com.aroha.repository.ExerciseRepository;
+import com.aroha.repository.MealRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,6 +25,7 @@ class WorkoutGeneratorServiceTest {
 
     @Autowired WorkoutGeneratorService generator;
     @Autowired ExerciseRepository exerciseRepository;
+    @Autowired MealRepository mealRepository;
 
     private Map<Long, Exercise> byId() {
         return exerciseRepository.findAll().stream().collect(Collectors.toMap(Exercise::getId, e -> e));
@@ -41,6 +43,14 @@ class WorkoutGeneratorServiceTest {
     void gymLibraryIsSeeded() {
         long gym = exerciseRepository.findAll().stream().filter(e -> !HOME_KIT.contains(e.getEquipment())).count();
         assertTrue(gym >= 60, "expected the gym library, found " + gym);
+    }
+
+    @Test
+    void regionalFoodsAreSeeded() {
+        var names = mealRepository.findAll().stream().map(m -> m.getName()).collect(Collectors.toSet());
+        for (String dish : java.util.List.of("Bharli Vangi", "Thepla", "Dal Baati", "Machher Jhol", "Masala Dosa", "Chicken Biryani", "Paneer Bhurji")) {
+            assertTrue(names.contains(dish), dish + " missing");
+        }
     }
 
     @Test
