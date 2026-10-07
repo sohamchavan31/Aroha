@@ -1,0 +1,10 @@
+# Build output and editor files
+target/
+.idea/
+.vscode/
+*.iml
+
+# Secrets never go into the image — pass them with --env-file or the host's settings
+.env
+.env.*
+**/application-secret.properties

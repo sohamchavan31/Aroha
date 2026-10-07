@@ -57,6 +57,24 @@ Aroha/
 
 ---
 
+## Run the backend in Docker
+
+The backend can run in Docker instead of `mvn spring-boot:run`. Both ways work.
+The database stays on Neon, so only the API runs in the container.
+
+```bash
+cp aroha-backend/.env.example aroha-backend/.env   # fill in DB_URL, DB_USERNAME, DB_PASSWORD, JWT_SECRET
+docker compose up --build                           # API on http://localhost:8080
+docker compose down                                 # stop it
+```
+
+- `DB_URL` uses the JDBC form: `jdbc:postgresql://<neon-host>/<db>?sslmode=require`.
+- Secrets are never baked into the image; they come from `.env` (gitignored) or the host's settings.
+- The image honours `PORT`, so Render (or any host) can run the same Dockerfile.
+- The phone still reaches it at `http://<PC Wi-Fi IP>:8080`, just like before.
+
+---
+
 ## Dev
 
 Solo project — Soham | 2–4 hrs/day

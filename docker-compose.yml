@@ -1,0 +1,14 @@
+# Run the Aroha backend in Docker: `docker compose up --build`
+# Needs aroha-backend/.env (copy aroha-backend/.env.example). The database is Neon,
+# so there is no Postgres container. The mobile app and the AI service run outside Docker.
+services:
+  backend:
+    build: ./aroha-backend
+    image: aroha-backend
+    container_name: aroha-backend
+    env_file: ./aroha-backend/.env
+    ports:
+      - "8080:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # reach the Flask AI service on your PC (Linux needs this)
+    restart: unless-stopped
