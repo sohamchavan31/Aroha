@@ -12,7 +12,7 @@ import PrimaryButton from '../components/ui/PrimaryButton';
 import Skeleton from '../components/Skeleton';
 import FadeInView from '../components/FadeInView';
 import AnimatedPressable from '../components/AnimatedPressable';
-import LogSetSheet from '../components/train/LogSetSheet';
+import LogSetSheet, { setsSummary } from '../components/train/LogSetSheet';
 import ExerciseHistorySheet from '../components/train/ExerciseHistorySheet';
 import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
 import { tap, success, warn } from '../utils/haptics';
@@ -40,6 +40,25 @@ const CATEGORY_ICON = {
 
 function fmtKg(n) {
   return Number.isInteger(n) ? String(n) : Number(n).toFixed(1);
+}
+
+// Today's rows grouped per exercise, in the order first logged. Older rows
+// that stored "3 × 10" in one entry expand into 3 sets.
+function groupToday(entries) {
+  const groups = [];
+  const byKey = {};
+  for (const e of entries) {
+    const key = e.exerciseId ?? e.exerciseName;
+    if (!byKey[key]) {
+      byKey[key] = { key: String(key), name: e.exerciseName, ids: [], sets: [], pr: false };
+      groups.push(byKey[key]);
+    }
+    const g = byKey[key];
+    g.ids.push(e.id);
+    g.pr = g.pr || !!e.newPR;
+    for (let i = 0; i < Math.max(1, e.sets || 1); i++) g.sets.push({ weightKg: e.weightKg || 0, reps: e.reps });
+  }
+  return groups;
 }
 
 export default function WorkoutScreen() {
@@ -105,15 +124,20 @@ export default function WorkoutScreen() {
   }
 
   // ── Actions ─────────────────────────────────────────────────────────────────
-  async function saveLog({ sets, reps, weightKg }) {
+  // rows: [{ weightKg, reps }] — one per set.
+  async function saveLog(rows) {
     const ex = logExercise;
     try {
-      const { data } = await client.post('/workouts/log', { exerciseId: ex.id, sets, reps, weightKg });
+      const { data } = await client.post('/workouts/log/sets', {
+        exerciseId: ex.id,
+        sets: rows.map(r => ({ weightKg: r.weightKg, reps: r.reps })),
+      });
       setLogExercise(null);
       if (data?.newPR) {
         success();
-        setPrIds(s => new Set(s).add(data.id));
-        setPrBanner({ name: ex.name, detail: weightKg > 0 ? `${fmtKg(weightKg)} kg × ${reps}` : `${reps} reps` });
+        const prEntry = (data.entries || []).find(e => e.newPR);
+        if (prEntry) setPrIds(s => new Set(s).add(prEntry.id));
+        setPrBanner({ name: ex.name, detail: data.bestWeightKg > 0 ? `${fmtKg(data.bestWeightKg)} kg × ${data.bestReps}` : `${data.bestReps} reps` });
         clearTimeout(bannerTimer.current);
         bannerTimer.current = setTimeout(() => setPrBanner(null), 6000);
         scrollRef.current?.scrollTo({ y: 0, animated: true });
@@ -129,19 +153,21 @@ export default function WorkoutScreen() {
     }
   }
 
-  function confirmDelete(entry) {
+  function confirmDelete(group) {
     tap();
-    Alert.alert('Remove from today?', `${entry.exerciseName} · ${entry.sets} × ${entry.reps}`, [
+    Alert.alert('Remove from today?', `${group.name} · ${group.sets.length} set${group.sets.length === 1 ? '' : 's'}`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => deleteEntry(entry.id) },
+      { text: 'Remove', style: 'destructive', onPress: () => deleteGroup(group) },
     ]);
   }
 
-  async function deleteEntry(id) {
+  // Removes every set of that exercise logged today.
+  async function deleteGroup(group) {
     const before = today;
-    setToday(t => ({ ...t, entries: t.entries.filter(e => e.id !== id) }));
+    const ids = new Set(group.ids);
+    setToday(t => ({ ...t, entries: t.entries.filter(e => !ids.has(e.id)) }));
     try {
-      await client.delete(`/workouts/log/${id}`);
+      await Promise.all(group.ids.map(id => client.delete(`/workouts/log/${id}`)));
       loadToday();
     } catch {
       setToday(before);
@@ -198,17 +224,17 @@ export default function WorkoutScreen() {
             {!loadingToday && today.entries.length === 0 && (
               <Text style={styles.todayEmpty}>Nothing logged yet. Pick an exercise below or generate a workout.</Text>
             )}
-            {today.entries.map(entry => (
-              <View key={entry.id} style={[styles.entry, styles.divider]}>
+            {groupToday(today.entries).map(group => (
+              <View key={group.key} style={[styles.entry, styles.divider]}>
                 <View style={styles.entryInfo}>
                   <View style={styles.entryNameRow}>
-                    <Text style={styles.entryName} numberOfLines={1}>{entry.exerciseName}</Text>
-                    {(entry.newPR || prIds.has(entry.id)) && <Text style={styles.prTag}>PR</Text>}
+                    <Text style={styles.entryName} numberOfLines={1}>{group.name}</Text>
+                    {group.ids.some(id => prIds.has(id)) || group.pr ? <Text style={styles.prTag}>PR</Text> : null}
                   </View>
-                  <Text style={styles.entryMeta}>{entry.weightKg > 0 ? `${fmtKg(entry.weightKg)} kg` : 'Bodyweight'}</Text>
+                  <Text style={styles.entryMeta} numberOfLines={2}>{group.sets.some(s => s.weightKg > 0) ? setsSummary(group.sets) : `${setsSummary(group.sets)} reps · bodyweight`}</Text>
                 </View>
-                <Text style={styles.entrySets}>{entry.sets} × {entry.reps}</Text>
-                <AnimatedPressable onPress={() => confirmDelete(entry)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel={`Remove ${entry.exerciseName}`}>
+                <Text style={styles.entrySets}>{group.sets.length} set{group.sets.length === 1 ? '' : 's'}</Text>
+                <AnimatedPressable onPress={() => confirmDelete(group)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel={`Remove ${group.name}`}>
                   <Ionicons name="close" size={16} color={Palette.textDim} />
                 </AnimatedPressable>
               </View>
