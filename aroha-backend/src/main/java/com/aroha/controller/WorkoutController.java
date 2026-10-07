@@ -2,6 +2,7 @@ package com.aroha.controller;
 
 import com.aroha.service.ActivityService;
 import com.aroha.dto.WorkoutLogRequest;
+import com.aroha.dto.WorkoutSetsRequest;
 import com.aroha.model.Exercise;
 import com.aroha.model.User;
 import com.aroha.model.WorkoutLog;
@@ -41,6 +42,16 @@ public class WorkoutController {
             @AuthenticationPrincipal User user,
             @Valid @RequestBody WorkoutLogRequest request) {
         WorkoutLog saved = workoutService.logExercise(user, request);
+        activityService.recordActivity(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
+    // Several sets of one exercise, each with its own weight and reps.
+    @PostMapping("/log/sets")
+    public ResponseEntity<Map<String, Object>> logSets(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody WorkoutSetsRequest request) {
+        Map<String, Object> saved = workoutService.logSets(user, request);
         activityService.recordActivity(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
