@@ -59,7 +59,7 @@ export default function ServingSheet({ meal, initialSlot, onClose, onAdd }) {
     <Sheet
       visible={!!meal}
       onClose={onClose}
-      title={meal?.name}
+      title={meal?.brand ? `${meal.brand} ${meal.name}` : meal?.name}
       subtitle={unitFood ? `${typical} g per ${meal?.servingUnit}` : `Typical serving ${typical} g`}
       showClose
     >

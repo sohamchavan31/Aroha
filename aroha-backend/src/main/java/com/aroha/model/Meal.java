@@ -54,4 +54,7 @@ public class Meal {
 
     @Column(name = "created_by")
     private Long createdBy;
+
+    // Brand for packaged foods entered from a label (e.g. "Amul"), null for generic foods.
+    private String brand;
 }

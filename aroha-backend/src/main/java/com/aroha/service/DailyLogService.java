@@ -35,7 +35,7 @@ public class DailyLogService {
         DailyLog log = DailyLog.builder()
                 .userId(user.getId())
                 .mealId(meal.getId())
-                .mealName(meal.getName())
+                .mealName(meal.getBrand() != null ? meal.getBrand() + " " + meal.getName() : meal.getName())
                 .mealSlot(request.getMealSlot())
                 .servingGrams(request.getServingGrams())
                 .calories(Math.round(meal.getCaloriesPer100g() * ratio * 10.0) / 10.0)
