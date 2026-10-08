@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, Switch, StatusBar, Share, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Switch, StatusBar, Share, Alert, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,6 +18,8 @@ import {
   scheduleMealReminders,
   scheduleWorkoutReminder,
   scheduleMissionReminder,
+  permissionStatus,
+  requestPermissions,
 } from '../utils/notifications';
 
 const SETTINGS_KEY = 'aroha_settings';
@@ -69,7 +71,18 @@ export default function SettingsScreen({ visible, onClose }) {
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
     } catch {}
     const handler = NOTIF_HANDLERS[key];
-    if (handler) handler(value).catch(() => {});
+    if (!handler) return;
+    if (value && (await permissionStatus()) !== 'granted') {
+      const granted = await requestPermissions();
+      if (!granted) {
+        Alert.alert('Notifications are off', 'Allow notifications for Aroha in your phone settings to get reminders.', [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Open settings', onPress: () => Linking.openSettings().catch(() => {}) },
+        ]);
+        return;
+      }
+    }
+    handler(value).catch(() => {});
   }
 
   // A copy of everything the server holds about the user, shared as JSON.

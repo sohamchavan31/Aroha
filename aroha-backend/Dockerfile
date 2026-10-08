@@ -27,4 +27,6 @@ ENV PORT=8080
 EXPOSE 8080
 
 # Keep the heap inside the container's memory limit (Render free = 512 MB).
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]
+# Days (streaks, "today's" logs, missions) roll over at midnight India time,
+# not UTC: Aroha v1 is for India.
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-Duser.timezone=Asia/Kolkata", "-jar", "app.jar"]

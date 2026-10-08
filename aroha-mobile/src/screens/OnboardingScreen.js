@@ -413,6 +413,12 @@ export default function OnboardingScreen({ onComplete }) {
           {plan.targetWeightKg != null && (isLoss || isGain) && <Row label="Target" value={`${plan.targetWeightKg} kg${weeks ? ` · ~${weeks} weeks` : ''}`} />}
         </Card>
         <Text style={styles.hint}>You can change any of this later in Profile → Edit, and your targets are recalculated.</Text>
+        <View style={styles.disclaimer} accessibilityRole="text">
+          <Ionicons name="medkit-outline" size={16} color={Palette.textSub} />
+          <Text style={styles.disclaimerText}>
+            These targets are estimates for healthy adults, not medical advice. If you are pregnant, have a medical condition or take regular medication, check with a doctor before changing your diet or training.
+          </Text>
+        </View>
       </>
     );
   }
@@ -474,6 +480,8 @@ const styles = StyleSheet.create({
   label:   { ...Type.label, color: Palette.textSub },
   section: { marginTop: Spacing.xl, marginBottom: Spacing.sm },
   hint:    { ...Type.small, color: Palette.textDim, marginTop: Spacing.md, lineHeight: 18 },
+  disclaimer:     { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.md, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1, borderColor: Palette.line },
+  disclaimerText: { ...Type.small, color: Palette.textSub, lineHeight: 18, flex: 1 },
 
   list:        { gap: Spacing.sm },
   option:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: Palette.surface, borderWidth: 1, borderColor: Palette.lineSoft, borderRadius: Radius.md + 2, paddingHorizontal: Spacing.md + 2, paddingVertical: Spacing.md },

@@ -41,6 +41,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { formatNumber } from '../utils/format';
 import { on } from '../utils/events';
 import { tap, success, warn } from '../utils/haptics';
+import RemindersCard from '../components/RemindersCard';
 
 function greetingKey() {
   const h = new Date().getHours();
@@ -362,6 +363,8 @@ export default function HomeScreen({ navigation }) {
             <DayTile icon="calendar-clear" color={Palette.carbs}   title="Planner" sub="Tasks and time blocks" onPress={() => navigation.navigate('Planner')} />
           </View>
         </FadeInView>
+
+        {!loading && <RemindersCard index={6} />}
       </ScrollView>
 
       <ProfileScreen visible={showProfile} onClose={() => { setShowProfile(false); loadAll(); }} />
