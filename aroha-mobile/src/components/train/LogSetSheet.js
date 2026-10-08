@@ -6,6 +6,7 @@ import Stepper from '../ui/Stepper';
 import PrimaryButton from '../ui/PrimaryButton';
 import AnimatedPressable from '../AnimatedPressable';
 import Skeleton from '../Skeleton';
+import ExerciseGuide from './ExerciseGuide';
 import client from '../../api/client';
 import { formatNumber } from '../../utils/format';
 import { Palette, Fonts, Type, Radius, Spacing } from '../../constants/theme';
@@ -104,6 +105,7 @@ export default function LogSetSheet({ exercise, onClose, onSave }) {
       </View>
 
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <ExerciseGuide exercise={exercise} style={styles.guide} />
         {rows.map((r, i) => (
           <View key={i} style={[styles.setRow, i > 0 && styles.divider]}>
             <View style={styles.setNum}>
@@ -153,6 +155,7 @@ const styles = StyleSheet.create({
   refValue: { fontFamily: Fonts.num, fontSize: 17, color: Palette.text },
 
   scroll:   { flexShrink: 1, marginBottom: Spacing.lg },
+  guide:    { marginBottom: Spacing.sm },
   setRow:   { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.sm },
   divider:  { borderTopWidth: 1, borderTopColor: Palette.lineSoft },
   setNum:   { width: 26, height: 26, borderRadius: 13, backgroundColor: Palette.surface2, borderWidth: 1, borderColor: Palette.line, alignItems: 'center', justifyContent: 'center' },
