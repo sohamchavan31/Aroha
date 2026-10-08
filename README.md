@@ -75,6 +75,15 @@ docker compose down                                 # stop it
 
 ---
 
+## Website and hosting
+
+- `website/`: static site for **aroha.sohrexlabs.com** (landing page, Privacy Policy, Terms,
+  Account deletion). Hosted on Cloudflare Pages: project root `website`, no build command.
+- `render.yaml`: Render Blueprint for the backend (Docker, Singapore, health check `/api/health`).
+  It deploys from `main`; secrets are entered in the Render dashboard, never committed.
+
+---
+
 ## Dev
 
 Solo project — Soham | 2–4 hrs/day

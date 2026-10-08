@@ -1,0 +1,53 @@
+/* aroha.sohrexlabs.com — same matte kit as the app: ink background, brass for the brand only. */
+:root {
+  --ink: #0B0A10; --surface: #14121B; --line: #26232F;
+  --text: #F3F1F8; --sub: #9B97AD; --dim: #5F5B70;
+  --brass: #C4A46A; --ivory: #EBE7DE; --on-ivory: #14121B;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--ink); color: var(--text);
+  font-family: Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px; line-height: 1.65;
+}
+a { color: var(--ivory); text-underline-offset: 3px; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+
+header { border-bottom: 1px solid var(--line); }
+header .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.brand { font-family: Unbounded, system-ui, sans-serif; font-weight: 600; letter-spacing: .12em; color: var(--brass); text-decoration: none; font-size: 15px; }
+nav a { color: var(--sub); text-decoration: none; font-size: 14px; margin-left: 18px; }
+nav a:hover, nav a[aria-current] { color: var(--text); }
+
+main { padding: 48px 0 64px; }
+h1 { font-family: Unbounded, system-ui, sans-serif; font-weight: 600; font-size: 30px; line-height: 1.25; margin: 0 0 8px; }
+h2 { font-size: 19px; margin: 40px 0 8px; }
+h3 { font-size: 16px; margin: 24px 0 4px; }
+p, li { color: var(--sub); }
+strong { color: var(--text); }
+ul { padding-left: 20px; }
+.meta { color: var(--dim); font-size: 14px; margin-bottom: 32px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; margin: 24px 0; }
+.card p:first-child { margin-top: 0; } .card p:last-child { margin-bottom: 0; }
+.btn { display: inline-block; background: var(--ivory); color: var(--on-ivory); text-decoration: none; font-weight: 700; padding: 12px 22px; border-radius: 999px; }
+ol.steps li { margin-bottom: 6px; }
+
+/* Landing */
+.hero { padding: 40px 0 8px; }
+.hero h1 { font-size: 40px; }
+.kicker { color: var(--brass); text-transform: uppercase; letter-spacing: .16em; font-size: 12px; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 32px 0; }
+.grid .card { margin: 0; }
+.grid h3 { margin-top: 0; color: var(--text); }
+.stages { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
+.stages li { border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 13px; color: var(--sub); }
+.stages li:last-child { border-color: var(--brass); color: var(--brass); }
+
+footer { border-top: 1px solid var(--line); padding: 24px 0 40px; color: var(--dim); font-size: 14px; }
+footer a { color: var(--sub); margin-right: 16px; }
+
+@media (max-width: 480px) {
+  h1 { font-size: 25px; } .hero h1 { font-size: 31px; }
+  nav a { margin-left: 12px; font-size: 13px; }
+}
