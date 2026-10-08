@@ -1,0 +1,27 @@
+# Render Blueprint for the Aroha backend.
+# Render → New → Blueprint → pick this repo. It builds aroha-backend/Dockerfile
+# and asks for the secrets marked `sync: false` (paste them in Render, never in git).
+services:
+  - type: web
+    name: aroha-backend
+    runtime: docker
+    dockerfilePath: ./aroha-backend/Dockerfile
+    dockerContext: ./aroha-backend
+    region: singapore          # same region as the Neon database
+    plan: free                 # free sleeps after 15 min idle; switch to starter for launch
+    branch: main               # deploys what's released; dev stays local
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: DB_URL            # jdbc:postgresql://<neon-host>/<db>?sslmode=require
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true    # Render makes a strong random secret
+      - key: AI_INTERNAL_KEY
+        sync: false
+      - key: AROHA_AI_URL      # hosted AI comes later; AI screens show offline samples until then
+        value: http://localhost:5000

@@ -13,7 +13,7 @@ public class ProfileRequest {
     private String gender;              // male | female | other
 
     @NotNull
-    @Min(10) @Max(100)
+    @Min(13) @Max(100)
     private Integer age;
 
     @NotNull

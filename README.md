@@ -75,6 +75,15 @@ docker compose down                                 # stop it
 
 ---
 
+## Website and hosting
+
+- `website/`: static site for **aroha.sohrexlabs.com** (landing page, Privacy Policy, Terms,
+  Account deletion). Hosted on Cloudflare Pages: project root `website`, no build command.
+- `render.yaml`: Render Blueprint for the backend (Docker, Singapore, health check `/api/health`).
+  It deploys from `main`; secrets are entered in the Render dashboard, never committed.
+
+---
+
 ## Database changes (Flyway)
 
 The schema lives in `aroha-backend/src/main/resources/db/migration`:

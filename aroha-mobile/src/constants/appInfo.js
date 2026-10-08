@@ -8,6 +8,9 @@ const buildNumber = Platform.OS === 'ios'
   ? config.ios?.buildNumber ?? '1'
   : String(config.android?.versionCode ?? 1);
 
+export const WEBSITE = 'https://aroha.sohrexlabs.com';
+export const SUPPORT_EMAIL = 'support@sohrexlabs.com';
+
 export default {
   version,
   buildNumber,

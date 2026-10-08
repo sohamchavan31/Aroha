@@ -77,7 +77,7 @@ Next, in this order
   [x] AuthContext refreshes the user from /profile on app start
         (and drops to Login if the token is no longer valid).
   [x] A weigh-in updates the user's weight and recalculates calorie / macro targets.
-  [ ] client.js production API URL is still a TODO (needed before release).
+  [x] client.js production API URL is still a TODO (needed before release).
   [ ] Sleep reminder toggle in Settings had no scheduler behind it; it now shows
         "Coming soon". Add scheduleSleepReminder() in utils/notifications.js.
   [ ] Scheduled voice reminders: the Voice tab only plays phrases on tap. Schedule
@@ -139,10 +139,10 @@ Next, in this order
       EP and stage-up, auth
   [x] Switch spring.jpa.hibernate.ddl-auto=update -> Flyway migrations
       before real users exist
-  [ ] Account deletion (Play Store / GDPR) + export my data
+  [x] Account deletion (Play Store / GDPR) + export my data
   [x] JWT refresh tokens
   [ ] Sentry crash reporting (mobile + backend)
-  [ ] Privacy policy + terms pages (LegalScreen placeholders today)
+  [x] Privacy policy + terms pages (LegalScreen placeholders today)
 
 
 ======================================================================
@@ -159,8 +159,8 @@ Store compliance
   [x] Export my data (Settings → Export my data, JSON)
   [x] App ID com.sohrexlabs.aroha, iPad off, adaptive icon background = ink
   [x] API URL from EXPO_PUBLIC_API_URL (production build points at the API domain)
-  [ ] Web page for account deletion requests (Play asks for a URL too)
-  [ ] Privacy policy + terms: real text, hosted on aroha.sohrexlabs.com, linked
+  [x] Web page for account deletion requests (Play asks for a URL too)
+  [x] Privacy policy + terms: real text, hosted on aroha.sohrexlabs.com, linked
       in Legal screens and the store listing
   [ ] Health disclaimer on onboarding plan screen ("not medical advice")
   [ ] Notification permission asked at a sensible moment, not on first launch
