@@ -37,6 +37,7 @@ public class ActivityService {
     private final HabitLogRepository habitLogRepository;
     private final SleepLogRepository sleepLogRepository;
     private final WaterLogRepository waterLogRepository;
+    private final WorkoutLogRepository workoutLogRepository;
 
     // Deliberately not @Transactional: each save commits on its own, so a failure
     // in mission checks can't roll back (or poison) the streak update.
@@ -71,9 +72,11 @@ public class ActivityService {
     private boolean isMet(String key, User user, LocalDate today) {
         Long id = user.getId();
         return switch (key) {
-            case AutoMission.WORKOUT_20 -> sessionsToday(id, today).stream()
-                    .mapToInt(WorkoutSession::getActualSeconds).sum() >= 20 * 60;
-            case AutoMission.SESSION_DONE -> !sessionsToday(id, today).isEmpty();
+            // Sets logged by hand in Train count too (about 2.5 min each with rest).
+            case AutoMission.WORKOUT_20 -> Math.max(
+                    sessionsToday(id, today).stream().mapToInt(WorkoutSession::getActualSeconds).sum() / 60,
+                    Training.minutes(setsToday(id, today))) >= 20;
+            case AutoMission.SESSION_DONE -> !sessionsToday(id, today).isEmpty() || setsToday(id, today) >= 6;
             case AutoMission.ALL_HABITS -> {
                 long habits = habitRepository.countByUserId(id);
                 long done = habitLogRepository.findByUserIdAndLogDateBetween(id, today, today).stream()
@@ -104,6 +107,10 @@ public class ActivityService {
     private List<WorkoutSession> sessionsToday(Long userId, LocalDate today) {
         return workoutSessionRepository.findByUserIdAndCompletedAtBetween(
                 userId, today.atStartOfDay(), today.plusDays(1).atStartOfDay());
+    }
+
+    private int setsToday(Long userId, LocalDate today) {
+        return Training.sets(workoutLogRepository.findByUserIdAndLogDateOrderByLoggedAtAsc(userId, today));
     }
 
     private List<DailyLog> foodToday(Long userId, LocalDate today) {

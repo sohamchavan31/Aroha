@@ -7,6 +7,7 @@ import WellnessModal from '../components/WellnessModal';
 import client from '../api/client';
 import { emit } from '../utils/events';
 import { tap, success } from '../utils/haptics';
+import { useSwipeToClose } from '../components/ui/useSheetGestures';
 import { Palette, Fonts, Radius, Spacing, Motion } from '../constants/theme';
 
 const ACTIONS = [
@@ -24,6 +25,7 @@ export default function QuickLogSheet({ visible, onClose, navigation }) {
   const [mounted, setMounted] = useState(visible);
   const [showWellness, setShowWellness] = useState(false);
   const [waterNote, setWaterNote] = useState(null);
+  const { panHandlers, drag, resetDrag } = useSwipeToClose(onClose);
 
   useEffect(() => {
     if (visible) {
@@ -32,7 +34,7 @@ export default function QuickLogSheet({ visible, onClose, navigation }) {
       Animated.spring(slide, { toValue: 1, useNativeDriver: true, tension: 70, friction: 11 }).start();
     } else if (mounted) {
       Animated.timing(slide, { toValue: 0, duration: Motion.base, easing: Easing.in(Easing.cubic), useNativeDriver: true })
-        .start(() => setMounted(false));
+        .start(() => { setMounted(false); resetDrag(); });
     }
   }, [visible]);
 
@@ -57,7 +59,7 @@ export default function QuickLogSheet({ visible, onClose, navigation }) {
     }
   }
 
-  const translateY = slide.interpolate({ inputRange: [0, 1], outputRange: [420, 0] });
+  const translateY = Animated.add(slide.interpolate({ inputRange: [0, 1], outputRange: [520, 0] }), drag);
 
   return (
     <>
@@ -65,7 +67,7 @@ export default function QuickLogSheet({ visible, onClose, navigation }) {
         <Animated.View style={[styles.backdrop, { opacity: slide }]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close quick log" />
         </Animated.View>
-        <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + Spacing.xl, transform: [{ translateY }] }]}>
+        <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + Spacing.xl, transform: [{ translateY }] }]} {...panHandlers}>
           <View style={styles.handle} />
           <View style={styles.headRow}>
             <Text style={styles.title}>Quick log</Text>

@@ -8,7 +8,10 @@ import com.aroha.repository.DailyLogRepository;
 import com.aroha.repository.HabitLogRepository;
 import com.aroha.repository.HabitRepository;
 import com.aroha.repository.WeightLogRepository;
+import com.aroha.repository.WorkoutLogRepository;
 import com.aroha.repository.WorkoutSessionRepository;
+import com.aroha.model.WorkoutLog;
+import com.aroha.service.Training;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,6 +34,7 @@ public class AnalyticsController {
     private final HabitRepository habitRepository;
     private final WeightLogRepository weightLogRepository;
     private final WorkoutSessionRepository workoutSessionRepository;
+    private final WorkoutLogRepository workoutLogRepository;
 
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> summary(@AuthenticationPrincipal User user) {
@@ -54,14 +58,24 @@ public class AnalyticsController {
         double avgCarbs = dailyTotals.values().stream().mapToDouble(v -> v[2]).average().orElse(0);
         double avgFat   = dailyTotals.values().stream().mapToDouble(v -> v[3]).average().orElse(0);
 
-        // Workouts this week (Monday → now)
-        long workoutsThisWeek = workoutSessionRepository
-                .countByUserIdAndCompletedAtAfter(user.getId(), weekStart);
-
-        // Calories burned this week (Monday → now)
-        double caloriesBurnedWeek = workoutSessionRepository
-                .findByUserIdAndCompletedAtBetween(user.getId(), weekStart, today.plusDays(1).atStartOfDay())
-                .stream().mapToDouble(WorkoutSession::getCaloriesBurned).sum();
+        // Training this week (Monday → today): a day counts if it has a generated
+        // session or sets logged in Train; calories per day as in DailyLogService.
+        LocalDate monday = today.with(DayOfWeek.MONDAY);
+        Map<LocalDate, Double> sessionKcal = new HashMap<>();
+        for (WorkoutSession ws : workoutSessionRepository.findByUserIdAndCompletedAtBetween(
+                user.getId(), weekStart, today.plusDays(1).atStartOfDay())) {
+            sessionKcal.merge(ws.getCompletedAt().toLocalDate(), ws.getCaloriesBurned(), Double::sum);
+        }
+        Map<LocalDate, Integer> setsByDay = new HashMap<>();
+        for (WorkoutLog wl : workoutLogRepository.findByUserIdAndLogDateBetween(user.getId(), monday, today)) {
+            setsByDay.merge(wl.getLogDate(), Math.max(1, wl.getSets()), Integer::sum);
+        }
+        java.util.Set<LocalDate> trainedDays = new java.util.HashSet<>(sessionKcal.keySet());
+        trainedDays.addAll(setsByDay.keySet());
+        long workoutsThisWeek = trainedDays.size();
+        double caloriesBurnedWeek = trainedDays.stream()
+                .mapToDouble(d -> Training.burned(sessionKcal.getOrDefault(d, 0.0), setsByDay.getOrDefault(d, 0), user))
+                .sum();
 
         // Habit completion rate — last 7 days
         long totalHabits = habitRepository.countByUserId(user.getId());

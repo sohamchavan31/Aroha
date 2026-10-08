@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import client from '../api/client';
 import Card from '../components/ui/Card';
 import Sheet from '../components/ui/Sheet';
-import Stepper from '../components/ui/Stepper';
+import WheelPicker from '../components/ui/WheelPicker';
 import LineChart from '../components/ui/LineChart';
 import SegmentBar from '../components/ui/SegmentBar';
 import PrimaryButton from '../components/ui/PrimaryButton';
@@ -214,7 +214,7 @@ export default function ProgressScreen({ route }) {
         <FadeInView index={4}>
           <Text style={[styles.label, styles.sectionLabel]}>This week</Text>
           <View style={styles.tiles}>
-            <Tile label="Workouts"     value={summary?.workoutsThisWeek ?? 0}   icon="barbell-outline"          color={Palette.protein} loading={loading} />
+            <Tile label="Training days"     value={summary?.workoutsThisWeek ?? 0}   icon="barbell-outline"          color={Palette.protein} loading={loading} />
             <Tile label="Avg calories" value={summary?.avgCalories7d ?? 0}      icon="flame-outline"            color={Palette.kcal}    loading={loading} unit="kcal" />
             <Tile label="Burned"       value={summary?.caloriesBurnedWeek ?? 0} icon="trending-down-outline"    color={Palette.success} loading={loading} unit="kcal" />
             <Tile label="Habits done"  value={habitPct}                         icon="checkmark-done-outline"   color={Palette.carbs}   loading={loading} unit="%" />
@@ -254,9 +254,7 @@ export default function ProgressScreen({ route }) {
 
       <Sheet visible={showWeighIn} onClose={() => setShowWeighIn(false)} title="Today's weigh-in" subtitle="Saving again today replaces today's entry" showClose>
         <View style={styles.sheetBody}>
-          <View style={styles.stepperRow}>
-            <Stepper label="Weight" value={weightInput} onChange={setWeightInput} min={20} max={500} step={0.1} decimals={1} unit="kg" />
-          </View>
+          <WheelPicker value={weightInput} onChange={setWeightInput} min={20} max={300} decimals={1} unit="kg" />
           {hasWeight && (
             <Text style={styles.sheetHint}>
               Last logged {fmtKg(currentW)} kg
@@ -357,6 +355,5 @@ const styles = StyleSheet.create({
 
   // Sheet
   sheetBody: { gap: Spacing.lg },
-  stepperRow: { flexDirection: 'row' },
   sheetHint: { ...Type.small, color: Palette.textSub, textAlign: 'center' },
 });
