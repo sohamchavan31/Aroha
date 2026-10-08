@@ -57,7 +57,7 @@ export default function RegisterScreen({ navigation }) {
     setLoading(true);
     try {
       const { data } = await client.post('/auth/register', { name: cleanName, email: cleanEmail, password });
-      await login(data.token, { name: data.name, evolutionStage: data.evolutionStage, evolutionPoints: data.evolutionPoints, profileComplete: data.profileComplete });
+      await login(data.token, { name: data.name, evolutionStage: data.evolutionStage, evolutionPoints: data.evolutionPoints, profileComplete: data.profileComplete }, data.refreshToken);
     } catch (err) {
       warn();
       setError(apiError(err, 'Could not create your account. Try again.'));

@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import client from '../api/client';
+import client, { TOKEN_KEY, REFRESH_KEY } from '../api/client';
+import { on } from '../utils/events';
 
 const AuthContext = createContext(null);
 
@@ -14,7 +15,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     async function loadStoredAuth() {
       try {
-        const storedToken = await SecureStore.getItemAsync('aroha_token');
+        const storedToken = await SecureStore.getItemAsync(TOKEN_KEY);
         const storedUser  = await AsyncStorage.getItem('aroha_user');
         if (storedToken && storedUser) {
           setToken(storedToken);
@@ -28,6 +29,9 @@ export function AuthProvider({ children }) {
     }
     loadStoredAuth();
   }, []);
+
+  // The API client signed the user out (refresh token refused or account gone).
+  useEffect(() => on('auth-expired', () => { setToken(null); setUser(null); }), []);
 
   // The user object is cached from login; refresh it from the server once per
   // app start so name, stage, EP, avatar and onboarding state stay current.
@@ -60,15 +64,19 @@ export function AuthProvider({ children }) {
     return () => { cancelled = true; };
   }, [token]);
 
-  async function login(tokenValue, userData) {
-    await SecureStore.setItemAsync('aroha_token', tokenValue);
+  async function login(tokenValue, userData, refreshToken) {
+    await SecureStore.setItemAsync(TOKEN_KEY, tokenValue);
+    if (refreshToken) await SecureStore.setItemAsync(REFRESH_KEY, refreshToken);
     await AsyncStorage.setItem('aroha_user', JSON.stringify(userData));
     setToken(tokenValue);
     setUser(userData);
   }
 
   async function logout() {
-    await SecureStore.deleteItemAsync('aroha_token');
+    const refreshToken = await SecureStore.getItemAsync(REFRESH_KEY).catch(() => null);
+    if (refreshToken) client.post('/auth/logout', { refreshToken }).catch(() => {}); // sign this device out on the server
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await SecureStore.deleteItemAsync(REFRESH_KEY).catch(() => {});
     await AsyncStorage.removeItem('aroha_user');
     setToken(null);
     setUser(null);

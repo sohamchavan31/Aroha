@@ -137,10 +137,10 @@ Next, in this order
 ======================================================================
   [~] Backend unit tests: macro maths + streak done; still PR detection,
       EP and stage-up, auth
-  [ ] Switch spring.jpa.hibernate.ddl-auto=update -> Flyway migrations
+  [x] Switch spring.jpa.hibernate.ddl-auto=update -> Flyway migrations
       before real users exist
   [ ] Account deletion (Play Store / GDPR) + export my data
-  [ ] JWT refresh tokens
+  [x] JWT refresh tokens
   [ ] Sentry crash reporting (mobile + backend)
   [ ] Privacy policy + terms pages (LegalScreen placeholders today)
 
@@ -167,10 +167,10 @@ Store compliance
 
 Production backend
   [ ] Host Spring backend on Render (always-on instance) — HTTPS via custom domain
-  [ ] Flyway migrations instead of ddl-auto=update
+  [x] Flyway migrations instead of ddl-auto=update
   [ ] Secrets from environment variables only; CORS and rate limits checked
   [ ] Sentry crash reporting (mobile + backend)
-  [ ] JWT refresh tokens
+  [x] JWT refresh tokens
 
 Assets + listing
   [ ] Clean 1024×1024 icon, adaptive icon layers, splash screen
