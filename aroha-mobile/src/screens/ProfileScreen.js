@@ -20,7 +20,8 @@ import Skeleton from '../components/Skeleton';
 import FadeInView from '../components/FadeInView';
 import AnimatedPressable from '../components/AnimatedPressable';
 import AppInfo from '../constants/appInfo';
-import { stageInfo } from '../constants/stages';
+import { stageInfo, STAGES } from '../constants/stages';
+import StageCrest from '../components/StageCrest';
 import {
   ALL_GOALS, GENDERS, ACTIVITY_LEVELS, EXPERIENCE_LEVELS, DIET_PREFS,
   LOSS_SPEEDS, GAIN_SPEEDS, labelFor, bmiColor,
@@ -163,7 +164,17 @@ export default function ProfileScreen({ visible, onClose }) {
                 </AnimatedPressable>
                 <Text style={styles.name} numberOfLines={1}>{profile?.name || user?.name}</Text>
                 <Text style={styles.email} numberOfLines={1}>{profile?.email || user?.email}</Text>
-                <Text style={styles.stage}>{stage.name.toUpperCase()}</Text>
+                <View style={styles.stageLine}>
+                  <StageCrest stage={stage.name} size={22} />
+                  <Text style={styles.stage}>{stage.name.toUpperCase()}</Text>
+                </View>
+
+                {/* Evolution path: reached crests in brass, the rest locked */}
+                <View style={styles.path} accessibilityLabel={`Stage ${stage.number} of ${stage.total}`}>
+                  {STAGES.map((st, i) => (
+                    <StageCrest key={st.name} stage={i} size={i === stage.number - 1 ? 34 : 24} locked={i > stage.number - 1} />
+                  ))}
+                </View>
 
                 <View style={styles.idStats}>
                   <IdStat value={formatNumber(ep)} label="EP" brass />
@@ -390,7 +401,9 @@ const styles = StyleSheet.create({
   avatarEdit: { position: 'absolute', right: 4, bottom: 4, width: 26, height: 26, borderRadius: 13, backgroundColor: Palette.ivory, borderWidth: 2, borderColor: Palette.hero, alignItems: 'center', justifyContent: 'center' },
   name:       { fontFamily: Fonts.bodyHeavy, fontSize: 22, color: Palette.text, marginTop: Spacing.md },
   email:      { ...Type.small, color: Palette.textSub, marginTop: 2 },
-  stage:      { fontFamily: Fonts.display, fontSize: 13, letterSpacing: 1.2, color: Palette.brass, marginTop: Spacing.sm },
+  stage:      { fontFamily: Fonts.display, fontSize: 13, letterSpacing: 1.2, color: Palette.brass },
+  stageLine:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Spacing.sm },
+  path:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, marginTop: Spacing.md },
   idStats:    { flexDirection: 'row', alignSelf: 'stretch', marginTop: Spacing.lg, paddingTop: Spacing.lg, borderTopWidth: 1, borderTopColor: Palette.lineSoft },
   idStat:     { flex: 1, alignItems: 'center', gap: 2 },
   idStatValue:{ fontFamily: Fonts.num, fontSize: 22, color: Palette.text },
