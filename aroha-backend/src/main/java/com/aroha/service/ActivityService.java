@@ -18,7 +18,8 @@ import java.util.stream.Collectors;
  * Runs after anything the user logs (food, sets, sessions, water, sleep, habits,
  * tasks, weigh-ins, missions):
  *  1. keeps the day streak — +1 on the first activity of a day that follows an
- *     active yesterday, back to 1 after a gap;
+ *     active yesterday, back to 1 after a gap; a frozen streak (one missed day,
+ *     see StreakRules) is left alone so it can still be thawed today;
  *  2. completes today's auto-verifiable missions whose condition is now met.
  * It never throws: a failure here must not undo the action that triggered it.
  */
@@ -61,6 +62,7 @@ public class ActivityService {
     static void updateStreak(User user, LocalDate today) {
         LocalDate last = user.getLastActiveDate();
         if (today.equals(last)) return;
+        if (StreakRules.isFrozen(user, today)) return; // waiting for the thaw
         boolean continues = last != null && last.equals(today.minusDays(1));
         user.setStreak(continues ? user.getStreak() + 1 : 1);
         user.setLastActiveDate(today);

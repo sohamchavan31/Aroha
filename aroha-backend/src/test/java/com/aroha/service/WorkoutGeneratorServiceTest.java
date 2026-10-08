@@ -16,9 +16,9 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-// Loads the real seed file, which also proves data.sql runs (and re-runs) cleanly.
+// Loads the real seed file, which also proves the seed migration runs (and re-runs) cleanly.
 @SpringBootTest
-@Sql(scripts = "classpath:data.sql")
+@Sql(scripts = "classpath:db/migration/R__reference_data.sql")
 class WorkoutGeneratorServiceTest {
 
     private static final Set<String> HOME_KIT = Set.of("none", "mat", "pullup_bar", "rope");

@@ -51,6 +51,7 @@ Done
   [x] Stage-up celebration: full-screen moment, brass rings, stage track, EP to next stage
 
 Next, in this order
+  [x] Stage crests + Pokémon-style evolution flicker, growing streak flame, EP fly-up
   [ ] Later: Lottie / sound for the stage-up moment
   [ ] Replace assets/icon.png (current one has construction guides baked in)
         and update the Android adaptive icon background (#E6F4FE -> ink)
@@ -113,6 +114,8 @@ Next, in this order
   [ ] Workout builder: pick your own exercises/sets/reps
   [ ] Cardio machines (treadmill, bike, rower) logged by time, not reps
   [ ] Step counter (expo-sensors Pedometer) -> EP reward
+  [x] Streak freeze: miss a day and it freezes; thaw with 15 push-ups/pull-ups (25 if
+      it's the 2nd in a week) before the day ends, or it breaks
   [ ] Habits: consistency score per habit, streak freeze (bought with EP),
       monthly badges
 
@@ -134,10 +137,10 @@ Next, in this order
 ======================================================================
   [~] Backend unit tests: macro maths + streak done; still PR detection,
       EP and stage-up, auth
-  [ ] Switch spring.jpa.hibernate.ddl-auto=update -> Flyway migrations
+  [x] Switch spring.jpa.hibernate.ddl-auto=update -> Flyway migrations
       before real users exist
   [x] Account deletion (Play Store / GDPR) + export my data
-  [ ] JWT refresh tokens
+  [x] JWT refresh tokens
   [ ] Sentry crash reporting (mobile + backend)
   [x] Privacy policy + terms pages (LegalScreen placeholders today)
 
@@ -164,10 +167,10 @@ Store compliance
 
 Production backend
   [ ] Host Spring backend on Render (always-on instance) — HTTPS via custom domain
-  [ ] Flyway migrations instead of ddl-auto=update
+  [x] Flyway migrations instead of ddl-auto=update
   [ ] Secrets from environment variables only; CORS and rate limits checked
   [ ] Sentry crash reporting (mobile + backend)
-  [ ] JWT refresh tokens
+  [x] JWT refresh tokens
 
 Assets + listing
   [ ] Clean 1024×1024 icon, adaptive icon layers, splash screen

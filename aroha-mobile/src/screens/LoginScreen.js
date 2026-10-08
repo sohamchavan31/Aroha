@@ -30,7 +30,7 @@ export default function LoginScreen({ navigation }) {
     setLoading(true);
     try {
       const { data } = await client.post('/auth/login', { email: cleanEmail, password });
-      await login(data.token, { name: data.name, evolutionStage: data.evolutionStage, evolutionPoints: data.evolutionPoints, profileComplete: data.profileComplete });
+      await login(data.token, { name: data.name, evolutionStage: data.evolutionStage, evolutionPoints: data.evolutionPoints, profileComplete: data.profileComplete }, data.refreshToken);
     } catch (err) {
       warn();
       setError(apiError(err, 'Invalid email or password.'));

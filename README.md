@@ -84,6 +84,16 @@ docker compose down                                 # stop it
 
 ---
 
+## Database changes (Flyway)
+
+The schema lives in `aroha-backend/src/main/resources/db/migration`:
+
+- `V1__baseline.sql`: every table as of the switch to Flyway. Never edit it.
+- `R__reference_data.sql`: the seeded foods and exercises. Edit freely; it re-runs when it changes, and inserts only rows that are missing.
+- New entity field or table: add `V2__what_changed.sql` (then V3, …). Hibernate only *validates* the schema now, so the app refuses to start if an entity and the database disagree.
+
+---
+
 ## Dev
 
 Solo project — Soham | 2–4 hrs/day

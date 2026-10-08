@@ -33,6 +33,10 @@ import IconButton from '../components/ui/IconButton';
 import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
 import { stageInfo, STAGES } from '../constants/stages';
 import StageUpCelebration from '../components/StageUpCelebration';
+import StageCrest from '../components/StageCrest';
+import StreakFlame from '../components/StreakFlame';
+import EpFlyUp from '../components/EpFlyUp';
+import ThawSheet from '../components/streak/ThawSheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { formatNumber } from '../utils/format';
 import { on } from '../utils/events';
@@ -70,6 +74,8 @@ export default function HomeScreen({ navigation }) {
   const [showProfile, setShowProfile] = useState(false);
   const [showAi, setShowAi]           = useState(false);
   const [stageUp, setStageUp]         = useState(null); // { oldStage, newStage, ep }
+  const [flyUp, setFlyUp]             = useState(null); // { id, amount, key }
+  const [showThaw, setShowThaw]       = useState(false);
 
   // ── Data ────────────────────────────────────────────────────────────────────
   const loadWater = useCallback(async () => {
@@ -134,7 +140,9 @@ export default function HomeScreen({ navigation }) {
   // ── Actions ─────────────────────────────────────────────────────────────────
   async function completeMission(id) {
     const oldStage = profile?.evolutionStage;
+    const mission = missions.find(m => m.id === id);
     setMissions(ms => ms.map(m => (m.id === id ? { ...m, completed: true } : m)));
+    if (mission?.epReward) setFlyUp({ id, amount: mission.epReward, key: Date.now() });
     success();
     try {
       const { data } = await client.post(`/missions/${id}/complete`);
@@ -170,6 +178,8 @@ export default function HomeScreen({ navigation }) {
   const ep         = profile?.evolutionPoints ?? 0;
   const stage      = stageInfo(profile?.evolutionStage, ep);
   const streak     = profile?.streak ?? 0;
+  const frozen     = profile?.streakState === 'FROZEN';
+  const thawReps   = profile?.streakThawReps || 15;
   const kcalGoal   = profile?.dailyCalorieGoal || 2000;
   const proteinGoal = profile?.dailyProteinGoal || 100;
   const waterGoal  = water.dailyGoal || profile?.waterGoalGlasses || 8;
@@ -208,15 +218,13 @@ export default function HomeScreen({ navigation }) {
           <Card variant="hero">
             <View style={styles.row}>
               <Text style={styles.label}>Stage {stage.number} of {stage.total}</Text>
-              {streak > 0 && (
-                <View style={styles.chip}>
-                  <Ionicons name="flame-outline" size={11} color={Palette.textSub} />
-                  <Text style={styles.chipText}>{streak}-day streak</Text>
-                </View>
-              )}
+              {streak > 0 && <StreakFlame streak={streak} frozen={frozen} />}
             </View>
             <View style={[styles.row, styles.stageRow]}>
-              <Text style={styles.stageName}>{stage.name.toUpperCase()}</Text>
+              <View style={styles.stageLeft}>
+                <StageCrest stage={stage.name} size={40} />
+                <Text style={styles.stageName} numberOfLines={1}>{stage.name.toUpperCase()}</Text>
+              </View>
               {loading ? (
                 <Skeleton width={90} height={22} />
               ) : (
@@ -234,6 +242,24 @@ export default function HomeScreen({ navigation }) {
             </Text>
           </Card>
         </FadeInView>
+
+        {/* Frozen streak: thaw it today or it breaks at midnight */}
+        {frozen && (
+          <FadeInView index={1}>
+            <AnimatedPressable onPress={() => { tap(); setShowThaw(true); }} scaleTo={0.98} style={styles.ice} accessibilityRole="button">
+              <View style={styles.iceIcon}>
+                <Ionicons name="snow" size={22} color={Palette.water} />
+              </View>
+              <View style={styles.iceText}>
+                <Text style={styles.iceTitle}>Your {streak}-day streak is frozen</Text>
+                <Text style={styles.iceSub}>You missed yesterday. Do {thawReps} push-ups or pull-ups today to thaw it, or it breaks at midnight.</Text>
+              </View>
+              <View style={styles.iceGo}>
+                <Text style={styles.iceGoText}>Thaw</Text>
+              </View>
+            </AnimatedPressable>
+          </FadeInView>
+        )}
 
         {/* Today rings */}
         <FadeInView index={2}>
@@ -315,6 +341,9 @@ export default function HomeScreen({ navigation }) {
                       {m.auto && !m.completed && <Text style={styles.missionAuto}>Ticks itself when you log it</Text>}
                     </View>
                     <Text style={[styles.missionEp, m.completed && styles.missionEpDone]}>+{m.epReward} EP</Text>
+                    {flyUp?.id === m.id && (
+                      <EpFlyUp key={flyUp.key} amount={flyUp.amount} style={styles.flyUp} onDone={() => setFlyUp(null)} />
+                    )}
                   </AnimatedPressable>
                 ))
               )}
@@ -339,6 +368,14 @@ export default function HomeScreen({ navigation }) {
       <Modal visible={showAi} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowAi(false)}>
         <AiScreen visible={showAi} onClose={() => setShowAi(false)} />
       </Modal>
+
+      <ThawSheet
+        visible={showThaw}
+        streak={streak}
+        reps={thawReps}
+        onThawed={data => setProfile(p => (p ? { ...p, streak: data.streak, streakState: data.streakState } : p))}
+        onClose={() => { setShowThaw(false); refreshProgress(); }}
+      />
 
       {/* Stage-up celebration */}
       <StageUpCelebration
@@ -393,9 +430,8 @@ const styles = StyleSheet.create({
   name:       { fontFamily: Fonts.bodyHeavy, fontSize: 20, color: Palette.text },
 
   // Hero
-  chip:     { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: Radius.pill, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: Palette.line },
-  chipText: { fontFamily: Fonts.bodyBold, fontSize: 11, color: Palette.textSub },
-  stageRow: { alignItems: 'flex-end', marginTop: Spacing.sm },
+  stageRow: { alignItems: 'center', marginTop: Spacing.sm },
+  stageLeft:{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 2, flexShrink: 1 },
   stageName:{ ...Type.stage, color: Palette.brass, flexShrink: 1 },
   epWrap:   { flexDirection: 'row', alignItems: 'baseline' },
   epValue:  { fontFamily: Fonts.num, fontSize: 26, color: Palette.text },
@@ -403,6 +439,15 @@ const styles = StyleSheet.create({
   segBar:   { marginTop: Spacing.md },
   heroFoot: { ...Type.small, color: Palette.textSub, marginTop: Spacing.sm },
   heroFootStrong: { fontFamily: Fonts.bodyBold, color: Palette.text },
+
+  // Frozen streak
+  ice:       { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.lg, borderRadius: Radius.lg, backgroundColor: Palette.water + '12', borderWidth: 1, borderColor: Palette.water + '40' },
+  iceIcon:   { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: Palette.water + '1F' },
+  iceText:   { flex: 1 },
+  iceTitle:  { ...Type.bodyB, color: Palette.text },
+  iceSub:    { ...Type.small, color: Palette.textSub, marginTop: 2 },
+  iceGo:     { paddingHorizontal: Spacing.md, paddingVertical: 6, borderRadius: Radius.pill, backgroundColor: Palette.water },
+  iceGoText: { fontFamily: Fonts.bodyBold, fontSize: 13, color: Palette.ink },
 
   // Today
   todayCard:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.lg },
@@ -429,6 +474,7 @@ const styles = StyleSheet.create({
   missionTitleDone: { color: Palette.textDim, textDecorationLine: 'line-through' },
   missionEp:    { fontFamily: Fonts.num, fontSize: 15, color: Palette.brass },
   missionEpDone:{ color: Palette.textDim },
+  flyUp:        { right: 0, top: 4 },
   empty:        { ...Type.body, color: Palette.textSub, marginTop: Spacing.md },
   allDone:      { ...Type.small, color: Palette.success, marginTop: Spacing.xs },
 

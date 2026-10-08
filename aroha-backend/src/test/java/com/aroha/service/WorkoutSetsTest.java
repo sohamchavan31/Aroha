@@ -17,7 +17,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@Sql(scripts = "classpath:data.sql")
+@Sql(scripts = "classpath:db/migration/R__reference_data.sql")
 class WorkoutSetsTest {
 
     @Autowired WorkoutService workoutService;
