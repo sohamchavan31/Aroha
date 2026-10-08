@@ -52,7 +52,7 @@ Done
 
 Next, in this order
   [ ] Later: Lottie / sound for the stage-up moment
-  [ ] Replace assets/icon.png (current one has construction guides baked in)
+  [x] Replace assets/icon.png (current one has construction guides baked in)
         and update the Android adaptive icon background (#E6F4FE -> ink)
   [ ] Later: light mode as a second theme (tokens already make this possible)
   [ ] Later: react-native-reanimated for smoother rings and sheets
@@ -159,8 +159,8 @@ Store compliance
   [ ] Web page for account deletion requests (Play asks for a URL too)
   [ ] Privacy policy + terms: real text, hosted on aroha.sohrexlabs.com, linked
       in Legal screens and the store listing
-  [ ] Health disclaimer on onboarding plan screen ("not medical advice")
-  [ ] Notification permission asked at a sensible moment, not on first launch
+  [x] Health disclaimer on onboarding plan screen ("not medical advice")
+  [x] Notification permission asked at a sensible moment, not on first launch
 
 Production backend
   [ ] Host Spring backend on Render (always-on instance) — HTTPS via custom domain
@@ -170,7 +170,7 @@ Production backend
   [ ] JWT refresh tokens
 
 Assets + listing
-  [ ] Clean 1024×1024 icon, adaptive icon layers, splash screen
+  [x] Clean 1024×1024 icon, adaptive icon layers, splash screen
   [ ] Play listing: short + full description, 1024×500 feature graphic,
       phone screenshots, content rating, Data safety form, Health apps declaration
 

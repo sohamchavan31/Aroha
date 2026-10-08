@@ -13,15 +13,30 @@ Notifications.setNotificationHandler({
   }),
 });
 
-async function requestPermissions() {
+async function ensureChannel() {
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
       name: 'Aroha Reminders',
       importance: Notifications.AndroidImportance.DEFAULT,
     });
   }
+}
+
+// Asks the system for permission (only shows the prompt the first time).
+export async function requestPermissions() {
+  await ensureChannel();
   const { status } = await Notifications.requestPermissionsAsync();
   return status === 'granted';
+}
+
+// 'granted' | 'denied' | 'undetermined' — without prompting.
+export async function permissionStatus() {
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    return status;
+  } catch {
+    return 'undetermined';
+  }
 }
 
 export async function scheduleWaterReminders(enabled) {
@@ -85,10 +100,22 @@ export async function scheduleMissionReminder(enabled) {
   });
 }
 
-// Called once on app launch — requests permissions then reschedules based on saved settings
+// Called on app launch. Never prompts: the permission is asked from the
+// reminders card on Home (or a Settings toggle), when the user has context.
 export async function initNotifications() {
+  if ((await permissionStatus()) !== 'granted') return;
+  await rescheduleAll();
+}
+
+// User said yes to reminders: ask once, then schedule what Settings has on.
+export async function enableReminders() {
   const granted = await requestPermissions();
-  if (!granted) return;
+  if (granted) await rescheduleAll();
+  return granted;
+}
+
+async function rescheduleAll() {
+  await ensureChannel();
   try {
     const raw = await AsyncStorage.getItem('aroha_settings');
     const s = raw ? JSON.parse(raw) : {};
