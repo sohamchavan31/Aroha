@@ -66,7 +66,7 @@ export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
 
   const [profile, setProfile]     = useState(null);
-  const [today, setToday]         = useState({ calories: 0, protein: 0 });
+  const [today, setToday]         = useState({ calories: 0, protein: 0, sets: 0, minutes: 0, burned: 0 });
   const [water, setWater]         = useState({ glasses: 0, dailyGoal: 8 });
   const [missions, setMissions]   = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -95,7 +95,11 @@ export default function HomeScreen({ navigation }) {
     ]);
     if (p.status === 'fulfilled') setProfile(p.value.data);
     if (l.status === 'fulfilled') {
-      setToday({ calories: l.value.data.totalCalories || 0, protein: l.value.data.totalProtein || 0 });
+      const d = l.value.data;
+      setToday({
+        calories: d.totalCalories || 0, protein: d.totalProtein || 0,
+        sets: d.setsToday || 0, minutes: d.trainingMinutes || 0, burned: d.caloriesBurned || 0,
+      });
     }
     if (m.status === 'fulfilled') setMissions(m.value.data || []);
     setLoading(false);
@@ -293,6 +297,22 @@ export default function HomeScreen({ navigation }) {
           </Card>
         </FadeInView>
 
+        {/* Training today: sets logged in Train or a generated session */}
+        {!loading && (today.sets > 0 || today.minutes > 0) && (
+          <FadeInView index={2}>
+            <AnimatedPressable onPress={() => { tap(); navigation.navigate('Workout'); }} scaleTo={0.98} style={styles.trained} accessibilityRole="button">
+              <View style={styles.trainedIcon}>
+                <Ionicons name="barbell" size={16} color={Palette.protein} />
+              </View>
+              <Text style={styles.trainedText} numberOfLines={2}>
+                <Text style={styles.trainedStrong}>Trained today</Text>
+                {today.sets > 0 ? ` · ${today.sets} sets` : ''} · ~{today.minutes} min · {formatNumber(Math.round(today.burned))} kcal burned
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={Palette.textDim} />
+            </AnimatedPressable>
+          </FadeInView>
+        )}
+
         {/* Primary action */}
         <FadeInView index={3}>
           <PrimaryButton
@@ -463,6 +483,12 @@ const styles = StyleSheet.create({
   stepper:        { flexDirection: 'row', gap: 6 },
   stepBtn:        { width: 26, height: 26, borderRadius: 9, backgroundColor: Palette.surface2, borderWidth: 1, borderColor: Palette.lineSoft, alignItems: 'center', justifyContent: 'center' },
   stepBtnAdd:     { backgroundColor: Palette.water + '1F', borderColor: Palette.water + '40' },
+
+  // Training today
+  trained:       { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg, borderRadius: Radius.lg, backgroundColor: Palette.surface, borderWidth: 1, borderColor: Palette.lineSoft },
+  trainedIcon:   { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: Palette.protein + '1F' },
+  trainedText:   { ...Type.small, color: Palette.textSub, flex: 1 },
+  trainedStrong: { fontFamily: Fonts.bodyBold, color: Palette.text },
 
   // Missions
   cardMeta:     { ...Type.small, color: Palette.textSub },

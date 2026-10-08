@@ -17,6 +17,8 @@ public interface WorkoutLogRepository extends JpaRepository<WorkoutLog, Long> {
 
     List<WorkoutLog> findByUserId(Long userId);
 
+    List<WorkoutLog> findByUserIdAndLogDateBetween(Long userId, LocalDate from, LocalDate to);
+
     @Transactional
     void deleteByUserId(Long userId);
 }

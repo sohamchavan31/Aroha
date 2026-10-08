@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AnimatedPressable from '../AnimatedPressable';
@@ -13,18 +13,30 @@ function clean(n, decimals) {
 // − value + with an editable number in the middle.
 export default function Stepper({ label, value, onChange, step = 1, min = 0, max = 999, decimals = 0, unit }) {
   const [text, setText] = useState(String(value));
+  const editing = useRef(false);
 
-  useEffect(() => { setText(String(value)); }, [value]);
+  // Follow outside changes, but never overwrite what the user is typing.
+  useEffect(() => { if (!editing.current) setText(String(value)); }, [value]);
 
   function bump(dir) {
     const next = clean(Math.min(max, Math.max(min, (Number(value) || 0) + dir * step)), decimals);
-    if (next !== value) { tap(); onChange(next); }
+    if (next !== value) { tap(); editing.current = false; setText(String(next)); onChange(next); }
   }
 
+  // Typed numbers count straight away: on Android, hiding the keyboard or
+  // tapping Save doesn't blur the field, so waiting for blur lost the value.
+  function type(t) {
+    setText(t);
+    const n = parseFloat(t.replace(',', '.'));
+    if (Number.isFinite(n) && n >= min && n <= max) onChange(clean(n, decimals));
+  }
+
+  // Leaving the field: clamp whatever is there (or restore the last good value).
   function commit() {
+    editing.current = false;
     const n = parseFloat(text.replace(',', '.'));
     const next = Number.isFinite(n) ? clean(Math.min(max, Math.max(min, n)), decimals) : value;
-    onChange(next);
+    if (next !== value) onChange(next);
     setText(String(next));
   }
 
@@ -38,7 +50,8 @@ export default function Stepper({ label, value, onChange, step = 1, min = 0, max
         <View style={styles.valueBox}>
           <TextInput
             value={text}
-            onChangeText={setText}
+            onChangeText={type}
+            onFocus={() => { editing.current = true; }}
             onEndEditing={commit}
             onBlur={commit}
             keyboardType={decimals > 0 ? 'decimal-pad' : 'number-pad'}

@@ -7,6 +7,7 @@ import com.aroha.model.User;
 import com.aroha.model.WorkoutSession;
 import com.aroha.repository.DailyLogRepository;
 import com.aroha.repository.MealRepository;
+import com.aroha.repository.WorkoutLogRepository;
 import com.aroha.repository.WorkoutSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,7 @@ public class DailyLogService {
     private final DailyLogRepository dailyLogRepository;
     private final MealRepository mealRepository;
     private final WorkoutSessionRepository workoutSessionRepository;
+    private final WorkoutLogRepository workoutLogRepository;
 
     public DailyLog addEntry(User user, DailyLogRequest request) {
         Meal meal = mealRepository.findById(request.getMealId())
@@ -60,7 +62,10 @@ public class DailyLogService {
 
         List<WorkoutSession> sessionsToday = workoutSessionRepository.findByUserIdAndCompletedAtBetween(
                 user.getId(), today.atStartOfDay(), today.plusDays(1).atStartOfDay());
-        double caloriesBurned = sessionsToday.stream().mapToDouble(WorkoutSession::getCaloriesBurned).sum();
+        double sessionKcal = sessionsToday.stream().mapToDouble(WorkoutSession::getCaloriesBurned).sum();
+        int setsToday = Training.sets(workoutLogRepository.findByUserIdAndLogDateOrderByLoggedAtAsc(user.getId(), today));
+        double caloriesBurned = Training.burned(sessionKcal, setsToday, user);
+        int sessionMinutes = sessionsToday.stream().mapToInt(WorkoutSession::getActualSeconds).sum() / 60;
         double netCalories = totalCalories - caloriesBurned;
 
         Map<String, Object> response = new HashMap<>();
@@ -71,6 +76,8 @@ public class DailyLogService {
         response.put("totalFat",       Math.round(totalFat       * 10.0) / 10.0);
         response.put("caloriesBurned", Math.round(caloriesBurned * 10.0) / 10.0);
         response.put("netCalories",    Math.round(netCalories    * 10.0) / 10.0);
+        response.put("setsToday",      setsToday);
+        response.put("trainingMinutes", Math.max(sessionMinutes, Training.minutes(setsToday)));
         return response;
     }
 

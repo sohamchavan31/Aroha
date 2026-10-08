@@ -10,7 +10,7 @@ import IconButton from '../components/ui/IconButton';
 import PrimaryButton from '../components/ui/PrimaryButton';
 import SegmentBar from '../components/ui/SegmentBar';
 import Segmented from '../components/ui/Segmented';
-import Stepper from '../components/ui/Stepper';
+import WheelPicker from '../components/ui/WheelPicker';
 import AnimatedPressable from '../components/AnimatedPressable';
 import FormError from '../components/auth/FormError';
 import { ALL_GOALS, LOSS_SPEEDS, GAIN_SPEEDS, LOSS_GOALS, GAIN_GOALS } from '../constants/profile';
@@ -87,15 +87,6 @@ function Option({ item, selected, onPress, color }) {
         {selected && <Ionicons name="checkmark" size={13} color={Palette.onIvory} />}
       </View>
     </AnimatedPressable>
-  );
-}
-
-function BigValue({ value, unit, note }) {
-  return (
-    <View style={styles.bigWrap}>
-      <Text style={styles.bigValue}>{value}<Text style={styles.bigUnit}> {unit}</Text></Text>
-      {!!note && <Text style={styles.bigNote}>{note}</Text>}
-    </View>
   );
 }
 
@@ -250,8 +241,7 @@ export default function OnboardingScreen({ onComplete }) {
       sub: 'Your metabolism slows a little with age.',
       body: (
         <>
-          <BigValue value={age} unit="years" />
-          <View style={styles.stepperRow}><Stepper value={age} onChange={setAge} step={1} min={13} max={100} unit="years" /></View>
+          <View style={styles.wheel}><WheelPicker value={age} onChange={setAge} min={13} max={100} unit="years" /></View>
         </>
       ),
     },
@@ -261,15 +251,15 @@ export default function OnboardingScreen({ onComplete }) {
       body: (
         <>
           <Segmented options={[{ key: 'cm', label: 'cm' }, { key: 'ft', label: 'ft / in' }]} value={heightUnit} onChange={setHeightUnit} style={styles.unitSwitch} />
-          <BigValue value={heightUnit === 'cm' ? heightCm : `${ft}′${inch}″`} unit={heightUnit === 'cm' ? 'cm' : ''} note={heightUnit === 'cm' ? `${ft}′${inch}″` : `${heightCm} cm`} />
-          <View style={styles.stepperRow}>
+          <View style={styles.wheel}>
             {heightUnit === 'cm'
-              ? <Stepper value={heightCm} onChange={setHeightCm} step={1} min={120} max={230} unit="cm" />
-              : <>
-                  <Stepper label="Feet" value={ft} onChange={f => setFtIn(f, inch)} step={1} min={4} max={7} unit="ft" />
-                  <Stepper label="Inches" value={inch} onChange={i => setFtIn(ft, i)} step={1} min={0} max={11} unit="in" />
-                </>}
+              ? <WheelPicker value={heightCm} onChange={setHeightCm} min={120} max={230} unit="cm" />
+              : <View style={styles.wheelPair}>
+                  <WheelPicker value={ft} onChange={f => setFtIn(f, inch)} min={4} max={7} unit="ft" wholeWidth={56} />
+                  <WheelPicker value={inch} onChange={i => setFtIn(ft, i)} min={0} max={11} unit="in" wholeWidth={56} />
+                </View>}
           </View>
+          <Text style={styles.wheelNote}>{heightUnit === 'cm' ? `${ft}′${inch}″` : `${heightCm} cm`}</Text>
         </>
       ),
     },
@@ -278,8 +268,8 @@ export default function OnboardingScreen({ onComplete }) {
       sub: 'Your weight today. You can log new weigh-ins any time.',
       body: (
         <>
-          <BigValue value={weight} unit="kg" note={`BMI ${(weight / Math.pow(heightCm / 100, 2)).toFixed(1)}`} />
-          <View style={styles.stepperRow}><Stepper value={weight} onChange={setWeight} step={0.5} min={30} max={250} decimals={1} unit="kg" /></View>
+          <View style={styles.wheel}><WheelPicker value={weight} onChange={setWeight} min={30} max={250} decimals={1} unit="kg" /></View>
+          <Text style={styles.wheelNote}>BMI {(weight / Math.pow(heightCm / 100, 2)).toFixed(1)}</Text>
         </>
       ),
     },
@@ -305,7 +295,7 @@ export default function OnboardingScreen({ onComplete }) {
             </View>
             <Ionicons name="arrow-forward" size={18} color={Palette.textDim} style={{ marginTop: 18 }} />
             <View style={styles.flex}>
-              <View style={styles.stepperRow}><Stepper label="Target" value={target ?? weight} onChange={setTarget} step={0.5} min={30} max={250} decimals={1} unit="kg" /></View>
+              <WheelPicker label="Target" value={target ?? weight} onChange={setTarget} min={30} max={250} decimals={1} unit="kg" wholeWidth={72} />
             </View>
           </View>
           <Text style={[styles.label, styles.section]}>Pace</Text>
@@ -336,8 +326,8 @@ export default function OnboardingScreen({ onComplete }) {
       sub: 'One glass is about 250 ml. Most adults do well with 8–10.',
       body: (
         <>
-          <BigValue value={water} unit="glasses" note={`about ${(water * 0.25).toFixed(1)} litres`} />
-          <View style={styles.stepperRow}><Stepper value={water} onChange={setWater} step={1} min={4} max={20} unit="glasses" /></View>
+          <View style={styles.wheel}><WheelPicker value={water} onChange={setWater} min={4} max={20} unit="glasses" /></View>
+          <Text style={styles.wheelNote}>about {(water * 0.25).toFixed(1)} litres</Text>
           <View style={styles.chips}>
             {[6, 8, 10, 12].map(n => <Chip key={n} label={`${n}`} selected={water === n} color={Palette.water} onPress={() => setWater(n)} />)}
           </View>
@@ -492,11 +482,10 @@ const styles = StyleSheet.create({
   radio:       { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: Palette.textDim, alignItems: 'center', justifyContent: 'center' },
   radioOn:     { backgroundColor: Palette.ivory, borderColor: Palette.ivory },
 
-  bigWrap:   { alignItems: 'center', paddingVertical: Spacing.xl },
-  bigValue:  { fontFamily: Fonts.numHeavy, fontSize: 72, lineHeight: 80, color: Palette.text },
   bigUnit:   { fontFamily: Fonts.bodySemi, fontSize: 16, color: Palette.textSub },
-  bigNote:   { ...Type.small, color: Palette.textDim, marginTop: 2 },
-  stepperRow:{ flexDirection: 'row', gap: Spacing.md },
+  wheel:     { marginTop: Spacing.lg },
+  wheelPair: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.lg },
+  wheelNote: { ...Type.small, color: Palette.textSub, textAlign: 'center', marginTop: Spacing.md },
   unitSwitch:{ alignSelf: 'center', width: 180 },
   chips:     { flexDirection: 'row', justifyContent: 'center', gap: Spacing.sm, marginTop: Spacing.lg },
 
