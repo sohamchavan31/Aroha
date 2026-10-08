@@ -110,7 +110,9 @@ Next, in this order
   [x] Gym library: barbell, dumbbell, cable, machine, Smith (100+ exercises),
       kit filter in Train, Gym / Home in the generator
   [x] Per-set logging: each set has its own weight and reps; history per session
-  [ ] Live session (generator) logs weight per set too
+  [x] Live session (generator) logs weight per set too
+  [x] Muscle map + "feel it in" + form cues for every exercise; rest timer +15 s and 10 s heads-up
+  [ ] Animated exercise demos (licensed library, streamed from the domain)
   [ ] Workout builder: pick your own exercises/sets/reps
   [ ] Cardio machines (treadmill, bike, rower) logged by time, not reps
   [ ] Step counter (expo-sensors Pedometer) -> EP reward

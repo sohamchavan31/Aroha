@@ -16,6 +16,9 @@ import PrimaryButton from '../components/ui/PrimaryButton';
 import AnimatedPressable from '../components/AnimatedPressable';
 import FadeInView from '../components/FadeInView';
 import { Ring } from '../components/ui/ProgressRing';
+import MuscleMap from '../components/train/MuscleMap';
+import { setsSummary, fmtKg } from '../components/train/LogSetSheet';
+import { guideFor } from '../constants/exerciseGuide';
 import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
 import { tap, press, success, warn } from '../utils/haptics';
 
@@ -73,11 +76,33 @@ function SessionScreen({ plan, plannedMinutes, onExit }) {
   const [customSets, setCustomSets] = useState(3);
   const [customReps, setCustomReps] = useState(10);
 
-  const [save, setSave] = useState({ status: 'idle', kcal: null }); // idle | saving | saved | error
+  const [save, setSave] = useState({ status: 'idle', kcal: null, prs: 0 }); // idle | saving | saved | error
+
+  // What was actually lifted: logs[exIdx] = [{ weightKg, reps }], cur = the set being done.
+  const [logs, setLogs]         = useState({});
+  const [cur, setCur]           = useState({ weightKg: 0, reps: plan.exercises[0]?.reps || 10 });
+  const [showGuide, setShowGuide] = useState(false);
+  const touched = useRef(false); // user changed the weight; don't overwrite with history
 
   const ex = exercises[exIdx];
   const totalSets = exercises.reduce((s, e) => s + (e.sets || 0), 0);
   const nextEx = exercises[exIdx + 1];
+
+  // New exercise: start from its target reps, then last session's top weight.
+  useEffect(() => {
+    if (!ex) return undefined;
+    touched.current = false;
+    setCur({ weightKg: 0, reps: ex.reps || 10 });
+    if (typeof ex.id !== 'number') return undefined;
+    let cancelled = false;
+    client.get(`/workouts/history/${ex.id}`)
+      .then(({ data }) => {
+        const last = data?.sessions?.[data.sessions.length - 1];
+        if (!cancelled && !touched.current && last?.topWeightKg > 0) setCur(c => ({ ...c, weightKg: last.topWeightKg }));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [exIdx, ex?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // One clock: elapsed time, and the rest countdown while resting.
   useEffect(() => {
@@ -90,6 +115,7 @@ function SessionScreen({ plan, plannedMinutes, onExit }) {
   }, [phase]);
 
   useEffect(() => {
+    if (phase === 'rest' && restLeft === 10 && restTotal > 15) tap(); // heads-up: 10 seconds left
     if (phase === 'rest' && restLeft === 0) {
       press();
       setPhase('work');
@@ -105,6 +131,7 @@ function SessionScreen({ plan, plannedMinutes, onExit }) {
   function markSetDone() {
     tap();
     setDoneSets(d => d + 1);
+    setLogs(l => ({ ...l, [exIdx]: [...(l[exIdx] || []), { ...cur }] }));
     if (setNum < ex.sets) {
       setSetNum(s => s + 1);
       startRest(ex.restSeconds || 60);
@@ -136,8 +163,16 @@ function SessionScreen({ plan, plannedMinutes, onExit }) {
 
   // Save as soon as the last set is done
   async function saveSession() {
-    setSave({ status: 'saving', kcal: null });
+    setSave({ status: 'saving', kcal: null, prs: 0 });
     try {
+      // Each library exercise's sets go to its history, same as logging from Train.
+      // Custom exercises added mid-session only count toward the session.
+      const results = await Promise.allSettled(exercises.map((e, i) => (
+        typeof e.id === 'number' && logs[i]?.length
+          ? client.post('/workouts/log/sets', { exerciseId: e.id, sets: logs[i].slice(0, 20) })
+          : null
+      )).filter(Boolean));
+      const prs = results.filter(r => r.status === 'fulfilled' && r.value?.data?.newPR).length;
       const { data } = await client.post('/workout/sessions', {
         workoutType:        plan.workoutType,
         plannedMinutes,
@@ -146,10 +181,11 @@ function SessionScreen({ plan, plannedMinutes, onExit }) {
         totalSets:          doneSets,
         exerciseNames:      exercises.map(e => e.name),
       });
-      setSave({ status: 'saved', kcal: data?.caloriesBurned ?? null });
+      setSave({ status: 'saved', kcal: data?.caloriesBurned ?? null, prs });
+      if (prs > 0) success();
     } catch {
       warn();
-      setSave({ status: 'error', kcal: null });
+      setSave({ status: 'error', kcal: null, prs: 0 });
     }
   }
 
@@ -188,13 +224,23 @@ function SessionScreen({ plan, plannedMinutes, onExit }) {
           />
         </FadeInView>
 
+        {save.prs > 0 && (
+          <FadeInView index={2} style={styles.prBanner}>
+            <Ionicons name="trophy" size={18} color={Palette.kcal} />
+            <Text style={styles.prText}>{save.prs === 1 ? 'New personal record!' : `${save.prs} new personal records!`}</Text>
+          </FadeInView>
+        )}
+
         <FadeInView index={2}>
           <Card style={styles.doneList}>
             {exercises.map((e, i) => (
               <View key={e.id} style={[styles.doneRow, i > 0 && styles.divider]}>
                 <Text style={styles.doneNum}>{i + 1}</Text>
-                <Text style={styles.doneName} numberOfLines={1}>{e.name}</Text>
-                <Text style={styles.doneSets}>{e.sets} × {e.reps}</Text>
+                <View style={styles.doneText}>
+                  <Text style={styles.doneName} numberOfLines={1}>{e.name}</Text>
+                  {!!logs[i]?.length && <Text style={styles.doneDetail} numberOfLines={2}>{setsSummary(logs[i])}</Text>}
+                </View>
+                <Text style={styles.doneSets}>{logs[i]?.length || 0} sets</Text>
               </View>
             ))}
           </Card>
@@ -248,6 +294,7 @@ function SessionScreen({ plan, plannedMinutes, onExit }) {
   const muscle = ex?.muscleGroup || '';
   const color = MUSCLE_COLOR[muscle] || Palette.textSub;
   const resting = phase === 'rest';
+  const guide = guideFor(ex);
 
   return (
     <View style={styles.flex}>
@@ -269,6 +316,17 @@ function SessionScreen({ plan, plannedMinutes, onExit }) {
         <Text style={[styles.muscle, { color }]}>{muscle.replace('_', ' ').toUpperCase()}</Text>
         <Text style={styles.exName}>{ex?.name}</Text>
 
+        {guide && (
+          <AnimatedPressable onPress={() => { tap(); setShowGuide(true); }} scaleTo={0.97} style={styles.guideRow} accessibilityRole="button" accessibilityLabel={`How to do it. Feel it in: ${guide.feel}`}>
+            <MuscleMap primary={guide.primary} secondary={guide.secondary} height={58} labels={false} />
+            <View style={styles.guideText}>
+              <Text style={styles.guideLabel}>Feel it in</Text>
+              <Text style={styles.guideFeel} numberOfLines={2}>{guide.feel}</Text>
+            </View>
+            <Ionicons name="information-circle-outline" size={18} color={Palette.textSub} />
+          </AnimatedPressable>
+        )}
+
         <View style={styles.dots}>
           {Array.from({ length: ex?.sets || 1 }).map((_, i) => (
             <View
@@ -287,12 +345,21 @@ function SessionScreen({ plan, plannedMinutes, onExit }) {
               <Text style={styles.label}>Rest</Text>
               <Text style={styles.restTime}>{fmt(restLeft)}</Text>
             </View>
-            <Chip label="Skip rest" onPress={() => setRestLeft(0)} />
+            <View style={styles.restChips}>
+              <Chip label="+15 s" capitalize={false} onPress={() => { tap(); setRestLeft(r => r + 15); setRestTotal(t => t + 15); }} />
+              <Chip label="Skip rest" onPress={() => setRestLeft(0)} />
+            </View>
           </View>
         ) : (
           <View style={styles.workWrap}>
-            <Text style={styles.label}>Set {setNum} of {ex?.sets}</Text>
-            <Text style={styles.target}>{ex?.reps}<Text style={styles.targetUnit}> reps</Text></Text>
+            <Text style={styles.label}>Set {setNum} of {ex?.sets} · target {ex?.reps} reps</Text>
+            <View style={styles.setSteppers}>
+              <Stepper value={cur.weightKg} onChange={v => { touched.current = true; setCur(c => ({ ...c, weightKg: v })); }} min={0} max={500} step={2.5} decimals={1} unit="kg" />
+              <Stepper value={cur.reps} onChange={v => setCur(c => ({ ...c, reps: v }))} min={1} max={200} unit="reps" />
+            </View>
+            {!!logs[exIdx]?.length && (
+              <Text style={styles.doneSoFar} numberOfLines={1}>Done: {setsSummary(logs[exIdx])}</Text>
+            )}
           </View>
         )}
       </View>
@@ -305,11 +372,33 @@ function SessionScreen({ plan, plannedMinutes, onExit }) {
         </Text>
         <PrimaryButton
           title={resting ? 'Start next set' : setNum === ex?.sets && !nextEx ? 'Finish workout' : 'Set done'}
-          subtitle={resting ? 'Skip the rest of your break' : `${ex?.reps} reps · set ${setNum}/${ex?.sets}`}
+          subtitle={resting ? 'Skip the rest of your break' : `${cur.weightKg > 0 ? `${fmtKg(cur.weightKg)} kg × ` : ''}${cur.reps} reps · set ${setNum}/${ex?.sets}`}
           icon={resting ? 'play' : 'checkmark'}
           onPress={resting ? () => setRestLeft(0) : markSetDone}
         />
       </View>
+
+      <Sheet visible={showGuide} onClose={() => setShowGuide(false)} title={ex?.name} subtitle="How to do it" showClose>
+        {guide && (
+          <View style={styles.guideBody}>
+            <MuscleMap primary={guide.primary} secondary={guide.secondary} height={210} />
+            <View style={styles.legendRow}>
+              <View style={[styles.legendDot, { backgroundColor: Palette.kcal }]} /><Text style={styles.legendText}>Main muscle</Text>
+              <View style={[styles.legendDot, { backgroundColor: Palette.kcal + '59' }]} /><Text style={styles.legendText}>Helping</Text>
+            </View>
+            <View style={styles.feelBox}>
+              <Text style={styles.guideLabel}>Feel it in</Text>
+              <Text style={styles.feelText}>{guide.feel}</Text>
+            </View>
+            {guide.cues.map((c, i) => (
+              <View key={i} style={styles.cue}>
+                <Text style={styles.cueNum}>{i + 1}</Text>
+                <Text style={styles.cueText}>{c}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </Sheet>
 
       <Sheet visible={showAdd} onClose={() => setShowAdd(false)} title="Add an exercise" subtitle="It's added to the end of this session" showClose>
         <View style={styles.addBody}>
@@ -570,10 +659,28 @@ const styles = StyleSheet.create({
   dot:              { width: 22, height: 6, borderRadius: 3, backgroundColor: Palette.track },
   dotDone:          { backgroundColor: Palette.success },
   dotActive:        { backgroundColor: Palette.text },
-  workWrap:         { alignItems: 'center', gap: Spacing.sm },
-  target:           { fontFamily: Fonts.numHeavy, fontSize: 88, lineHeight: 92, color: Palette.text },
-  targetUnit:       { fontFamily: Fonts.num, fontSize: 24, color: Palette.textSub },
+  workWrap:         { alignItems: 'center', alignSelf: 'stretch', gap: Spacing.sm },
   restWrap:         { alignItems: 'center', gap: Spacing.lg },
+  restChips:        { flexDirection: 'row', gap: Spacing.sm },
+  setSteppers:      { flexDirection: 'row', gap: Spacing.sm, alignSelf: 'stretch' },
+  doneSoFar:        { ...Type.small, color: Palette.textSub },
+  guideRow:         { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderRadius: Radius.md, backgroundColor: Palette.surface, borderWidth: 1, borderColor: Palette.lineSoft, alignSelf: 'stretch' },
+  guideText:        { flex: 1 },
+  guideLabel:       { ...Type.label, color: Palette.textSub },
+  guideFeel:        { ...Type.bodyB, color: Palette.text, marginTop: 2 },
+  guideBody:        { gap: Spacing.md, paddingBottom: Spacing.sm },
+  legendRow:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  legendDot:        { width: 10, height: 10, borderRadius: 5, marginLeft: Spacing.sm },
+  legendText:       { ...Type.small, color: Palette.textSub },
+  feelBox:          { padding: Spacing.md, borderRadius: Radius.md, backgroundColor: Palette.kcal + '12', borderWidth: 1, borderColor: Palette.kcal + '33', gap: 2 },
+  feelText:         { ...Type.bodyB, fontSize: 15, color: Palette.text },
+  cue:              { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md },
+  cueNum:           { width: 22, height: 22, borderRadius: 11, textAlign: 'center', lineHeight: 22, fontFamily: Fonts.num, fontSize: 13, color: Palette.text, backgroundColor: Palette.surface2, overflow: 'hidden' },
+  cueText:          { ...Type.body, color: Palette.text, flex: 1 },
+  prBanner:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, padding: Spacing.md, borderRadius: Radius.md, backgroundColor: Palette.kcal + '14', borderWidth: 1, borderColor: Palette.kcal + '40' },
+  prText:           { ...Type.bodyB, color: Palette.text },
+  doneText:         { flex: 1 },
+  doneDetail:       { ...Type.small, color: Palette.textSub, marginTop: 2 },
   ring:             { width: 180, height: 180, alignItems: 'center', justifyContent: 'center' },
   restTime:         { fontFamily: Fonts.numHeavy, fontSize: 52, color: Palette.text },
   sessionBottom:    { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.lg, gap: Spacing.md },
@@ -595,7 +702,7 @@ const styles = StyleSheet.create({
   doneList:      { paddingVertical: 0, paddingHorizontal: Spacing.md + 2 },
   doneRow:       { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.md },
   doneNum:       { fontFamily: Fonts.num, fontSize: 16, color: Palette.textDim, width: 18 },
-  doneName:      { ...Type.body, color: Palette.text, flex: 1 },
+  doneName:      { ...Type.body, color: Palette.text },
   doneSets:      { fontFamily: Fonts.num, fontSize: 16, color: Palette.textSub },
   saveState:     { alignItems: 'center', minHeight: 20 },
   saveRow:       { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
