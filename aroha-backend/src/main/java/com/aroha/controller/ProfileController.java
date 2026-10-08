@@ -1,5 +1,6 @@
 package com.aroha.controller;
 
+import com.aroha.service.StreakRules;
 import com.aroha.dto.AvatarRequest;
 import com.aroha.dto.ProfileRequest;
 import com.aroha.model.User;
@@ -68,7 +69,10 @@ public class ProfileController {
         p.put("email",            user.getEmail());
         p.put("evolutionStage",   user.getEvolutionStage());
         p.put("evolutionPoints",  user.getEvolutionPoints());
-        p.put("streak",           effectiveStreak(user));
+        StreakRules.Status streak = StreakRules.status(user, java.time.LocalDate.now());
+        p.put("streak",           streak.streak());
+        p.put("streakState",      streak.state());
+        p.put("streakThawReps",   streak.thawReps());
         p.put("profileComplete",  user.getProfileComplete());
         p.put("avatarKey",        user.getAvatarKey());
         p.put("gender",           user.getGender());
@@ -119,13 +123,6 @@ public class ProfileController {
         }
 
         return p;
-    }
-
-    // A streak only survives if the user was active today or yesterday.
-    private int effectiveStreak(User user) {
-        java.time.LocalDate last = user.getLastActiveDate();
-        if (last == null) return 0;
-        return last.isBefore(java.time.LocalDate.now().minusDays(1)) ? 0 : user.getStreak();
     }
 
     private String bmiCategory(double bmi) {

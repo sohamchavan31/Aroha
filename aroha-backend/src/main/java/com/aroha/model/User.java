@@ -42,6 +42,10 @@ public class User {
     // train, drink water, tick a habit...). Drives streak = consecutive days.
     private LocalDate lastActiveDate;
 
+    // The missed day of the last streak the user thawed. A second freeze within
+    // a week of it costs more reps (see StreakRules).
+    private LocalDate lastFreezeDay;
+
     // ── Health profile (set during onboarding) ───────────────────────────────
     private String gender;              // male | female | other
     private Integer age;

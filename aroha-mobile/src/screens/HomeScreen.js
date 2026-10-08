@@ -36,6 +36,7 @@ import StageUpCelebration from '../components/StageUpCelebration';
 import StageCrest from '../components/StageCrest';
 import StreakFlame from '../components/StreakFlame';
 import EpFlyUp from '../components/EpFlyUp';
+import ThawSheet from '../components/streak/ThawSheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { formatNumber } from '../utils/format';
 import { on } from '../utils/events';
@@ -74,6 +75,7 @@ export default function HomeScreen({ navigation }) {
   const [showAi, setShowAi]           = useState(false);
   const [stageUp, setStageUp]         = useState(null); // { oldStage, newStage, ep }
   const [flyUp, setFlyUp]             = useState(null); // { id, amount, key }
+  const [showThaw, setShowThaw]       = useState(false);
 
   // ── Data ────────────────────────────────────────────────────────────────────
   const loadWater = useCallback(async () => {
@@ -176,6 +178,8 @@ export default function HomeScreen({ navigation }) {
   const ep         = profile?.evolutionPoints ?? 0;
   const stage      = stageInfo(profile?.evolutionStage, ep);
   const streak     = profile?.streak ?? 0;
+  const frozen     = profile?.streakState === 'FROZEN';
+  const thawReps   = profile?.streakThawReps || 15;
   const kcalGoal   = profile?.dailyCalorieGoal || 2000;
   const proteinGoal = profile?.dailyProteinGoal || 100;
   const waterGoal  = water.dailyGoal || profile?.waterGoalGlasses || 8;
@@ -214,7 +218,7 @@ export default function HomeScreen({ navigation }) {
           <Card variant="hero">
             <View style={styles.row}>
               <Text style={styles.label}>Stage {stage.number} of {stage.total}</Text>
-              {streak > 0 && <StreakFlame streak={streak} />}
+              {streak > 0 && <StreakFlame streak={streak} frozen={frozen} />}
             </View>
             <View style={[styles.row, styles.stageRow]}>
               <View style={styles.stageLeft}>
@@ -238,6 +242,24 @@ export default function HomeScreen({ navigation }) {
             </Text>
           </Card>
         </FadeInView>
+
+        {/* Frozen streak: thaw it today or it breaks at midnight */}
+        {frozen && (
+          <FadeInView index={1}>
+            <AnimatedPressable onPress={() => { tap(); setShowThaw(true); }} scaleTo={0.98} style={styles.ice} accessibilityRole="button">
+              <View style={styles.iceIcon}>
+                <Ionicons name="snow" size={22} color={Palette.water} />
+              </View>
+              <View style={styles.iceText}>
+                <Text style={styles.iceTitle}>Your {streak}-day streak is frozen</Text>
+                <Text style={styles.iceSub}>You missed yesterday. Do {thawReps} push-ups or pull-ups today to thaw it, or it breaks at midnight.</Text>
+              </View>
+              <View style={styles.iceGo}>
+                <Text style={styles.iceGoText}>Thaw</Text>
+              </View>
+            </AnimatedPressable>
+          </FadeInView>
+        )}
 
         {/* Today rings */}
         <FadeInView index={2}>
@@ -347,6 +369,14 @@ export default function HomeScreen({ navigation }) {
         <AiScreen visible={showAi} onClose={() => setShowAi(false)} />
       </Modal>
 
+      <ThawSheet
+        visible={showThaw}
+        streak={streak}
+        reps={thawReps}
+        onThawed={data => setProfile(p => (p ? { ...p, streak: data.streak, streakState: data.streakState } : p))}
+        onClose={() => { setShowThaw(false); refreshProgress(); }}
+      />
+
       {/* Stage-up celebration */}
       <StageUpCelebration
         visible={!!stageUp}
@@ -409,6 +439,15 @@ const styles = StyleSheet.create({
   segBar:   { marginTop: Spacing.md },
   heroFoot: { ...Type.small, color: Palette.textSub, marginTop: Spacing.sm },
   heroFootStrong: { fontFamily: Fonts.bodyBold, color: Palette.text },
+
+  // Frozen streak
+  ice:       { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.lg, borderRadius: Radius.lg, backgroundColor: Palette.water + '12', borderWidth: 1, borderColor: Palette.water + '40' },
+  iceIcon:   { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: Palette.water + '1F' },
+  iceText:   { flex: 1 },
+  iceTitle:  { ...Type.bodyB, color: Palette.text },
+  iceSub:    { ...Type.small, color: Palette.textSub, marginTop: 2 },
+  iceGo:     { paddingHorizontal: Spacing.md, paddingVertical: 6, borderRadius: Radius.pill, backgroundColor: Palette.water },
+  iceGoText: { fontFamily: Fonts.bodyBold, fontSize: 13, color: Palette.ink },
 
   // Today
   todayCard:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.lg },

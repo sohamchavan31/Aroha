@@ -51,6 +51,7 @@ Done
   [x] Stage-up celebration: full-screen moment, brass rings, stage track, EP to next stage
 
 Next, in this order
+  [x] Stage crests + Pokémon-style evolution flicker, growing streak flame, EP fly-up
   [ ] Later: Lottie / sound for the stage-up moment
   [ ] Replace assets/icon.png (current one has construction guides baked in)
         and update the Android adaptive icon background (#E6F4FE -> ink)
@@ -113,6 +114,8 @@ Next, in this order
   [ ] Workout builder: pick your own exercises/sets/reps
   [ ] Cardio machines (treadmill, bike, rower) logged by time, not reps
   [ ] Step counter (expo-sensors Pedometer) -> EP reward
+  [x] Streak freeze: miss a day and it freezes; thaw with 15 push-ups/pull-ups (25 if
+      it's the 2nd in a week) before the day ends, or it breaks
   [ ] Habits: consistency score per habit, streak freeze (bought with EP),
       monthly badges
 
