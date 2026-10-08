@@ -33,6 +33,9 @@ import IconButton from '../components/ui/IconButton';
 import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
 import { stageInfo, STAGES } from '../constants/stages';
 import StageUpCelebration from '../components/StageUpCelebration';
+import StageCrest from '../components/StageCrest';
+import StreakFlame from '../components/StreakFlame';
+import EpFlyUp from '../components/EpFlyUp';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { formatNumber } from '../utils/format';
 import { on } from '../utils/events';
@@ -70,6 +73,7 @@ export default function HomeScreen({ navigation }) {
   const [showProfile, setShowProfile] = useState(false);
   const [showAi, setShowAi]           = useState(false);
   const [stageUp, setStageUp]         = useState(null); // { oldStage, newStage, ep }
+  const [flyUp, setFlyUp]             = useState(null); // { id, amount, key }
 
   // ── Data ────────────────────────────────────────────────────────────────────
   const loadWater = useCallback(async () => {
@@ -134,7 +138,9 @@ export default function HomeScreen({ navigation }) {
   // ── Actions ─────────────────────────────────────────────────────────────────
   async function completeMission(id) {
     const oldStage = profile?.evolutionStage;
+    const mission = missions.find(m => m.id === id);
     setMissions(ms => ms.map(m => (m.id === id ? { ...m, completed: true } : m)));
+    if (mission?.epReward) setFlyUp({ id, amount: mission.epReward, key: Date.now() });
     success();
     try {
       const { data } = await client.post(`/missions/${id}/complete`);
@@ -208,15 +214,13 @@ export default function HomeScreen({ navigation }) {
           <Card variant="hero">
             <View style={styles.row}>
               <Text style={styles.label}>Stage {stage.number} of {stage.total}</Text>
-              {streak > 0 && (
-                <View style={styles.chip}>
-                  <Ionicons name="flame-outline" size={11} color={Palette.textSub} />
-                  <Text style={styles.chipText}>{streak}-day streak</Text>
-                </View>
-              )}
+              {streak > 0 && <StreakFlame streak={streak} />}
             </View>
             <View style={[styles.row, styles.stageRow]}>
-              <Text style={styles.stageName}>{stage.name.toUpperCase()}</Text>
+              <View style={styles.stageLeft}>
+                <StageCrest stage={stage.name} size={40} />
+                <Text style={styles.stageName} numberOfLines={1}>{stage.name.toUpperCase()}</Text>
+              </View>
               {loading ? (
                 <Skeleton width={90} height={22} />
               ) : (
@@ -315,6 +319,9 @@ export default function HomeScreen({ navigation }) {
                       {m.auto && !m.completed && <Text style={styles.missionAuto}>Ticks itself when you log it</Text>}
                     </View>
                     <Text style={[styles.missionEp, m.completed && styles.missionEpDone]}>+{m.epReward} EP</Text>
+                    {flyUp?.id === m.id && (
+                      <EpFlyUp key={flyUp.key} amount={flyUp.amount} style={styles.flyUp} onDone={() => setFlyUp(null)} />
+                    )}
                   </AnimatedPressable>
                 ))
               )}
@@ -393,9 +400,8 @@ const styles = StyleSheet.create({
   name:       { fontFamily: Fonts.bodyHeavy, fontSize: 20, color: Palette.text },
 
   // Hero
-  chip:     { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: Radius.pill, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: Palette.line },
-  chipText: { fontFamily: Fonts.bodyBold, fontSize: 11, color: Palette.textSub },
-  stageRow: { alignItems: 'flex-end', marginTop: Spacing.sm },
+  stageRow: { alignItems: 'center', marginTop: Spacing.sm },
+  stageLeft:{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 2, flexShrink: 1 },
   stageName:{ ...Type.stage, color: Palette.brass, flexShrink: 1 },
   epWrap:   { flexDirection: 'row', alignItems: 'baseline' },
   epValue:  { fontFamily: Fonts.num, fontSize: 26, color: Palette.text },
@@ -429,6 +435,7 @@ const styles = StyleSheet.create({
   missionTitleDone: { color: Palette.textDim, textDecorationLine: 'line-through' },
   missionEp:    { fontFamily: Fonts.num, fontSize: 15, color: Palette.brass },
   missionEpDone:{ color: Palette.textDim },
+  flyUp:        { right: 0, top: 4 },
   empty:        { ...Type.body, color: Palette.textSub, marginTop: Spacing.md },
   allDone:      { ...Type.small, color: Palette.success, marginTop: Spacing.xs },
 
