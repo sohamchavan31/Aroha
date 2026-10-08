@@ -1,5 +1,6 @@
 package com.aroha.controller;
 
+import com.aroha.dto.RefreshRequest;
 import com.aroha.dto.AuthResponse;
 import com.aroha.dto.LoginRequest;
 import com.aroha.dto.RegisterRequest;
@@ -25,5 +26,18 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    /** Swap a refresh token for a new access token (and a new refresh token). */
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
+        return ResponseEntity.ok(authService.refresh(request.getRefreshToken()));
+    }
+
+    /** Sign this device out: its refresh token stops working. */
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshRequest request) {
+        authService.logout(request.getRefreshToken());
+        return ResponseEntity.noContent().build();
     }
 }
