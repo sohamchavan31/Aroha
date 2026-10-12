@@ -60,7 +60,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 
+    // Behind the Cloudflare Tunnel every request reaches us from the tunnel
+    // container, so the real client is in the header Cloudflare sets.
     private String clientIp(HttpServletRequest request) {
+        String cf = request.getHeader("CF-Connecting-IP");
+        if (cf != null && !cf.isBlank()) {
+            return cf.trim();
+        }
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {
             return forwarded.split(",")[0].trim();

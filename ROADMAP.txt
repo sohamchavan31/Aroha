@@ -168,7 +168,7 @@ Store compliance
   [x] Notification permission asked at a sensible moment, not on first launch
 
 Production backend
-  [ ] Host Spring backend on Render (always-on instance) — HTTPS via custom domain
+  [~] Self-hosted with Docker Compose: PC + Cloudflare Tunnel now, AWS Lightsail next (docs/DEPLOY.md)
   [x] Flyway migrations instead of ddl-auto=update
   [ ] Secrets from environment variables only; CORS and rate limits checked
   [ ] Sentry crash reporting (mobile + backend)
