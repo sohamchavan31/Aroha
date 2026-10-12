@@ -154,7 +154,7 @@ Identity
   Lab:      SOHREX Labs  ·  domain sohrexlabs.com (buy later)
   App ID:   com.sohrexlabs.aroha  (Android package + iOS bundle id — permanent)
   Web:      aroha.sohrexlabs.com (landing + privacy policy)
-  API:      api.aroha.sohrexlabs.com
+  API:      aroha-api.sohrexlabs.com
 
 Store compliance
   [x] In-app account deletion (Settings → Delete account, password confirm)

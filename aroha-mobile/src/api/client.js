@@ -6,7 +6,7 @@ import { emit } from '../utils/events';
 
 // Where the API lives:
 //  1. EXPO_PUBLIC_API_URL, if set at build time (release builds set this in
-//     eas.json, e.g. https://api.aroha.sohrexlabs.com/api).
+//     eas.json, e.g. https://aroha-api.sohrexlabs.com/api).
 //  2. In dev, the IP Metro is serving on (Constants.expoConfig.hostUri), so it
 //     works on Ethernet or Wi-Fi without hardcoding. Assumes Spring Boot runs on
 //     the same machine on port 8080.
