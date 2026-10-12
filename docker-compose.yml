@@ -2,7 +2,7 @@
 # server: copy .env.example to .env, fill it in, then pick what to start.
 #
 #   docker compose up -d --build                         backend only (phone on the same Wi-Fi)
-#   docker compose --profile tunnel up -d --build        + public HTTPS at api.aroha.sohrexlabs.com
+#   docker compose --profile tunnel up -d --build        + public HTTPS at aroha-api.sohrexlabs.com
 #   docker compose --profile ai up -d --build            + AI coach (Flask + Ollama, needs ~8 GB RAM)
 #   docker compose --profile localdb up -d --build       + a local Postgres instead of Neon
 #
@@ -32,7 +32,7 @@ services:
       start_period: 60s
       retries: 5
 
-  # Cloudflare Tunnel: makes the backend reachable at api.aroha.sohrexlabs.com
+  # Cloudflare Tunnel: makes the backend reachable at aroha-api.sohrexlabs.com
   # over HTTPS without opening any port on your router or server.
   tunnel:
     image: cloudflare/cloudflared:latest

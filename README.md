@@ -65,7 +65,7 @@ Cloudflare Tunnel (public HTTPS), the AI coach (Flask + Ollama) and a local Post
 ```bash
 cp .env.example .env                       # fill in DB_*, JWT_SECRET (and the tunnel token to go live)
 docker compose up -d --build               # backend on :8080 for the phone on your Wi-Fi
-docker compose --profile tunnel up -d      # + live at https://api.aroha.sohrexlabs.com
+docker compose --profile tunnel up -d      # + live at https://aroha-api.sohrexlabs.com
 ```
 
 Going live on your PC and later on AWS Lightsail: see [docs/DEPLOY.md](docs/DEPLOY.md).

@@ -2,7 +2,7 @@
 
 Everything runs from `docker-compose.yml` at the repo root. Step 1 runs it on
 your PC behind a Cloudflare Tunnel; step 2 moves the same setup to an AWS
-Lightsail server. The app always talks to `https://api.aroha.sohrexlabs.com/api`,
+Lightsail server. The app always talks to `https://aroha-api.sohrexlabs.com/api`,
 so moving machines needs no app update.
 
 ```
@@ -11,6 +11,10 @@ phone ──HTTPS──▶ Cloudflare ──tunnel──▶ cloudflared ──�
 ```
 
 The website (`website/`) is separate: Cloudflare Pages serves it from `main`.
+
+Hostnames are one level under the domain (`aroha-api.sohrexlabs.com`, not
+`api.aroha.sohrexlabs.com`): Cloudflare's free certificate only covers
+`*.sohrexlabs.com`, so deeper names fail with "can't provide a secure connection".
 
 ---
 
@@ -22,14 +26,14 @@ The website (`website/`) is separate: Cloudflare Pages serves it from `main`.
    - On the install screen, copy the long **token** (the part after `--token`).
      Don't run the install command; the container does that.
    - **Public hostname** tab → Add:
-     subdomain `api.aroha`, domain `sohrexlabs.com`, service **HTTP** → `backend:8080`.
+     subdomain `aroha-api`, domain `sohrexlabs.com`, service **HTTP** → `backend:8080`.
 2. **Fill in `.env`** (repo root): `copy .env.example .env`, then set `DB_*`,
    `JWT_SECRET` and `CLOUDFLARE_TUNNEL_TOKEN`.
 3. **Start it**:
    ```powershell
    docker compose --profile tunnel up -d --build
    ```
-4. **Check**: `https://api.aroha.sohrexlabs.com/api/health` →
+4. **Check**: `https://aroha-api.sohrexlabs.com/api/health` →
    `{"status":"Aroha backend is running"}`.
    Logs: `docker compose logs -f backend` (Flyway runs on first start).
 
