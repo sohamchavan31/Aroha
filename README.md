@@ -57,30 +57,26 @@ Aroha/
 
 ---
 
-## Run the backend in Docker
+## Run it in Docker
 
-The backend can run in Docker instead of `mvn spring-boot:run`. Both ways work.
-The database stays on Neon, so only the API runs in the container.
+Everything is in `docker-compose.yml`: the backend, plus optional profiles for the
+Cloudflare Tunnel (public HTTPS), the AI coach (Flask + Ollama) and a local Postgres.
 
 ```bash
-cp aroha-backend/.env.example aroha-backend/.env   # fill in DB_URL, DB_USERNAME, DB_PASSWORD, JWT_SECRET
-docker compose up --build                           # API on http://localhost:8080
-docker compose down                                 # stop it
+cp .env.example .env                       # fill in DB_*, JWT_SECRET (and the tunnel token to go live)
+docker compose up -d --build               # backend on :8080 for the phone on your Wi-Fi
+docker compose --profile tunnel up -d      # + live at https://api.aroha.sohrexlabs.com
 ```
 
-- `DB_URL` uses the JDBC form: `jdbc:postgresql://<neon-host>/<db>?sslmode=require`.
-- Secrets are never baked into the image; they come from `.env` (gitignored) or the host's settings.
-- The image honours `PORT`, so Render (or any host) can run the same Dockerfile.
-- The phone still reaches it at `http://<PC Wi-Fi IP>:8080`, just like before.
+Going live on your PC and later on AWS Lightsail: see [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ---
 
-## Website and hosting
+## Website
 
-- `website/`: static site for **aroha.sohrexlabs.com** (landing page, Privacy Policy, Terms,
-  Account deletion). Hosted on Cloudflare Pages: project root `website`, no build command.
-- `render.yaml`: Render Blueprint for the backend (Docker, Singapore, health check `/api/health`).
-  It deploys from `main`; secrets are entered in the Render dashboard, never committed.
+`website/` is the static site for **aroha.sohrexlabs.com** (landing page, Privacy Policy,
+Terms, Account deletion), served by Cloudflare Pages from `main`: build output directory
+`website`, no build command.
 
 ---
 

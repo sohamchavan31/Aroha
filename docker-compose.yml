@@ -1,14 +1,82 @@
-# Run the Aroha backend in Docker: `docker compose up --build`
-# Needs aroha-backend/.env (copy aroha-backend/.env.example). The database is Neon,
-# so there is no Postgres container. The mobile app and the AI service run outside Docker.
+# Aroha, self-hosted. The same file runs on your PC and later on a Lightsail
+# server: copy .env.example to .env, fill it in, then pick what to start.
+#
+#   docker compose up -d --build                         backend only (phone on the same Wi-Fi)
+#   docker compose --profile tunnel up -d --build        + public HTTPS at api.aroha.sohrexlabs.com
+#   docker compose --profile ai up -d --build            + AI coach (Flask + Ollama, needs ~8 GB RAM)
+#   docker compose --profile localdb up -d --build       + a local Postgres instead of Neon
+#
+# Profiles combine: --profile tunnel --profile ai ...
+# Stop everything: docker compose --profile "*" down
+
+name: aroha
+
 services:
   backend:
     build: ./aroha-backend
     image: aroha-backend
-    container_name: aroha-backend
-    env_file: ./aroha-backend/.env
-    ports:
-      - "8080:8080"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"   # reach the Flask AI service on your PC (Linux needs this)
     restart: unless-stopped
+    environment:
+      DB_URL: ${DB_URL:?set DB_URL in .env}
+      DB_USERNAME: ${DB_USERNAME:?set DB_USERNAME in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      AI_INTERNAL_KEY: ${AI_INTERNAL_KEY:-}
+      AROHA_AI_URL: http://ai:5000
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"      # for the phone on your Wi-Fi; the tunnel doesn't need it
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 60s
+      retries: 5
+
+  # Cloudflare Tunnel: makes the backend reachable at api.aroha.sohrexlabs.com
+  # over HTTPS without opening any port on your router or server.
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN in .env}
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  ai:
+    build: ./aroha-ai
+    image: aroha-ai
+    profiles: ["ai"]
+    restart: unless-stopped
+    environment:
+      AI_INTERNAL_KEY: ${AI_INTERNAL_KEY:-}
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["ai"]
+    restart: unless-stopped
+    volumes:
+      - ollama:/root/.ollama
+    # First start downloads the model once (about 2 GB for llama3.2), then serves it.
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull ${OLLAMA_MODEL:-llama3.2}; wait"]
+
+  db:
+    image: postgres:16-alpine
+    profiles: ["localdb"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: aroha
+      POSTGRES_USER: ${DB_USERNAME:-aroha}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  ollama:
+  pgdata:
