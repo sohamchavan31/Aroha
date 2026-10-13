@@ -318,7 +318,7 @@ export default function OnboardingScreen({ onComplete }) {
     },
     diet: {
       title: 'How do you eat?',
-      sub: 'Your AI meal plans will stick to this.',
+      sub: 'Saved to your profile. You can change it anytime.',
       body: <View style={styles.list}>{DIETS.map(d => <Option key={d.key} item={d} color={Palette.success} selected={diet === d.key} onPress={() => pick(setDiet, d.key)} />)}</View>,
     },
     water: {
