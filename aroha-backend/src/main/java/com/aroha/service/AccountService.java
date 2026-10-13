@@ -36,6 +36,7 @@ public class AccountService {
     private final WorkoutLogRepository workoutLogRepository;
     private final WorkoutSessionRepository workoutSessionRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final EmailCodeRepository emailCodeRepository;
 
     /** Permanently deletes the user and everything they logged. Needs their password. */
     @Transactional
@@ -59,6 +60,7 @@ public class AccountService {
         workoutSessionRepository.deleteByUserId(id);
         taskRepository.deleteByUserId(id);
         refreshTokenRepository.deleteByUserId(id);
+        emailCodeRepository.deleteByUserId(id);
         mealRepository.deleteByCreatedBy(id);
         userRepository.delete(user);
     }

@@ -23,6 +23,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
       AI_INTERNAL_KEY: ${AI_INTERNAL_KEY:-}
       AROHA_AI_URL: http://ai:5000
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
     ports:
       - "${BACKEND_PORT:-8080}:8080"      # for the phone on your Wi-Fi; the tunnel doesn't need it
     healthcheck:
