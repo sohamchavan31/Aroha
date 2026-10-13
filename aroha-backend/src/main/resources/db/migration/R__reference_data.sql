@@ -457,3 +457,27 @@ FROM (VALUES
 ('Hung Curd',             'dairy',    'general',       100,  7.0,  5.0,  5.0, 0.0, 'katori', 100)
 ) AS v(name, category, region, cal, pro, car, fat, fib, unit, srv)
 WHERE NOT EXISTS (SELECT 1 FROM meals m WHERE m.name = v.name);
+
+-- ── Variants ───────────────────────────────────────────────────────────────
+-- The same food in different forms has very different macros (low-fat paneer
+-- is ~25 g protein per 100 g, regular ~18 g). Name the base rows by their form
+-- so search shows the choices side by side, then add the other forms.
+UPDATE meals SET name = 'Paneer (Regular)', serving_unit = 'grams' WHERE name = 'Paneer' AND is_custom = false;
+UPDATE meals SET name = 'Milk (Toned)'      WHERE name = 'Milk' AND is_custom = false;
+UPDATE meals SET name = 'Curd (Full-fat)'   WHERE name = 'Curd' AND is_custom = false;
+
+INSERT INTO meals (name, category, region, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, serving_unit, typical_serving)
+SELECT * FROM (VALUES
+('Paneer (Low-fat)',        'dairy',    'general', 205, 25.0,  4.5,  9.5, 0.0, 'grams',  100),
+('Paneer (Malai)',          'dairy',    'general', 320, 17.0,  3.0, 27.0, 0.0, 'grams',  100),
+('Tofu (Firm)',             'protein',  'general', 145, 15.8,  2.8,  8.7, 2.0, 'grams',  100),
+('Milk (Double Toned)',     'dairy',    'general',  45,  3.2,  4.8,  1.5, 0.0, 'glass',  250),
+('Milk (Skimmed)',          'dairy',    'general',  35,  3.4,  5.0,  0.1, 0.0, 'glass',  250),
+('Milk (Full Cream)',       'dairy',    'general',  87,  3.2,  4.8,  6.0, 0.0, 'glass',  250),
+('Curd (Low-fat)',          'dairy',    'general',  46,  3.5,  4.5,  1.5, 0.0, 'katori', 150),
+('Greek Yogurt (Plain)',    'dairy',    'general',  75,  9.0,  4.0,  2.5, 0.0, 'katori', 100),
+('Soy Milk (Unsweetened)',  'beverage', 'general',  37,  3.3,  1.8,  1.8, 0.5, 'glass',  250),
+('Cheese Slice',            'dairy',    'general', 310, 19.0,  4.0, 24.0, 0.0, 'piece',   20),
+('Whey Protein',            'protein',  'general', 390, 78.0,  8.0,  5.0, 0.0, 'scoop',   30)
+) AS v(name, category, region, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, serving_unit, typical_serving)
+WHERE NOT EXISTS (SELECT 1 FROM meals m WHERE m.name = v.name AND m.is_custom = false);

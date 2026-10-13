@@ -15,6 +15,7 @@ import AnimatedCounter from '../components/AnimatedCounter';
 import ServingSheet from '../components/food/ServingSheet';
 import RecipeBuilderSheet from '../components/food/RecipeBuilderSheet';
 import LabelFoodSheet from '../components/food/LabelFoodSheet';
+import MyFoodsSheet from '../components/food/MyFoodsSheet';
 import { DEFAULT_GOALS, SLOTS, isUnitFood, macrosFor } from '../constants/food';
 import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
 import { formatNumber } from '../utils/format';
@@ -43,6 +44,8 @@ export default function MacrosScreen() {
   const [pendingMeal, setPendingMeal] = useState(null);
   const [showBuilder, setShowBuilder] = useState(false);
   const [showLabel, setShowLabel]     = useState(false);
+  const [showMine, setShowMine]       = useState(false);
+  const [editFood, setEditFood]       = useState(null); // one of "My foods" open in the label sheet
 
   const scrollRef   = useRef(null);
   const searchRef   = useRef(null);
@@ -219,6 +222,7 @@ export default function MacrosScreen() {
             <Text style={styles.date}>{todayLabel()}</Text>
           </View>
           <View style={styles.headerBtns}>
+            <IconButton name="bookmark-outline" onPress={() => { tap(); setShowMine(true); }} accessibilityLabel="My foods" />
             <IconButton name="pricetag-outline" onPress={() => setShowLabel(true)} accessibilityLabel="Add a packaged food from its label" />
             <IconButton name="create-outline" onPress={() => setShowBuilder(true)} accessibilityLabel="Create a recipe" />
           </View>
@@ -397,8 +401,27 @@ export default function MacrosScreen() {
       <LabelFoodSheet
         visible={showLabel}
         initialName={query.trim()}
-        onClose={() => setShowLabel(false)}
-        onSaved={meal => { setShowLabel(false); setTimeout(() => setPendingMeal(meal), 350); }}
+        food={editFood}
+        onClose={() => { setShowLabel(false); if (editFood) { setTimeout(() => { setEditFood(null); setShowMine(true); }, 350); } }}
+        onSaved={meal => {
+          setShowLabel(false);
+          if (editFood) {
+            // Back to the list; refresh search so it shows the new values.
+            if (query.trim().length >= 2) search(query);
+            setTimeout(() => { setEditFood(null); setShowMine(true); }, 350);
+          } else {
+            setTimeout(() => setPendingMeal(meal), 350);
+          }
+        }}
+      />
+      {/* One sheet at a time: on Android a sheet opened over another can leave ghosts. */}
+      <MyFoodsSheet
+        visible={showMine}
+        onClose={() => setShowMine(false)}
+        onLog={food => { setShowMine(false); setTimeout(() => setPendingMeal(food), 350); }}
+        onEdit={food => { setShowMine(false); setEditFood(food); setTimeout(() => setShowLabel(true), 350); }}
+        onAddLabel={() => { setShowMine(false); setEditFood(null); setTimeout(() => setShowLabel(true), 350); }}
+        onAddRecipe={() => { setShowMine(false); setTimeout(() => setShowBuilder(true), 350); }}
       />
     </SafeAreaView>
   );

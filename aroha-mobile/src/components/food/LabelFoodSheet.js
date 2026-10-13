@@ -23,8 +23,9 @@ const num = v => {
 
 // Packaged food copied from the nutrition label (brands differ: Amul vs
 // Govardhan paneer, Pintola vs Dr. Oatkar oats). Saved as the user's own food,
-// with macros stored per 100 g like every other food.
-export default function LabelFoodSheet({ visible, initialName = '', onClose, onSaved }) {
+// with macros stored per 100 g like every other food. Pass `food` to edit one
+// of the user's foods instead.
+export default function LabelFoodSheet({ visible, initialName = '', food = null, onClose, onSaved }) {
   const [name, setName]       = useState('');
   const [brand, setBrand]     = useState('');
   const [basis, setBasis]     = useState('100g');
@@ -40,9 +41,21 @@ export default function LabelFoodSheet({ visible, initialName = '', onClose, onS
 
   useEffect(() => {
     if (!visible) return;
-    setName(initialName); setBrand(''); setBasis('100g'); setUnit('g'); setServing('');
-    setKcal(''); setProtein(''); setCarbs(''); setFat(''); setTried(false); setError('');
-  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+    setTried(false); setError(''); setBasis('100g');
+    if (food) {
+      const u = (food.servingUnit || '').toLowerCase();
+      const known = !u || u === 'grams' || u === 'gram' ? 'g' : u; // recipes may use units not in the list
+      setName(food.name || ''); setBrand(food.brand || '');
+      setUnit(known);
+      setServing(known !== 'g' && food.typicalServing ? String(food.typicalServing) : '');
+      const show = v => (v == null ? '' : String(Math.round(v * 10) / 10));
+      setKcal(show(food.caloriesPer100g)); setProtein(show(food.proteinPer100g));
+      setCarbs(show(food.carbsPer100g)); setFat(show(food.fatPer100g));
+      return;
+    }
+    setName(initialName); setBrand(''); setUnit('g'); setServing('');
+    setKcal(''); setProtein(''); setCarbs(''); setFat('');
+  }, [visible, food?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const servingG = num(serving);
   const per = basis === '100g' ? 100 : servingG;
@@ -69,18 +82,21 @@ export default function LabelFoodSheet({ visible, initialName = '', onClose, onS
     setSaving(true);
     try {
       const round = v => Math.round(to100(v) * 10) / 10;
-      const { data } = await client.post('/meals/custom', {
+      const body = {
         name: name.trim(),
         brand: brand.trim() || null,
-        category: 'packaged',
+        category: food?.category || 'packaged',
         caloriesPer100g: round(kcal),
         proteinPer100g: round(protein),
         carbsPer100g: round(carbs),
         fatPer100g: round(fat),
-        fiberPer100g: 0,
+        fiberPer100g: food?.fiberPer100g || 0,
         servingUnit: unit === 'g' ? 'grams' : unit,
-        typicalServing: servingG > 0 ? servingG : 100,
-      });
+        typicalServing: servingG > 0 ? servingG : (food?.typicalServing || 100),
+      };
+      const { data } = food
+        ? await client.put(`/meals/custom/${food.id}`, body)
+        : await client.post('/meals/custom', body);
       success();
       onSaved?.(data);
     } catch (err) {
@@ -92,7 +108,7 @@ export default function LabelFoodSheet({ visible, initialName = '', onClose, onS
   }
 
   return (
-    <Sheet visible={visible} onClose={onClose} title="Add from label" subtitle="Copy the numbers from the pack" showClose>
+    <Sheet visible={visible} onClose={onClose} title={food ? 'Edit food' : 'Add from label'} subtitle={food ? 'Meals you already logged keep their old values' : 'Copy the numbers from the pack'} showClose>
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
         <View style={styles.row}>
           <Field label="Food" placeholder="Paneer" value={name} onChangeText={setName} maxLength={80} error={show('name')} style={styles.flex} />
@@ -107,7 +123,7 @@ export default function LabelFoodSheet({ visible, initialName = '', onClose, onS
         <View>
           <Text style={styles.label}>You eat it by the</Text>
           <View style={styles.chips}>
-            {UNITS.map(u => <Chip key={u} label={u} capitalize={false} selected={unit === u} onPress={() => setUnit(u)} />)}
+            {(UNITS.includes(unit) ? UNITS : [...UNITS, unit]).map(u => <Chip key={u} label={u} capitalize={false} selected={unit === u} onPress={() => setUnit(u)} />)}
           </View>
         </View>
 
@@ -135,7 +151,7 @@ export default function LabelFoodSheet({ visible, initialName = '', onClose, onS
 
         <Text style={styles.hint}>Only you can see foods you add. Search finds them by name or brand.</Text>
         <FormError message={error} />
-        <PrimaryButton title={saving ? 'Saving…' : 'Save and log it'} icon="checkmark" onPress={save} />
+        <PrimaryButton title={saving ? 'Saving…' : food ? 'Save changes' : 'Save and log it'} icon="checkmark" onPress={save} />
       </ScrollView>
     </Sheet>
   );
