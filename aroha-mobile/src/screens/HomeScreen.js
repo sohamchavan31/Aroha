@@ -18,6 +18,7 @@ import client from '../api/client';
 import { apiError } from '../utils/apiError';
 import ProfileScreen from './ProfileScreen';
 import AiScreen from './AiScreen';
+import { FEATURES } from '../constants/features';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import Skeleton from '../components/Skeleton';
@@ -215,7 +216,7 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.greeting}>{t(greetingKey())}</Text>
             <Text style={styles.name} numberOfLines={1}>{name}</Text>
           </View>
-          <IconButton name="sparkles-outline" onPress={() => setShowAi(true)} accessibilityLabel="Open Aroha AI" />
+          {FEATURES.ai && <IconButton name="sparkles-outline" onPress={() => setShowAi(true)} accessibilityLabel="Open Aroha AI" />}
         </FadeInView>
 
         {/* Stage hero */}
@@ -388,9 +389,11 @@ export default function HomeScreen({ navigation }) {
       </ScrollView>
 
       <ProfileScreen visible={showProfile} onClose={() => { setShowProfile(false); loadAll(); }} />
-      <Modal visible={showAi} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowAi(false)}>
-        <AiScreen visible={showAi} onClose={() => setShowAi(false)} />
-      </Modal>
+      {FEATURES.ai && (
+        <Modal visible={showAi} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowAi(false)}>
+          <AiScreen visible={showAi} onClose={() => setShowAi(false)} />
+        </Modal>
+      )}
 
       <ThawSheet
         visible={showThaw}
