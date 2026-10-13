@@ -2,6 +2,8 @@ package com.aroha.controller;
 
 import com.aroha.dto.RefreshRequest;
 import com.aroha.dto.AuthResponse;
+import com.aroha.dto.ForgotPasswordRequest;
+import com.aroha.dto.ResetPasswordRequest;
 import com.aroha.dto.LoginRequest;
 import com.aroha.dto.RegisterRequest;
 import com.aroha.service.AuthService;
@@ -39,5 +41,18 @@ public class AuthController {
     public ResponseEntity<Void> logout(@Valid @RequestBody RefreshRequest request) {
         authService.logout(request.getRefreshToken());
         return ResponseEntity.noContent().build();
+    }
+
+    /** Emails a reset code. Always 204, whether or not the email has an account. */
+    @PostMapping("/password/forgot")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.getEmail());
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Sets a new password with the emailed code and signs in. */
+    @PostMapping("/password/reset")
+    public ResponseEntity<AuthResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        return ResponseEntity.ok(authService.resetPassword(request));
     }
 }

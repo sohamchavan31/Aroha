@@ -11,6 +11,7 @@ import { LanguageProvider } from './src/context/LanguageContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import OnboardingScreen from './src/screens/OnboardingScreen';
+import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
 import { initNotifications } from './src/utils/notifications';
 import { Palette } from './src/constants/theme';
 
@@ -40,6 +41,10 @@ function RootNavigator() {
   if (loading) return <Splash />;
 
   if (!token) return <AuthNavigator />;
+
+  // Signed up but hasn't entered the emailed code yet. (Older cached users
+  // have no flag; the profile refresh fills it in.)
+  if (user && user.emailVerified === false) return <VerifyEmailScreen />;
 
   // Logged in but profile not yet complete — show onboarding
   if (!onboardingDone && user && !user.profileComplete) {

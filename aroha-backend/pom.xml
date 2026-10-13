@@ -46,6 +46,12 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- Sign-up and password-reset codes by email (SMTP) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- PostgreSQL (runtime only — not needed to compile) -->
         <dependency>
             <groupId>org.postgresql</groupId>

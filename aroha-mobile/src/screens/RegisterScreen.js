@@ -8,6 +8,7 @@ import FormError from '../components/auth/FormError';
 import Field from '../components/ui/Field';
 import PrimaryButton from '../components/ui/PrimaryButton';
 import SegmentBar from '../components/ui/SegmentBar';
+import { userFromAuth } from '../utils/authUser';
 import { apiError, EMAIL_RE } from '../utils/apiError';
 import { Palette, Type } from '../constants/theme';
 import { warn } from '../utils/haptics';
@@ -57,7 +58,7 @@ export default function RegisterScreen({ navigation }) {
     setLoading(true);
     try {
       const { data } = await client.post('/auth/register', { name: cleanName, email: cleanEmail, password });
-      await login(data.token, { name: data.name, evolutionStage: data.evolutionStage, evolutionPoints: data.evolutionPoints, profileComplete: data.profileComplete }, data.refreshToken);
+      await login(data.token, userFromAuth(data, cleanEmail), data.refreshToken);
     } catch (err) {
       warn();
       setError(apiError(err, 'Could not create your account. Try again.'));

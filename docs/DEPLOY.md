@@ -79,7 +79,26 @@ after a restart (`restart: unless-stopped` brings the containers back).
 | `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | Neon (`jdbc:postgresql://<host>/<db>?sslmode=require`) or local (`jdbc:postgresql://db:5432/aroha` with `--profile localdb`) |
 | `JWT_SECRET` | Long random string; changing it signs everyone out |
 | `CLOUDFLARE_TUNNEL_TOKEN` | From the tunnel's install command |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | The Google Workspace address that sends sign-up and password-reset codes, and an App Password for it (see below). Empty: codes go to the backend log instead |
 | `AI_INTERNAL_KEY`, `OLLAMA_MODEL` | AI profile only |
 | `BACKEND_PORT` | Host port for Wi-Fi testing (default 8080) |
 
 `.env` is gitignored. Never commit it or paste it anywhere.
+
+## Email codes (sign-up and forgot password)
+
+The backend emails 6-digit codes through Google Workspace SMTP (`smtp.gmail.com:587`).
+
+1. Sign in to the sending account (e.g. `soham@sohrexlabs.com`) at myaccount.google.com.
+2. Security → turn on **2-Step Verification** (an admin may need to allow it in
+   admin.google.com → Security → Authentication → 2-Step Verification).
+3. Security → **App passwords** → create one named `Aroha backend`. Copy the 16 letters.
+4. In `.env`:
+   ```
+   MAIL_USERNAME=soham@sohrexlabs.com
+   MAIL_PASSWORD=<the 16 letters, no spaces>
+   ```
+5. `docker compose --profile tunnel up -d` and sign up with a test email to check it arrives.
+
+Workspace allows about 2,000 emails a day, plenty for codes. Accounts that existed
+before email verification count as verified.

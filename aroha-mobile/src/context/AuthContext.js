@@ -45,6 +45,8 @@ export function AuthProvider({ children }) {
         evolutionStage: data.evolutionStage,
         evolutionPoints: data.evolutionPoints,
         profileComplete: data.profileComplete,
+        emailVerified: data.emailVerified,
+        email: data.email,
         avatarKey: data.avatarKey,
         waterGoalGlasses: data.waterGoalGlasses,
       };
@@ -72,6 +74,15 @@ export function AuthProvider({ children }) {
     setUser(userData);
   }
 
+  // Merge fields into the cached user (e.g. emailVerified after entering the code).
+  function updateUser(patch) {
+    setUser(prev => {
+      const next = { ...(prev || {}), ...patch };
+      AsyncStorage.setItem('aroha_user', JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }
+
   async function logout() {
     const refreshToken = await SecureStore.getItemAsync(REFRESH_KEY).catch(() => null);
     if (refreshToken) client.post('/auth/logout', { refreshToken }).catch(() => {}); // sign this device out on the server
@@ -83,7 +94,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ token, user, loading, login, logout }}>
+    <AuthContext.Provider value={{ token, user, loading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

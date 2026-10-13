@@ -17,4 +17,5 @@ public class AuthResponse {
     private String evolutionStage;
     private int evolutionPoints;
     private boolean profileComplete;
+    private boolean emailVerified;
 }

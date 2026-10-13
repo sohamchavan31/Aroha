@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AnimatedPressable from '../AnimatedPressable';
 import { Palette, Fonts, Type, Spacing, Radius } from '../../constants/theme';
 
-// Shared frame for Login and Register: wordmark, title, form slot, footer link.
+// Shared frame for the sign-in screens: wordmark, title, form slot, optional footer link.
 export default function AuthShell({ title, subtitle, children, footerText, footerAction, onFooter }) {
   return (
     <SafeAreaView style={styles.safe}>
@@ -22,12 +22,14 @@ export default function AuthShell({ title, subtitle, children, footerText, foote
 
           <View style={styles.form}>{children}</View>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>{footerText} </Text>
-            <AnimatedPressable onPress={onFooter} scaleTo={0.96} hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }} accessibilityRole="link">
-              <Text style={styles.footerAction}>{footerAction}</Text>
-            </AnimatedPressable>
-          </View>
+          {!!footerAction && (
+            <View style={styles.footer}>
+              {!!footerText && <Text style={styles.footerText}>{footerText} </Text>}
+              <AnimatedPressable onPress={onFooter} scaleTo={0.96} hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }} accessibilityRole="link">
+                <Text style={styles.footerAction}>{footerAction}</Text>
+              </AnimatedPressable>
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

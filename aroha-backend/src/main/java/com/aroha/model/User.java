@@ -29,6 +29,10 @@ public class User {
     @Column(nullable = false)
     private String name;
 
+    // Set once the user enters the code we email them (or resets their password).
+    @Column(nullable = false)
+    private boolean emailVerified;
+
     @Column(nullable = false)
     private String evolutionStage;
 
