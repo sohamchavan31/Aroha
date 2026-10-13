@@ -4,21 +4,21 @@ SELECT * FROM (VALUES
 ('Toor Dal',       'dal',   'general',     118, 8.4,  21.0,  0.5, 3.0, 'katori',      150),
 ('Moong Dal',      'dal',   'general',     105, 7.6,  18.0,  0.4, 4.1, 'katori',      150),
 ('Chana Dal',      'dal',   'general',     164, 8.7,  27.0,  2.7, 7.6, 'katori',      150),
-('Urad Dal',       'dal',   'general',     341, 25.0, 58.0,  1.6, 1.8, 'katori',      150),
+('Urad Dal',       'dal',   'general',     130, 7.5, 18.0, 3.0, 3.5, 'katori',      150),
 ('Rajma',          'dal',   'punjabi',     127, 8.7,  22.0,  0.5, 8.4, 'katori',      150),
 ('Chole',          'dal',   'punjabi',     164, 8.9,  27.0,  2.6, 6.2, 'katori',      150),
 ('Dal Makhani',    'dal',   'punjabi',     174, 9.0,  20.0,  6.5, 5.0, 'katori',      150),
-('Steamed Rice',   'rice',  'general',      86, 1.8,  19.0,  0.1, 0.3, 'katori',      150),
+('Steamed Rice',   'rice',  'general',      130, 2.7, 28.2, 0.3, 0.4, 'katori',      150),
 ('Brown Rice',     'rice',  'general',     111, 2.6,  23.0,  0.9, 1.8, 'katori',      150),
-('Khichdi',        'rice',  'general',      92, 3.4,  17.0,  0.8, 1.2, 'katori',      200),
+('Khichdi',        'rice',  'general',      120, 4.5, 20.0, 2.5, 1.5, 'katori',      200),
 ('Pulao',          'rice',  'general',     142, 3.2,  26.0,  2.8, 1.0, 'katori',      150),
 ('Biryani',        'rice',  'general',     187, 8.0,  28.0,  5.6, 1.1, 'katori',      200),
-('Chapati',        'roti',  'general',      71, 2.7,  15.0,  0.4, 1.9, 'piece',        40),
-('Jowar Bhakri',   'roti',  'konkan',       85, 2.7,  17.1,  0.8, 1.2, 'piece',        60),
-('Bajra Roti',     'roti',  'general',      97, 3.6,  18.0,  1.4, 2.3, 'piece',        50),
-('Paratha',        'roti',  'punjabi',     127, 3.2,  19.0,  4.0, 1.8, 'piece',        60),
+('Chapati',        'roti',  'general',      262, 8.5, 51.0, 2.5, 5.0, 'piece',        40),
+('Jowar Bhakri',   'roti',  'konkan',       240, 7.0, 50.0, 1.5, 5.0, 'piece',        60),
+('Bajra Roti',     'roti',  'general',      258, 7.5, 50.0, 3.0, 5.5, 'piece',        50),
+('Paratha',        'roti',  'punjabi',     322, 7.5, 45.0, 12.5, 4.0, 'piece',        60),
 ('Naan',           'roti',  'punjabi',     262, 8.7,  46.0,  4.5, 1.9, 'piece',        80),
-('Puri',           'roti',  'general',     175, 3.8,  24.0,  7.4, 1.2, 'piece',        35),
+('Puri',           'roti',  'general',     362, 7.5, 45.0, 17.0, 3.0, 'piece',        35),
 ('Aloo Sabzi',     'sabzi', 'general',      98, 1.8,  20.0,  1.5, 2.0, 'katori',      150),
 ('Palak Paneer',   'sabzi', 'punjabi',     132, 7.0,   8.0,  8.0, 2.4, 'katori',      150),
 ('Bhindi Masala',  'sabzi', 'general',      64, 2.0,   7.0,  3.0, 3.2, 'katori',      150),
@@ -31,9 +31,9 @@ SELECT * FROM (VALUES
 ('Fish Curry',     'sabzi', 'konkan',      142, 19.0,  4.0,  6.0, 0.4, 'katori',      150),
 ('Poha',           'snack', 'general',     130, 2.6,  24.0,  3.4, 0.9, 'katori',      150),
 ('Upma',           'snack', 'south_indian',145, 3.5,  25.0,  4.0, 1.4, 'katori',      150),
-('Idli',           'snack', 'south_indian', 58, 2.7,  12.0,  0.1, 0.5, 'piece',        50),
+('Idli',           'snack', 'south_indian', 130, 4.0, 27.0, 0.5, 1.0, 'piece',        50),
 ('Dosa',           'snack', 'south_indian',168, 3.8,  28.0,  4.4, 0.6, 'piece',       100),
-('Vada',           'snack', 'south_indian', 97, 2.5,  11.0,  4.9, 1.2, 'piece',        40),
+('Vada',           'snack', 'south_indian', 260, 9.0, 28.0, 12.5, 3.0, 'piece',        40),
 ('Dhokla',         'snack', 'general',     150, 6.0,  25.0,  2.5, 1.0, 'piece',        50),
 ('Samosa',         'snack', 'general',     262, 5.7,  31.0, 12.5, 2.3, 'piece',        70),
 ('Poori Sabzi',    'snack', 'general',     223, 4.8,  30.0,  9.4, 2.2, 'plate',       180),
@@ -52,7 +52,7 @@ SELECT * FROM (VALUES
 ('Amboli',         'konkan','konkan',       148, 5.2,  28.0,  1.4, 0.8, 'piece',        80),
 ('Modak',          'konkan','konkan',       180, 3.5,  35.0,  3.5, 1.2, 'piece',        60),
 ('Kombdi Vade',    'konkan','konkan',       265, 14.0, 28.0, 10.0, 1.5, 'plate',       250),
-('Bombil Fry',     'konkan','konkan',        95, 18.0,  0.0,  2.5, 0.0, 'piece',        80)
+('Bombil Fry',     'konkan','konkan',        212, 16.0, 8.0, 13.0, 0.3, 'piece',        80)
 ) AS v(name, category, region, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, serving_unit, typical_serving)
 WHERE NOT EXISTS (SELECT 1 FROM meals LIMIT 1);
 
@@ -66,7 +66,7 @@ FROM (VALUES
 ('Kolambi Masala',       'konkan',   'konkan',      142, 18.0,  5.0,  5.5, 0.5, 'katori',      150),
 ('Tisre Curry',          'konkan',   'konkan',       95, 14.0,  5.0,  2.5, 0.3, 'katori',      150),
 ('Crab Curry',           'konkan',   'konkan',      120, 16.0,  5.0,  4.0, 0.5, 'katori',      150),
-('Thalipeeth',           'konkan',   'konkan',      180,  5.5, 32.0,  3.5, 3.0, 'piece',        80),
+('Thalipeeth',           'konkan',   'konkan',      250, 8.0, 38.0, 7.5, 5.0, 'piece',        80),
 ('Sabudana Khichdi',     'konkan',   'konkan',      210,  3.0, 42.0,  4.5, 0.5, 'katori',      150),
 ('Chakli',               'konkan',   'konkan',      490,  8.5, 62.0, 22.0, 3.0, 'piece',        10),
 ('Karanji',              'konkan',   'konkan',      380,  6.5, 52.0, 16.0, 2.0, 'piece',        50),
@@ -77,7 +77,7 @@ FROM (VALUES
 ('Kale Vatane Usal',     'dal',      'konkan',      118,  7.5, 19.0,  2.5, 6.5, 'katori',      150),
 ('Kolambi Bhaat',        'rice',     'konkan',      155,  8.0, 25.0,  3.0, 0.5, 'katori',      200),
 ('Narali Bhat',          'rice',     'konkan',      195,  3.5, 36.0,  4.5, 1.5, 'katori',      150),
-('Varan Bhaat',          'rice',     'konkan',       95,  3.5, 18.0,  1.5, 1.0, 'katori',      200),
+('Varan Bhaat',          'rice',     'konkan',       135, 4.5, 24.0, 2.5, 1.5, 'katori',      200),
 ('Puran Poli',           'konkan',   'konkan',      280,  6.0, 52.0,  6.0, 2.5, 'piece',        80),
 ('Shrikhand',            'dairy',    'konkan',      193,  6.5, 30.0,  6.0, 0.0, 'katori',      100),
 ('Basundi',              'dairy',    'konkan',      186,  5.5, 28.0,  6.0, 0.0, 'katori',      150),
@@ -124,7 +124,7 @@ FROM (VALUES
 ('Cornflakes',           'snack',    'general',     357,  7.5, 84.0,  0.4, 1.2, 'katori',       30),
 ('Muesli',               'snack',    'general',     351,  9.0, 67.0,  6.0, 7.0, 'katori',       50),
 ('Aloo Paratha',         'roti',     'punjabi',     260,  6.5, 38.0,  9.0, 3.0, 'piece',       100),
-('Methi Paratha',        'roti',     'punjabi',     180,  5.5, 26.0,  6.0, 2.5, 'piece',        70),
+('Methi Paratha',        'roti',     'punjabi',     280, 7.5, 40.0, 10.0, 4.5, 'piece',        70),
 ('Daliya Cooked',        'snack',    'general',      76,  2.8, 14.5,  0.8, 2.2, 'katori',      150),
 -- BEVERAGES
 ('Milk Tea',             'beverage', 'general',      60,  2.5,  8.0,  2.0, 0.0, 'cup',         150),
@@ -139,11 +139,11 @@ FROM (VALUES
 -- SOUTH INDIAN
 ('Rasam',                'dal',      'south_indian',  40,  1.5,  6.0,  1.0, 0.8, 'katori',     200),
 ('Sambhar',              'dal',      'south_indian',  65,  3.5,  9.0,  1.5, 2.5, 'katori',     150),
-('Curd Rice',            'rice',     'south_indian',  98,  3.5, 17.0,  2.0, 0.0, 'katori',     200),
+('Curd Rice',            'rice',     'south_indian',  115, 3.5, 19.0, 2.8, 0.4, 'katori',     200),
 ('Lemon Rice',           'rice',     'south_indian', 160,  3.0, 30.0,  4.0, 1.5, 'katori',     150),
 ('Tamarind Rice',        'rice',     'south_indian', 155,  2.8, 29.0,  3.5, 1.5, 'katori',     150),
-('Rava Idli',            'snack',    'south_indian',  68,  3.0, 13.5,  0.5, 0.8, 'piece',       60),
-('Medu Vada',            'snack',    'south_indian', 110,  4.5, 14.0,  4.5, 1.0, 'piece',       50),
+('Rava Idli',            'snack',    'south_indian',  150, 4.5, 26.0, 3.0, 1.0, 'piece',       60),
+('Medu Vada',            'snack',    'south_indian', 260, 9.0, 28.0, 12.5, 3.0, 'piece',       50),
 ('Pesarattu',            'snack',    'south_indian', 145,  8.5, 22.0,  2.5, 3.5, 'piece',       80),
 ('Pongal',               'rice',     'south_indian', 150,  4.5, 28.0,  3.0, 1.5, 'katori',     200),
 ('Uttapam',              'snack',    'south_indian', 175,  5.0, 30.0,  4.0, 1.5, 'piece',       80),
@@ -175,7 +175,7 @@ FROM (VALUES
 ('Sweet Corn',           'sabzi',    'general',      86,  3.2, 19.0,  1.2, 2.7, 'katori',      100),
 ('Jaggery',              'snack',    'general',     383,  0.4, 98.0,  0.1, 0.0, 'piece',        10),
 ('Honey',                'snack',    'general',     304,  0.3, 82.0,  0.0, 0.2, 'tablespoon',   21),
-('Pulka',                'roti',     'general',      68,  2.6, 14.5,  0.3, 1.8, 'piece',        35),
+('Pulka',                'roti',     'general',      250, 8.5, 50.0, 1.7, 5.0, 'piece',        35),
 ('Green Chutney',        'snack',    'general',      75,  4.5,  8.5,  2.5, 4.5, 'tablespoon',   20),
 ('Mixed Fruit Salad',    'fruit',    'general',      57,  0.9, 14.2,  0.4, 1.8, 'katori',      150),
 ('Poha Chivda',          'snack',    'general',     445, 10.5, 68.0, 15.0, 3.5, 'katori',       50),
@@ -481,3 +481,27 @@ SELECT * FROM (VALUES
 ('Whey Protein',            'protein',  'general', 390, 78.0,  8.0,  5.0, 0.0, 'scoop',   30)
 ) AS v(name, category, region, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, serving_unit, typical_serving)
 WHERE NOT EXISTS (SELECT 1 FROM meals m WHERE m.name = v.name AND m.is_custom = false);
+
+-- ── Corrections ────────────────────────────────────────────────────────────
+-- Food audit: these rows were entered per piece or as raw ingredients instead
+-- of per 100 g as eaten (a chapati logged as 28 kcal). The values above are
+-- fixed for new databases; this brings existing ones in line. Meals already
+-- logged keep the values they were logged with.
+UPDATE meals SET calories_per_100g = 130, protein_per_100g = 7.5, carbs_per_100g = 18.0, fat_per_100g = 3.0, fiber_per_100g = 3.5 WHERE name = 'Urad Dal' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 130, protein_per_100g = 2.7, carbs_per_100g = 28.2, fat_per_100g = 0.3, fiber_per_100g = 0.4 WHERE name = 'Steamed Rice' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 120, protein_per_100g = 4.5, carbs_per_100g = 20.0, fat_per_100g = 2.5, fiber_per_100g = 1.5 WHERE name = 'Khichdi' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 262, protein_per_100g = 8.5, carbs_per_100g = 51.0, fat_per_100g = 2.5, fiber_per_100g = 5.0 WHERE name = 'Chapati' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 250, protein_per_100g = 8.5, carbs_per_100g = 50.0, fat_per_100g = 1.7, fiber_per_100g = 5.0 WHERE name = 'Pulka' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 240, protein_per_100g = 7.0, carbs_per_100g = 50.0, fat_per_100g = 1.5, fiber_per_100g = 5.0 WHERE name = 'Jowar Bhakri' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 258, protein_per_100g = 7.5, carbs_per_100g = 50.0, fat_per_100g = 3.0, fiber_per_100g = 5.5 WHERE name = 'Bajra Roti' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 322, protein_per_100g = 7.5, carbs_per_100g = 45.0, fat_per_100g = 12.5, fiber_per_100g = 4.0 WHERE name = 'Paratha' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 280, protein_per_100g = 7.5, carbs_per_100g = 40.0, fat_per_100g = 10.0, fiber_per_100g = 4.5 WHERE name = 'Methi Paratha' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 362, protein_per_100g = 7.5, carbs_per_100g = 45.0, fat_per_100g = 17.0, fiber_per_100g = 3.0 WHERE name = 'Puri' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 250, protein_per_100g = 8.0, carbs_per_100g = 38.0, fat_per_100g = 7.5, fiber_per_100g = 5.0 WHERE name = 'Thalipeeth' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 130, protein_per_100g = 4.0, carbs_per_100g = 27.0, fat_per_100g = 0.5, fiber_per_100g = 1.0 WHERE name = 'Idli' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 150, protein_per_100g = 4.5, carbs_per_100g = 26.0, fat_per_100g = 3.0, fiber_per_100g = 1.0 WHERE name = 'Rava Idli' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 260, protein_per_100g = 9.0, carbs_per_100g = 28.0, fat_per_100g = 12.5, fiber_per_100g = 3.0 WHERE name = 'Vada' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 260, protein_per_100g = 9.0, carbs_per_100g = 28.0, fat_per_100g = 12.5, fiber_per_100g = 3.0 WHERE name = 'Medu Vada' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 212, protein_per_100g = 16.0, carbs_per_100g = 8.0, fat_per_100g = 13.0, fiber_per_100g = 0.3 WHERE name = 'Bombil Fry' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 135, protein_per_100g = 4.5, carbs_per_100g = 24.0, fat_per_100g = 2.5, fiber_per_100g = 1.5 WHERE name = 'Varan Bhaat' AND is_custom = false;
+UPDATE meals SET calories_per_100g = 115, protein_per_100g = 3.5, carbs_per_100g = 19.0, fat_per_100g = 2.8, fiber_per_100g = 0.4 WHERE name = 'Curd Rice' AND is_custom = false;
