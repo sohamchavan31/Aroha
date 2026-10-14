@@ -19,6 +19,7 @@ import { apiError } from '../utils/apiError';
 import ProfileScreen from './ProfileScreen';
 import AiScreen from './AiScreen';
 import { FEATURES } from '../constants/features';
+import { useTourTarget, useTourTips } from '../components/tour/TourContext';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import Skeleton from '../components/Skeleton';
@@ -75,6 +76,9 @@ export default function HomeScreen({ navigation }) {
 
   const [showProfile, setShowProfile] = useState(false);
   const [showAi, setShowAi]           = useState(false);
+  const stageRef    = useTourTarget('stage-card');
+  const missionsRef = useTourTarget('missions');
+  useTourTips(['quick-log', 'stage-card', 'missions'], !loading);
   const [stageUp, setStageUp]         = useState(null); // { oldStage, newStage, ep }
   const [flyUp, setFlyUp]             = useState(null); // { id, amount, key }
   const [showThaw, setShowThaw]       = useState(false);
@@ -220,7 +224,7 @@ export default function HomeScreen({ navigation }) {
         </FadeInView>
 
         {/* Stage hero */}
-        <FadeInView index={1}>
+        <FadeInView index={1} viewRef={stageRef}>
           <Card variant="hero">
             <View style={styles.row}>
               <Text style={styles.label}>Stage {stage.number} of {stage.total}</Text>
@@ -324,7 +328,7 @@ export default function HomeScreen({ navigation }) {
         </FadeInView>
 
         {/* Missions */}
-        <FadeInView index={4}>
+        <FadeInView index={4} viewRef={missionsRef}>
           <Card>
             <View style={styles.row}>
               <Text style={styles.label}>{t('dailyMissions')}</Text>

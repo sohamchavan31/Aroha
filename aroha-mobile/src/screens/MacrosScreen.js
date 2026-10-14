@@ -16,6 +16,7 @@ import ServingSheet from '../components/food/ServingSheet';
 import RecipeBuilderSheet from '../components/food/RecipeBuilderSheet';
 import LabelFoodSheet from '../components/food/LabelFoodSheet';
 import MyFoodsSheet from '../components/food/MyFoodsSheet';
+import { useTourTarget, useTourTips } from '../components/tour/TourContext';
 import { DEFAULT_GOALS, SLOTS, isUnitFood, macrosFor } from '../constants/food';
 import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
 import { formatNumber } from '../utils/format';
@@ -46,6 +47,9 @@ export default function MacrosScreen() {
   const [showLabel, setShowLabel]     = useState(false);
   const [showMine, setShowMine]       = useState(false);
   const [editFood, setEditFood]       = useState(null); // one of "My foods" open in the label sheet
+  const searchTarget = useTourTarget('food-search');
+  const myFoodsTarget = useTourTarget('my-foods');
+  useTourTips(['food-search', 'my-foods']);
 
   const scrollRef   = useRef(null);
   const searchRef   = useRef(null);
@@ -222,7 +226,9 @@ export default function MacrosScreen() {
             <Text style={styles.date}>{todayLabel()}</Text>
           </View>
           <View style={styles.headerBtns}>
-            <IconButton name="bookmark-outline" onPress={() => { tap(); setShowMine(true); }} accessibilityLabel="My foods" />
+            <View ref={myFoodsTarget} collapsable={false}>
+              <IconButton name="bookmark-outline" onPress={() => { tap(); setShowMine(true); }} accessibilityLabel="My foods" />
+            </View>
             <IconButton name="pricetag-outline" onPress={() => setShowLabel(true)} accessibilityLabel="Add a packaged food from its label" />
             <IconButton name="create-outline" onPress={() => setShowBuilder(true)} accessibilityLabel="Create a recipe" />
           </View>
@@ -255,7 +261,7 @@ export default function MacrosScreen() {
         </FadeInView>
 
         {/* Search */}
-        <FadeInView index={2}>
+        <FadeInView index={2} viewRef={searchTarget}>
           {!!targetSlotLabel && (
             <View style={styles.targetRow}>
               <Text style={styles.targetText}>Adding to <Text style={styles.targetStrong}>{targetSlotLabel}</Text></Text>

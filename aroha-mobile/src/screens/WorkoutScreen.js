@@ -9,6 +9,7 @@ import Card from '../components/ui/Card';
 import Chip from '../components/ui/Chip';
 import Field from '../components/ui/Field';
 import PrimaryButton from '../components/ui/PrimaryButton';
+import { useTourTarget, useTourTips } from '../components/tour/TourContext';
 import Skeleton from '../components/Skeleton';
 import FadeInView from '../components/FadeInView';
 import AnimatedPressable from '../components/AnimatedPressable';
@@ -62,6 +63,8 @@ function groupToday(entries) {
 }
 
 export default function WorkoutScreen() {
+  const generateTarget = useTourTarget('generate');
+  useTourTips(['generate']);
   const [exercises, setExercises]   = useState([]);
   const [loadingEx, setLoadingEx]   = useState(true);
   const [exError, setExError]       = useState(false);
@@ -242,7 +245,7 @@ export default function WorkoutScreen() {
           </Card>
         </FadeInView>
 
-        <FadeInView index={2}>
+        <FadeInView index={2} viewRef={generateTarget}>
           <PrimaryButton
             title="Generate a workout"
             subtitle="Pick your time and focus, get a plan"

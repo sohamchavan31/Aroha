@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useScreenshotProtection } from '../utils/screenshotProtection';
 import SettingsScreen from './SettingsScreen';
+import { useTour } from '../components/tour/TourContext';
 import LegalScreen from './LegalScreen';
 import AvatarPickerScreen from './AvatarPickerScreen';
 import EditProfileForm from '../components/profile/EditProfileForm';
@@ -52,6 +53,7 @@ export default function ProfileScreen({ visible, onClose }) {
   const [evoHistory, setEvoHistory] = useState([]);
   const [editing, setEditing]       = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const { replay } = useTour();
   const [legalType, setLegalType]   = useState(null);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
@@ -337,7 +339,16 @@ export default function ProfileScreen({ visible, onClose }) {
       </SafeAreaView>
 
       <Modal visible={showSettings} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowSettings(false)}>
-        <SettingsScreen visible={showSettings} onClose={() => setShowSettings(false)} />
+        <SettingsScreen
+          visible={showSettings}
+          onClose={() => setShowSettings(false)}
+          onReplayTour={() => {
+            // Back to Home first, so the tips can point at it.
+            setShowSettings(false);
+            onClose?.();
+            setTimeout(replay, 500);
+          }}
+        />
       </Modal>
       <LegalScreen visible={!!legalType} type={legalType} onClose={() => setLegalType(null)} />
       <AvatarPickerScreen
