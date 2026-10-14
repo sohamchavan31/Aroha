@@ -10,6 +10,7 @@ import WheelPicker from '../components/ui/WheelPicker';
 import LineChart from '../components/ui/LineChart';
 import SegmentBar from '../components/ui/SegmentBar';
 import PrimaryButton from '../components/ui/PrimaryButton';
+import { useTourTarget, useTourTips } from '../components/tour/TourContext';
 import Skeleton from '../components/Skeleton';
 import FadeInView from '../components/FadeInView';
 import AnimatedCounter from '../components/AnimatedCounter';
@@ -36,6 +37,8 @@ function macroCalPercent(p, c, f) {
 }
 
 export default function ProgressScreen({ route }) {
+  const weighTarget = useTourTarget('weigh-in');
+  useTourTips(['weigh-in']);
   const [summary, setSummary]             = useState(null);
   const [weightHistory, setWeightHistory] = useState([]);
   const [loading, setLoading]             = useState(true);
@@ -178,7 +181,7 @@ export default function ProgressScreen({ route }) {
           </Card>
         </FadeInView>
 
-        <FadeInView index={2}>
+        <FadeInView index={2} viewRef={weighTarget}>
           <PrimaryButton title="Log today's weight" subtitle="One weigh-in a day keeps the trend honest" icon="add" onPress={openWeighIn} />
         </FadeInView>
 

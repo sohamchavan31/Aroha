@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AnimatedPressable from '../components/AnimatedPressable';
 import QuickLogSheet from './QuickLogSheet';
+import { useTourTarget } from '../components/tour/TourContext';
 import { Palette, Fonts, Radius, Spacing } from '../constants/theme';
 import { tap, press } from '../utils/haptics';
 
@@ -19,6 +20,7 @@ const TABS = {
 export default function TabBar({ state, navigation }) {
   const insets = useSafeAreaInsets();
   const [showQuickLog, setShowQuickLog] = useState(false);
+  const plusRef = useTourTarget('quick-log');
 
   const routes = state.routes;
   const mid = Math.ceil(routes.length / 2);
@@ -62,6 +64,7 @@ export default function TabBar({ state, navigation }) {
         <View style={styles.bar}>
           {routes.slice(0, mid).map((r, i) => renderTab(r, i))}
           <View style={styles.tab}>
+            <View ref={plusRef} collapsable={false}>
             <AnimatedPressable
               onPress={() => { press(); setShowQuickLog(true); }}
               scaleTo={0.9}
@@ -71,6 +74,7 @@ export default function TabBar({ state, navigation }) {
             >
               <Ionicons name="add" size={28} color={Palette.onIvory} />
             </AnimatedPressable>
+            </View>
           </View>
           {routes.slice(mid).map((r, i) => renderTab(r, i + mid))}
         </View>

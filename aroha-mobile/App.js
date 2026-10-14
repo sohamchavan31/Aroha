@@ -12,6 +12,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
+import { TourProvider } from './src/components/tour/TourContext';
 import { initNotifications } from './src/utils/notifications';
 import { Palette } from './src/constants/theme';
 
@@ -51,7 +52,11 @@ function RootNavigator() {
     return <OnboardingScreen onComplete={() => setOnboardingDone(true)} />;
   }
 
-  return <AppNavigator />;
+  return (
+    <TourProvider>
+      <AppNavigator />
+    </TourProvider>
+  );
 }
 
 export default function App() {

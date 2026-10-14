@@ -2,7 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { Animated } from 'react-native';
 import { Motion } from '../constants/theme';
 
-export default function FadeInView({ children, index = 0, style, distance = 12 }) {
+// `viewRef` reaches the underlying view (the app tour measures it).
+export default function FadeInView({ children, index = 0, style, distance = 12, viewRef }) {
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -16,6 +17,8 @@ export default function FadeInView({ children, index = 0, style, distance = 12 }
 
   return (
     <Animated.View
+      ref={viewRef}
+      collapsable={false}
       style={[
         style,
         {

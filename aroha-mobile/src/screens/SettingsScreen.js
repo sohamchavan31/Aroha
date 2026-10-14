@@ -46,7 +46,7 @@ const NOTIF_HANDLERS = {
   missionReminders: scheduleMissionReminder,
 };
 
-export default function SettingsScreen({ visible, onClose }) {
+export default function SettingsScreen({ visible, onClose, onReplayTour }) {
   const { language, setLanguage, t } = useLanguage();
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [exporting, setExporting] = useState(false);
@@ -177,6 +177,20 @@ export default function SettingsScreen({ visible, onClose }) {
           })}
         </Card>
         <Text style={styles.hint}>Language applies to screens that are translated so far.</Text>
+
+        <Text style={styles.section}>Help</Text>
+        <Card style={styles.list}>
+          <AnimatedPressable scaleTo={0.98} onPress={() => { tap(); onReplayTour?.(); }} style={styles.row} accessibilityRole="button">
+            <View style={[styles.icon, { backgroundColor: Palette.brass + '1F' }]}>
+              <Ionicons name="map-outline" size={17} color={Palette.brass} />
+            </View>
+            <View style={styles.rowText}>
+              <Text style={styles.rowLabel}>Replay app tour</Text>
+              <Text style={styles.rowSub}>The welcome cards and tips, from the start</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Palette.textDim} />
+          </AnimatedPressable>
+        </Card>
 
         <Text style={styles.section}>Your data</Text>
         <Card style={styles.list}>
