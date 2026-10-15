@@ -13,10 +13,12 @@ import PrimaryButton from '../components/ui/PrimaryButton';
 import { useTourTarget, useTourTips } from '../components/tour/TourContext';
 import Skeleton from '../components/Skeleton';
 import FadeInView from '../components/FadeInView';
+import AnimatedPressable from '../components/AnimatedPressable';
 import AnimatedCounter from '../components/AnimatedCounter';
 import { Palette, Fonts, Type, Spacing, Radius } from '../constants/theme';
 import { formatNumber } from '../utils/format';
-import { success, warn } from '../utils/haptics';
+import { categoryColor } from '../constants/body';
+import { success, warn, tap } from '../utils/haptics';
 
 function fmtDate(dateStr) {
   const [, m, d] = (dateStr || '').split('-');
@@ -36,7 +38,7 @@ function macroCalPercent(p, c, f) {
   return { pct, cct, fct: Math.max(0, 100 - pct - cct) };
 }
 
-export default function ProgressScreen({ route }) {
+export default function ProgressScreen({ route, navigation }) {
   const weighTarget = useTourTarget('weigh-in');
   useTourTips(['weigh-in']);
   const [summary, setSummary]             = useState(null);
@@ -46,6 +48,7 @@ export default function ProgressScreen({ route }) {
   const [showWeighIn, setShowWeighIn]     = useState(false);
   const [weightInput, setWeightInput]     = useState(70);
   const [saving, setSaving]               = useState(false);
+  const [body, setBody]                   = useState(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -55,6 +58,7 @@ export default function ProgressScreen({ route }) {
       ]);
       setSummary(sRes.data);
       setWeightHistory(wRes.data ?? []);
+      client.get('/body').then(r => setBody(r.data)).catch(() => {});
     } catch {
       // keep what's on screen; empty states cover first load
     } finally {
@@ -185,8 +189,24 @@ export default function ProgressScreen({ route }) {
           <PrimaryButton title="Log today's weight" subtitle="One weigh-in a day keeps the trend honest" icon="add" onPress={openWeighIn} />
         </FadeInView>
 
-        {/* Weight trend */}
+        {/* Body numbers */}
         <FadeInView index={3}>
+          <AnimatedPressable scaleTo={0.98} onPress={() => { tap(); navigation.navigate('Body'); }} style={styles.bodyCard} accessibilityRole="button" accessibilityLabel="Open body numbers">
+            <View style={styles.row}>
+              <Text style={styles.label}>Body numbers</Text>
+              <Ionicons name="chevron-forward" size={16} color={Palette.textDim} />
+            </View>
+            <View style={styles.bodyStats}>
+              <BodyStat label="BMI" value={body?.bmi?.toFixed(1)} sub={body?.bmiCategory} />
+              <BodyStat label="Body fat" value={body?.bodyFatPct != null ? `${body.bodyFatPct.toFixed(1)}%` : null} sub={body?.bodyFatPct == null ? 'Add tape' : body.bodyFatCategory} />
+              <BodyStat label="Pace" value={body?.kgPerWeek != null ? `${body.kgPerWeek > 0 ? '+' : body.kgPerWeek < 0 ? '−' : ''}${Math.abs(body.kgPerWeek).toFixed(2)}` : null} sub={body?.paceStatus ?? 'kg / week'} />
+            </View>
+            <Text style={styles.bodyHint}>Body fat, lean mass, BMR, TDEE and tape measurements</Text>
+          </AnimatedPressable>
+        </FadeInView>
+
+        {/* Weight trend */}
+        <FadeInView index={4}>
           <Card>
             <View style={styles.row}>
               <Text style={styles.label}>Last 30 days</Text>
@@ -214,7 +234,7 @@ export default function ProgressScreen({ route }) {
         </FadeInView>
 
         {/* This week */}
-        <FadeInView index={4}>
+        <FadeInView index={5}>
           <Text style={[styles.label, styles.sectionLabel]}>This week</Text>
           <View style={styles.tiles}>
             <Tile label="Training days"     value={summary?.workoutsThisWeek ?? 0}   icon="barbell-outline"          color={Palette.protein} loading={loading} />
@@ -225,7 +245,7 @@ export default function ProgressScreen({ route }) {
         </FadeInView>
 
         {/* Macro split */}
-        <FadeInView index={5}>
+        <FadeInView index={6}>
           <Card>
             <View style={styles.row}>
               <Text style={styles.label}>Macro split · 7 days</Text>
@@ -268,6 +288,16 @@ export default function ProgressScreen({ route }) {
         </View>
       </Sheet>
     </SafeAreaView>
+  );
+}
+
+function BodyStat({ label, value, sub }) {
+  return (
+    <View style={styles.bodyStat}>
+      <Text style={styles.goalStatLabel}>{label}</Text>
+      <Text style={[styles.bodyStatValue, value == null && { color: Palette.textDim }]}>{value ?? '—'}</Text>
+      {!!sub && <Text style={[styles.bodyStatSub, { color: categoryColor(sub) }]} numberOfLines={1}>{sub}</Text>}
+    </View>
   );
 }
 
@@ -331,6 +361,14 @@ const styles = StyleSheet.create({
   goalStat:  { flex: 1, gap: 2 },
   goalStatLabel: { ...Type.small, color: Palette.textSub },
   goalStatValue: { fontFamily: Fonts.num, fontSize: 17, color: Palette.text },
+
+  // Body numbers
+  bodyCard:      { backgroundColor: Palette.surface, borderRadius: Radius.lg, borderWidth: 1, borderColor: Palette.lineSoft, padding: Spacing.lg },
+  bodyStats:     { flexDirection: 'row', marginTop: Spacing.md },
+  bodyStat:      { flex: 1, gap: 2 },
+  bodyStatValue: { fontFamily: Fonts.num, fontSize: 24, lineHeight: 26, color: Palette.text },
+  bodyStatSub:   { fontFamily: Fonts.bodyBold, fontSize: 11 },
+  bodyHint:      { ...Type.small, color: Palette.textDim, marginTop: Spacing.md },
 
   // Trend
   chart:     { marginTop: Spacing.md },

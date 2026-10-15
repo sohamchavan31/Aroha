@@ -10,6 +10,7 @@ import WorkoutScreen from '../screens/WorkoutScreen';
 import HabitScreen from '../screens/HabitScreen';
 import PlannerScreen from '../screens/PlannerScreen';
 import ProgressScreen from '../screens/ProgressScreen';
+import BodyScreen from '../screens/BodyScreen';
 import TabBar from './TabBar';
 import IconButton from '../components/ui/IconButton';
 import { Palette, Fonts, Spacing } from '../constants/theme';
@@ -31,7 +32,8 @@ function MainTabs() {
   );
 }
 
-// Habits and Planner open from Home ("My day") as pushed screens with a back bar.
+// Habits and Planner open from Home ("My day"), Body from Progress and Profile,
+// as pushed screens with a back bar.
 function withBackBar(Screen, title) {
   return function BackBarScreen({ navigation, route }) {
     return (
@@ -50,6 +52,7 @@ function withBackBar(Screen, title) {
 
 const HabitsWithBack  = withBackBar(HabitScreen, 'Habits');
 const PlannerWithBack = withBackBar(PlannerScreen, 'Planner');
+const BodyWithBack    = withBackBar(BodyScreen, 'Body numbers');
 
 export default function AppNavigator() {
   return (
@@ -57,6 +60,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Tabs"    component={MainTabs} />
       <Stack.Screen name="Habits"  component={HabitsWithBack} />
       <Stack.Screen name="Planner" component={PlannerWithBack} />
+      <Stack.Screen name="Body"    component={BodyWithBack} />
     </Stack.Navigator>
   );
 }

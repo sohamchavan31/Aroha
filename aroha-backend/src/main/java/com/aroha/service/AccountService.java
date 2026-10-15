@@ -37,6 +37,7 @@ public class AccountService {
     private final WorkoutSessionRepository workoutSessionRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final EmailCodeRepository emailCodeRepository;
+    private final BodyMeasurementRepository bodyMeasurementRepository;
 
     /**
      * Permanently deletes the user and everything they logged. Needs their
@@ -73,6 +74,7 @@ public class AccountService {
         taskRepository.deleteByUserId(id);
         refreshTokenRepository.deleteByUserId(id);
         emailCodeRepository.deleteByUserId(id);
+        bodyMeasurementRepository.deleteByUserId(id);
         mealRepository.deleteByCreatedBy(id);
         userRepository.delete(user);
     }
@@ -116,6 +118,7 @@ public class AccountService {
         out.put("workoutLog", workoutLogRepository.findByUserId(id));
         out.put("workoutSessions", workoutSessionRepository.findByUserId(id));
         out.put("weightLog", weightLogRepository.findByUserId(id));
+        out.put("bodyMeasurements", bodyMeasurementRepository.findByUserIdOrderByLogDateDesc(id));
         out.put("waterLog", waterLogRepository.findByUserId(id));
         out.put("sleepLog", sleepLogRepository.findByUserId(id));
         out.put("habits", habitRepository.findByUserId(id));

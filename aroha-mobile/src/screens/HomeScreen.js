@@ -408,7 +408,7 @@ export default function HomeScreen({ navigation }) {
         {!loading && <RemindersCard index={6} />}
       </ScrollView>
 
-      <ProfileScreen visible={showProfile} onClose={() => { setShowProfile(false); loadAll(); }} />
+      <ProfileScreen visible={showProfile} onClose={() => { setShowProfile(false); loadAll(); }} onOpenBody={() => { setShowProfile(false); navigation.navigate('Body'); }} />
       {FEATURES.ai && (
         <Modal visible={showAi} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowAi(false)}>
           <AiScreen visible={showAi} onClose={() => setShowAi(false)} />

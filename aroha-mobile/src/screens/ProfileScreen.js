@@ -44,7 +44,7 @@ function fmtKg(n) {
   return Number.isInteger(v) ? String(v) : v.toFixed(1);
 }
 
-export default function ProfileScreen({ visible, onClose }) {
+export default function ProfileScreen({ visible, onClose, onOpenBody }) {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
   const [profile, setProfile]       = useState(null);
@@ -208,6 +208,12 @@ export default function ProfileScreen({ visible, onClose }) {
                       {!!profile.bmiCategory && <Text style={styles.bodyFootText}>{profile.bmiCategory}</Text>}
                       {!!profile.tdee && <Text style={styles.bodyFootText}>Burns ~<Text style={styles.bodyFootStrong}>{formatNumber(profile.tdee)}</Text> kcal/day</Text>}
                     </View>
+                  )}
+                  {!!onOpenBody && (
+                    <AnimatedPressable scaleTo={0.98} onPress={() => { tap(); onOpenBody(); }} style={styles.bodyLink} accessibilityRole="button">
+                      <Text style={styles.bodyLinkText}>All body numbers</Text>
+                      <Ionicons name="chevron-forward" size={15} color={Palette.textSub} />
+                    </AnimatedPressable>
                   )}
                 </Card>
               </FadeInView>
@@ -430,6 +436,8 @@ const styles = StyleSheet.create({
   bodyFoot:      { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', gap: Spacing.sm, marginTop: Spacing.lg, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Palette.lineSoft },
   bodyFootText:  { ...Type.small, color: Palette.textSub },
   bodyFootStrong:{ fontFamily: Fonts.bodyBold, color: Palette.text },
+  bodyLink:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: Spacing.md, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Palette.lineSoft },
+  bodyLinkText:  { ...Type.bodyB, color: Palette.text },
 
   // Targets
   targets:     { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.md },
