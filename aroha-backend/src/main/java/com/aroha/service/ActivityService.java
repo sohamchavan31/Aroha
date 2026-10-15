@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -38,6 +39,9 @@ public class ActivityService {
     private final SleepLogRepository sleepLogRepository;
     private final WaterLogRepository waterLogRepository;
     private final WorkoutLogRepository workoutLogRepository;
+    private final WeightLogRepository weightLogRepository;
+    private final MealRepository mealRepository;
+    private final TaskRepository taskRepository;
 
     // Deliberately not @Transactional: each save commits on its own, so a failure
     // in mission checks can't roll back (or poison) the streak update.
@@ -49,14 +53,31 @@ public class ActivityService {
 
             updateStreak(user, today);
             userRepository.save(user);
-
-            for (Mission m : missionRepository.findByUserIdAndMissionDate(user.getId(), today)) {
-                if (!m.isCompleted() && m.getAutoKey() != null && isMet(m.getAutoKey(), user, today)) {
-                    missionService.complete(user, m);
-                }
-            }
+            completeMetMissions(user, LocalDateTime.now());
         } catch (Exception e) {
             log.warn("Activity bookkeeping failed for user {}", principal.getId(), e);
+        }
+    }
+
+    /**
+     * Completes today's automatic missions whose condition now holds. Also run
+     * when missions are fetched, for the time-based ones (before 8 AM, after 8 PM)
+     * that no log triggers. Doesn't touch the streak.
+     */
+    public void checkMissions(User principal) {
+        try {
+            userRepository.findById(principal.getId()).ifPresent(u -> completeMetMissions(u, LocalDateTime.now()));
+        } catch (Exception e) {
+            log.warn("Mission check failed for user {}", principal.getId(), e);
+        }
+    }
+
+    void completeMetMissions(User user, LocalDateTime now) {
+        for (Mission m : missionRepository.findByUserIdAndMissionDate(user.getId(), now.toLocalDate())) {
+            if (!m.isCompleted() && AutoMission.kind(m.getAutoKey()) == AutoMission.Kind.AUTO
+                    && isMet(m.getAutoKey(), user, now)) {
+                missionService.complete(user, m);
+            }
         }
     }
 
@@ -69,14 +90,34 @@ public class ActivityService {
         user.setLastActiveDate(today);
     }
 
-    private boolean isMet(String key, User user, LocalDate today) {
+    private boolean isMet(String key, User user, LocalDateTime now) {
         Long id = user.getId();
+        LocalDate today = now.toLocalDate();
         return switch (key) {
             // Sets logged by hand in Train count too (about 2.5 min each with rest).
             case AutoMission.WORKOUT_20 -> Math.max(
                     sessionsToday(id, today).stream().mapToInt(WorkoutSession::getActualSeconds).sum() / 60,
                     Training.minutes(setsToday(id, today))) >= 20;
             case AutoMission.SESSION_DONE -> !sessionsToday(id, today).isEmpty() || setsToday(id, today) >= 6;
+            case AutoMission.PUSHUPS_3 -> workoutLogRepository.findByUserIdAndLogDateOrderByLoggedAtAsc(id, today).stream()
+                    .filter(w -> isPushUp(w.getExerciseName()))
+                    .mapToInt(w -> Math.max(1, w.getSets())).sum() >= 3;
+            case AutoMission.CHECKIN_EARLY -> now.getHour() < AutoMission.EARLY_HOUR;
+            case AutoMission.PLAN_TOMORROW -> taskRepository
+                    .findByUserIdAndTaskDateOrderByScheduledTimeAscCreatedAtAsc(id, today.plusDays(1)).size() >= 3;
+            case AutoMission.WEIGHED_IN -> weightLogRepository.findByUserIdAndLoggedDate(id, today).isPresent();
+            case AutoMission.FRUIT_VEG -> {
+                List<Long> mealIds = foodToday(id, today).stream().map(DailyLog::getMealId).distinct().toList();
+                yield !mealIds.isEmpty() && mealRepository.findAllById(mealIds).stream()
+                        .map(m -> m.getCategory() == null ? "" : m.getCategory().toLowerCase())
+                        .anyMatch(c -> c.equals("fruit") || c.equals("sabzi"));
+            }
+            case AutoMission.CALORIES_ON_TARGET -> {
+                Integer goal = user.getDailyCalorieGoal();
+                if (goal == null || goal <= 0 || now.getHour() < AutoMission.EVENING_HOUR) yield false;
+                double eaten = foodToday(id, today).stream().mapToDouble(DailyLog::getCalories).sum();
+                yield eaten >= goal * 0.8 && eaten <= goal * 1.05;
+            }
             case AutoMission.ALL_HABITS -> {
                 long habits = habitRepository.countByUserId(id);
                 long done = habitLogRepository.findByUserIdAndLogDateBetween(id, today, today).stream()
@@ -102,6 +143,11 @@ public class ActivityService {
                     .mapToDouble(DailyLog::getProtein).sum() >= 20;
             default -> false;
         };
+    }
+
+    // "Push-ups", "Push Up", "Diamond pushups", "Incline Push-Up"…
+    static boolean isPushUp(String exerciseName) {
+        return exerciseName != null && exerciseName.toLowerCase().replaceAll("[\\s-]", "").contains("pushup");
     }
 
     private List<WorkoutSession> sessionsToday(Long userId, LocalDate today) {

@@ -44,6 +44,7 @@ import { formatNumber } from '../utils/format';
 import { on } from '../utils/events';
 import { tap, success, warn } from '../utils/haptics';
 import RemindersCard from '../components/RemindersCard';
+import MissionTimerSheet from '../components/missions/MissionTimerSheet';
 
 function greetingKey() {
   const h = new Date().getHours();
@@ -71,6 +72,7 @@ export default function HomeScreen({ navigation }) {
   const [today, setToday]         = useState({ calories: 0, protein: 0, sets: 0, minutes: 0, burned: 0 });
   const [water, setWater]         = useState({ glasses: 0, dailyGoal: 8 });
   const [missions, setMissions]   = useState([]);
+  const [timerMission, setTimerMission] = useState(null); // a timed mission open in the timer sheet
   const [loading, setLoading]     = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -168,6 +170,18 @@ export default function HomeScreen({ navigation }) {
       const msg = apiError(err, 'Check your connection and try again.');
       Alert.alert("Couldn't complete mission", msg);
     }
+  }
+
+  // Each kind of mission is done its own way (see the backend's AutoMission).
+  function pressMission(m) {
+    if (m.completed || m.auto) return;
+    if (m.kind === 'TIMER') { tap(); setTimerMission(m); return; }
+    if (m.kind === 'EVENING' && new Date().getHours() < 20) {
+      warn();
+      Alert.alert('After 8 PM', "Tick this once the day's eating is done, after 8 PM.");
+      return;
+    }
+    completeMission(m.id);
   }
 
   async function changeWater(delta) {
@@ -347,7 +361,7 @@ export default function HomeScreen({ navigation }) {
                     key={m.id}
                     scaleTo={0.98}
                     disabled={m.completed || m.auto}
-                    onPress={() => completeMission(m.id)}
+                    onPress={() => pressMission(m)}
                     style={[styles.mission, i > 0 && styles.missionDivider]}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: !!m.completed }}
@@ -364,7 +378,9 @@ export default function HomeScreen({ navigation }) {
                       <Text style={[styles.missionTitle, m.completed && styles.missionTitleDone]} numberOfLines={2}>
                         {m.title}
                       </Text>
-                      {m.auto && !m.completed && <Text style={styles.missionAuto}>Ticks itself when you log it</Text>}
+                      {!m.completed && !!(m.hint || m.auto) && (
+                        <Text style={styles.missionAuto}>{m.hint || 'Ticks itself when you log it'}</Text>
+                      )}
                     </View>
                     <Text style={[styles.missionEp, m.completed && styles.missionEpDone]}>+{m.epReward} EP</Text>
                     {flyUp?.id === m.id && (
@@ -398,6 +414,12 @@ export default function HomeScreen({ navigation }) {
           <AiScreen visible={showAi} onClose={() => setShowAi(false)} />
         </Modal>
       )}
+
+      <MissionTimerSheet
+        mission={timerMission}
+        onClose={() => { setTimerMission(null); refreshProgress(); }}
+        onDone={m => { setTimerMission(null); setTimeout(() => completeMission(m.id), 300); }}
+      />
 
       <ThawSheet
         visible={showThaw}
