@@ -22,7 +22,15 @@ public class MissionController {
 
     @GetMapping("/today")
     public ResponseEntity<List<MissionResponse>> getToday(@AuthenticationPrincipal User user) {
+        missionService.getTodayMissions(user.getEmail()); // make sure today's exist
+        activityService.checkMissions(user);             // time-based ones: before 8 AM, after 8 PM
         return ResponseEntity.ok(missionService.getTodayMissions(user.getEmail()));
+    }
+
+    /** Starts the timer of a timed mission (meditate, breathe, stretch). */
+    @PostMapping("/{id}/start")
+    public ResponseEntity<MissionResponse> start(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(missionService.startTimer(id, user.getEmail()));
     }
 
     @PostMapping("/{id}/complete")

@@ -44,6 +44,9 @@ public class Mission {
 
     private LocalDateTime completedAt;
 
+    // Set when a timed mission's timer is started (see AutoMission.TIMER_*).
+    private LocalDateTime startedAt;
+
     // Set when the app can verify the mission itself (see AutoMission). Null = tap to complete.
     private String autoKey;
 }

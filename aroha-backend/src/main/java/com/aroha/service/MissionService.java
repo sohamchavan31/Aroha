@@ -34,37 +34,35 @@ public class MissionService {
     private static final int[] EP_THRESHOLDS = {0, 1000, 3000, 6000, 11000, 18000, 28000};
     private static final String[] STAGES = {"Spark", "Awakened", "Ascender", "Guardian", "Titan", "Apex", "Legend"};
 
-    // ── Mission pool: category → list of [title, epReward, autoKey?] ─────────
-    // Entries with an autoKey complete themselves when AutoMissionService sees
-    // the matching activity; the rest are ticked off by the user.
+    // ── Mission pool: category → list of [title, epReward, key] ──────────────
+    // Every mission can be checked (see AutoMission): it completes itself from
+    // the user's logs, runs on an in-app timer, or can only be ticked after 8 PM.
     private static final Map<String, List<String[]>> POOL = Map.of(
         "STRENGTH", List.of(
             new String[]{"Complete a 20-minute workout", "40", AutoMission.WORKOUT_20},
-            new String[]{"Do 3 sets of push-ups", "30"},
-            new String[]{"Walk 5,000 steps", "35"},
+            new String[]{"Do 3 sets of push-ups", "30", AutoMission.PUSHUPS_3},
             new String[]{"Complete a full workout session", "45", AutoMission.SESSION_DONE},
-            new String[]{"Do 10 minutes of stretching", "25"}
+            new String[]{"Stretch for 10 minutes", "25", AutoMission.TIMER_10}
         ),
         "DISCIPLINE", List.of(
             new String[]{"Complete all your habits today", "50", AutoMission.ALL_HABITS},
-            new String[]{"Meditate for 5 minutes", "30"},
-            new String[]{"No screen time after 10 PM", "30"},
-            new String[]{"Wake up before 8 AM", "30"},
-            new String[]{"Journal for 5 minutes", "25"}
+            new String[]{"Meditate for 5 minutes", "30", AutoMission.TIMER_5},
+            new String[]{"Check in before 8 AM", "30", AutoMission.CHECKIN_EARLY},
+            new String[]{"Plan tomorrow: add 3 tasks", "25", AutoMission.PLAN_TOMORROW}
         ),
         "RECOVERY", List.of(
             new String[]{"Log 7+ hours of sleep", "40", AutoMission.SLEEP_7H},
             new String[]{"Hit your water goal", "30", AutoMission.WATER_GOAL},
-            new String[]{"Do 5 minutes of deep breathing", "25"},
+            new String[]{"Do 5 minutes of deep breathing", "25", AutoMission.TIMER_5},
             new String[]{"Log last night's sleep", "20", AutoMission.SLEEP_LOGGED},
-            new String[]{"Go screen-free for 30 minutes", "30"}
+            new String[]{"Weigh in today", "20", AutoMission.WEIGHED_IN}
         ),
         "NUTRITION", List.of(
             new String[]{"Log breakfast, lunch and dinner", "40", AutoMission.MEALS_LOGGED},
             new String[]{"Eat a protein-rich breakfast (20 g+)", "35", AutoMission.BREAKFAST_PROTEIN},
-            new String[]{"No junk food today", "45"},
-            new String[]{"Stay within your calorie goal", "50"},
-            new String[]{"Add fruit or vegetables to a meal", "30"}
+            new String[]{"No junk food today", "45", AutoMission.EVENING},
+            new String[]{"Stay within your calorie goal", "50", AutoMission.CALORIES_ON_TARGET},
+            new String[]{"Add fruit or vegetables to a meal", "30", AutoMission.FRUIT_VEG}
         )
     );
 
@@ -84,20 +82,71 @@ public class MissionService {
     }
 
     // ── Complete a mission — award EP, update attribute, check stage-up ──────
+    // Ticking by hand is only allowed where the server can stand behind it.
     @Transactional
     public CompleteResponse completeMission(Long missionId, String email) {
+        return completeMission(missionId, email, LocalDateTime.now());
+    }
+
+    @Transactional
+    CompleteResponse completeMission(Long missionId, String email, LocalDateTime now) {
         User user = getUser(email);
+        Mission mission = ownMission(missionId, user);
+        if (mission.isCompleted()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Mission already completed");
+        }
+        String key = mission.getAutoKey();
+        switch (AutoMission.kind(key)) {
+            case AUTO -> throw bad("This one ticks itself: " + lowerFirst(AutoMission.hint(key)) + ".");
+            case TIMER -> {
+                int minutes = AutoMission.timerMinutes(key);
+                // a few seconds of slack for the phone's clock and the network
+                if (mission.getStartedAt() == null
+                        || mission.getStartedAt().plusMinutes(minutes).minusSeconds(15).isAfter(now)) {
+                    throw bad("Finish the " + minutes + "-minute timer first.");
+                }
+            }
+            case EVENING -> {
+                if (now.getHour() < AutoMission.EVENING_HOUR) {
+                    throw bad("Tick this after 8 PM, once the day's eating is done.");
+                }
+            }
+            case MANUAL -> { }
+        }
+        return complete(user, mission);
+    }
 
-        Mission mission = missionRepository.findById(missionId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission not found"));
-
-        if (!mission.getUserId().equals(user.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your mission");
+    /** Starts (or restarts) a timed mission's timer. */
+    @Transactional
+    public MissionResponse startTimer(Long missionId, String email) {
+        User user = getUser(email);
+        Mission mission = ownMission(missionId, user);
+        if (AutoMission.kind(mission.getAutoKey()) != AutoMission.Kind.TIMER) {
+            throw bad("This mission doesn't have a timer.");
         }
         if (mission.isCompleted()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Mission already completed");
         }
-        return complete(user, mission);
+        mission.setStartedAt(LocalDateTime.now());
+        return toResponse(missionRepository.save(mission));
+    }
+
+    private Mission ownMission(Long missionId, User user) {
+        Mission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission not found"));
+        if (!mission.getUserId().equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your mission");
+        }
+        return mission;
+    }
+
+    // 400, not 401/403: the app treats those as "session expired".
+    private static ResponseStatusException bad(String message) {
+        return new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+    }
+
+    private static String lowerFirst(String s) {
+        return s == null || s.isEmpty() ? "" : Character.toLowerCase(s.charAt(0)) + s.substring(1);
     }
 
     // ── Mark done, award EP, bump the attribute and log a stage-up if any ────
@@ -212,16 +261,23 @@ public class MissionService {
     }
 
     private List<MissionResponse> toResponseList(List<Mission> missions) {
-        return missions.stream()
-                .map(m -> MissionResponse.builder()
-                        .id(m.getId())
-                        .title(m.getTitle())
-                        .type(m.getType())
-                        .category(m.getCategory())
-                        .epReward(m.getEpReward())
-                        .completed(m.isCompleted())
-                        .auto(m.getAutoKey() != null)
-                        .build())
-                .toList();
+        return missions.stream().map(MissionService::toResponse).toList();
+    }
+
+    static MissionResponse toResponse(Mission m) {
+        AutoMission.Kind kind = AutoMission.kind(m.getAutoKey());
+        return MissionResponse.builder()
+                .id(m.getId())
+                .title(m.getTitle())
+                .type(m.getType())
+                .category(m.getCategory())
+                .epReward(m.getEpReward())
+                .completed(m.isCompleted())
+                .auto(kind == AutoMission.Kind.AUTO)
+                .kind(kind.name())
+                .hint(AutoMission.hint(m.getAutoKey()))
+                .minutes(AutoMission.timerMinutes(m.getAutoKey()))
+                .startedAt(m.getStartedAt())
+                .build();
     }
 }
