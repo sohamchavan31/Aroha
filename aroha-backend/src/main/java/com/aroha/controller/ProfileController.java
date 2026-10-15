@@ -1,5 +1,6 @@
 package com.aroha.controller;
 
+import com.aroha.service.BodyMetrics;
 import com.aroha.service.StreakRules;
 import com.aroha.dto.AvatarRequest;
 import com.aroha.dto.ProfileRequest;
@@ -103,35 +104,14 @@ public class ProfileController {
         Double w = user.getWeightKg();
         Double h = user.getHeightCm();
 
-        if (w != null && h != null) {
-            double heightM = h / 100.0;
-            double bmi = Math.round((w / (heightM * heightM)) * 10.0) / 10.0;
+        Double bmi = BodyMetrics.bmi(w, h);
+        if (bmi != null) {
             p.put("bmi", bmi);
-            p.put("bmiCategory", bmiCategory(bmi));
+            p.put("bmiCategory", BodyMetrics.bmiCategory(bmi));
         }
-
-        // Re-expose TDEE for display (no re-persistence needed)
-        if (user.getAge() != null && w != null && h != null) {
-            double bmr = "female".equalsIgnoreCase(user.getGender())
-                    ? (10 * w) + (6.25 * h) - (5 * user.getAge()) - 161
-                    : (10 * w) + (6.25 * h) - (5 * user.getAge()) + 5;
-            double actMult = switch (user.getActivityLevel() != null ? user.getActivityLevel() : "sedentary") {
-                case "lightly_active"    -> 1.375;
-                case "moderately_active" -> 1.55;
-                case "very_active"       -> 1.725;
-                case "athlete"           -> 1.9;
-                default                  -> 1.2;
-            };
-            p.put("tdee", (int) Math.round(bmr * actMult));
-        }
+        Integer tdee = BodyMetrics.tdee(BodyMetrics.bmr(user.getGender(), w, h, user.getAge()), user.getActivityLevel());
+        if (tdee != null) p.put("tdee", tdee);
 
         return p;
-    }
-
-    private String bmiCategory(double bmi) {
-        if (bmi < 18.5) return "Underweight";
-        if (bmi < 25.0) return "Normal";
-        if (bmi < 30.0) return "Overweight";
-        return "Obese";
     }
 }

@@ -63,7 +63,7 @@ export function labelFor(list, key) {
 export function bmiColor(bmi) {
   if (!bmi) return Palette.text;
   if (bmi < 18.5) return Palette.water;
-  if (bmi < 25) return Palette.success;
-  if (bmi < 30) return Palette.kcal;
+  if (bmi < 23) return Palette.success;
+  if (bmi < 25) return Palette.kcal;
   return Palette.danger;
 }
