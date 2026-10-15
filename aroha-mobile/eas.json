@@ -14,13 +14,15 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://aroha-api.sohrexlabs.com/api"
+        "EXPO_PUBLIC_API_URL": "https://aroha-api.sohrexlabs.com/api",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": ""
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://aroha-api.sohrexlabs.com/api"
+        "EXPO_PUBLIC_API_URL": "https://aroha-api.sohrexlabs.com/api",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": ""
       },
       "android": {
         "buildType": "app-bundle"

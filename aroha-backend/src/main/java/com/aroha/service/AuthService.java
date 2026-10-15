@@ -8,6 +8,7 @@ import com.aroha.model.EmailCode.Purpose;
 import com.aroha.model.User;
 import com.aroha.repository.RefreshTokenRepository;
 import com.aroha.repository.UserRepository;
+import com.aroha.security.GoogleTokenVerifier;
 import com.aroha.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final EmailCodeService emailCodeService;
+    private final GoogleTokenVerifier googleTokenVerifier;
 
     public AuthResponse register(RegisterRequest request) {
         String email = normalizeEmail(request.getEmail());
@@ -79,6 +81,43 @@ public class AuthService {
         refreshTokenService.revoke(refreshToken);
     }
 
+    /**
+     * "Continue with Google": signs in the account linked to this Google account;
+     * else links the account with the same (Google-verified) email; else creates
+     * one. Google has verified the email, so no code is needed.
+     */
+    @Transactional
+    public AuthResponse googleSignIn(String idToken) {
+        GoogleTokenVerifier.GoogleUser google = googleTokenVerifier.verify(idToken);
+        if (google.email() == null || !google.emailVerified()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Your Google account's email isn't verified.");
+        }
+        String email = normalizeEmail(google.email());
+        User user = userRepository.findByGoogleSub(google.sub())
+                .or(() -> userRepository.findByEmailIgnoreCase(email))
+                .orElse(null);
+        if (user == null) {
+            String name = google.name() != null && !google.name().isBlank()
+                    ? google.name().trim()
+                    : email.substring(0, email.indexOf('@'));
+            user = User.builder()
+                    .email(email)
+                    // A random password nobody knows; "Forgot password?" lets them set one.
+                    .password(passwordEncoder.encode(java.util.UUID.randomUUID() + "-" + java.util.UUID.randomUUID()))
+                    .passwordSet(false)
+                    .name(name.length() > 60 ? name.substring(0, 60) : name)
+                    .evolutionStage("Spark")
+                    .evolutionPoints(0)
+                    .streak(0)
+                    .profileComplete(false)
+                    .build();
+        }
+        user.setGoogleSub(google.sub());
+        user.setEmailVerified(true);
+        userRepository.save(user);
+        return authResponse(user);
+    }
+
     /** Emails a new verification code to a signed-in user who hasn't verified yet. */
     public void sendVerification(User principal) {
         User user = current(principal);
@@ -113,6 +152,7 @@ public class AuthService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "This code has expired. Ask for a new one."));
         emailCodeService.check(user, Purpose.RESET, request.getCode());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setPasswordSet(true);
         user.setEmailVerified(true); // they just proved they read this inbox
         userRepository.save(user);
         refreshTokenRepository.deleteByUserId(user.getId());

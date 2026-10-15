@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Sheet from '../ui/Sheet';
 import PasswordField from '../auth/PasswordField';
 import FormError from '../auth/FormError';
+import Field from '../ui/Field';
 import AnimatedPressable from '../AnimatedPressable';
 import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
@@ -24,17 +25,24 @@ export default function DeleteAccountSheet({ visible, onClose }) {
   const [password, setPassword] = useState('');
   const [error, setError]       = useState('');
   const [busy, setBusy]         = useState(false);
+  // Accounts made with Google may have no password: they type DELETE instead.
+  const [hasPassword, setHasPassword] = useState(true);
 
-  useEffect(() => { if (visible) { setPassword(''); setError(''); } }, [visible]);
+  useEffect(() => {
+    if (!visible) return;
+    setPassword(''); setError('');
+    client.get('/profile').then(({ data }) => setHasPassword(data?.passwordSet !== false)).catch(() => {});
+  }, [visible]);
 
   async function remove() {
     if (busy) return;
-    if (!password) { warn(); setError('Enter your password to confirm.'); return; }
+    if (hasPassword && !password) { warn(); setError('Enter your password to confirm.'); return; }
+    if (!hasPassword && password.trim() !== 'DELETE') { warn(); setError('Type DELETE to confirm.'); return; }
     press();
     setBusy(true);
     setError('');
     try {
-      await client.post('/account/delete', { password });
+      await client.post('/account/delete', hasPassword ? { password } : { confirm: password.trim() });
       onClose?.();
       await logout();
     } catch (err) {
@@ -58,16 +66,29 @@ export default function DeleteAccountSheet({ visible, onClose }) {
         <Text style={styles.hint}>Want a copy first? Use "Export my data" in Settings before you delete.</Text>
       </View>
 
-      <PasswordField
-        label="Confirm with your password"
-        placeholder="Your password"
-        value={password}
-        onChangeText={t => { setPassword(t); setError(''); }}
-        autoComplete="current-password"
-        returnKeyType="done"
-        onSubmitEditing={remove}
-        style={styles.field}
-      />
+      {hasPassword ? (
+        <PasswordField
+          label="Confirm with your password"
+          placeholder="Your password"
+          value={password}
+          onChangeText={t => { setPassword(t); setError(''); }}
+          autoComplete="current-password"
+          returnKeyType="done"
+          onSubmitEditing={remove}
+          style={styles.field}
+        />
+      ) : (
+        <Field
+          label="Type DELETE to confirm"
+          placeholder="DELETE"
+          value={password}
+          onChangeText={t => { setPassword(t); setError(''); }}
+          autoCapitalize="characters"
+          returnKeyType="done"
+          onSubmitEditing={remove}
+          style={styles.field}
+        />
+      )}
       <FormError message={error} />
 
       <AnimatedPressable

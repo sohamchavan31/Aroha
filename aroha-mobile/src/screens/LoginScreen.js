@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import AuthShell from '../components/auth/AuthShell';
 import PasswordField from '../components/auth/PasswordField';
 import FormError from '../components/auth/FormError';
+import GoogleButton from '../components/auth/GoogleButton';
 import Field from '../components/ui/Field';
 import PrimaryButton from '../components/ui/PrimaryButton';
 import { userFromAuth } from '../utils/authUser';
@@ -51,6 +52,7 @@ export default function LoginScreen({ navigation }) {
       footerAction="Create an account"
       onFooter={() => navigation.navigate('Register')}
     >
+      <GoogleButton onError={setError} />
       <Field
         label="Email"
         icon="mail-outline"

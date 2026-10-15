@@ -25,6 +25,7 @@ services:
       AROHA_AI_URL: http://ai:5000
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      GOOGLE_CLIENT_IDS: ${GOOGLE_CLIENT_IDS:-}
     ports:
       - "${BACKEND_PORT:-8080}:8080"      # for the phone on your Wi-Fi; the tunnel doesn't need it
     healthcheck:

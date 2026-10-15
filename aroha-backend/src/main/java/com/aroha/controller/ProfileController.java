@@ -75,6 +75,8 @@ public class ProfileController {
         p.put("streakThawReps",   streak.thawReps());
         p.put("profileComplete",  user.getProfileComplete());
         p.put("emailVerified",    user.isEmailVerified());
+        p.put("passwordSet",      user.isPasswordSet());
+        p.put("googleLinked",     user.getGoogleSub() != null);
         p.put("avatarKey",        user.getAvatarKey());
         p.put("gender",           user.getGender());
         p.put("age",              user.getAge());

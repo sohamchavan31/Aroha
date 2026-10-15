@@ -3,6 +3,7 @@ package com.aroha.controller;
 import com.aroha.dto.RefreshRequest;
 import com.aroha.dto.AuthResponse;
 import com.aroha.dto.ForgotPasswordRequest;
+import com.aroha.dto.GoogleSignInRequest;
 import com.aroha.dto.ResetPasswordRequest;
 import com.aroha.dto.LoginRequest;
 import com.aroha.dto.RegisterRequest;
@@ -28,6 +29,12 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    /** "Continue with Google": exchanges a Google ID token for an Aroha session. */
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> google(@Valid @RequestBody GoogleSignInRequest request) {
+        return ResponseEntity.ok(authService.googleSignIn(request.getIdToken()));
     }
 
     /** Swap a refresh token for a new access token (and a new refresh token). */

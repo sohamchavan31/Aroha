@@ -45,7 +45,7 @@ public class AccountController {
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal User user,
             @RequestBody Map<String, String> body) {
-        accountService.deleteAccount(user, body.get("password"));
+        accountService.deleteAccount(user, body.get("password"), body.get("confirm"));
         return ResponseEntity.noContent().build();
     }
 }
