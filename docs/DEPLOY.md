@@ -79,6 +79,7 @@ after a restart (`restart: unless-stopped` brings the containers back).
 | `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | Neon (`jdbc:postgresql://<host>/<db>?sslmode=require`) or local (`jdbc:postgresql://db:5432/aroha` with `--profile localdb`) |
 | `JWT_SECRET` | Long random string; changing it signs everyone out |
 | `CLOUDFLARE_TUNNEL_TOKEN` | From the tunnel's install command |
+| `GOOGLE_CLIENT_IDS` | The OAuth **Web** client ID from Google Cloud, for "Continue with Google" (see below). Not a secret |
 | `MAIL_USERNAME` / `MAIL_PASSWORD` | The Google Workspace address that sends sign-up and password-reset codes, and an App Password for it (see below). Empty: codes go to the backend log instead |
 | `AI_INTERNAL_KEY`, `OLLAMA_MODEL` | AI profile only |
 | `BACKEND_PORT` | Host port for Wi-Fi testing (default 8080) |
@@ -102,3 +103,20 @@ The backend emails 6-digit codes through Google Workspace SMTP (`smtp.gmail.com:
 
 Workspace allows about 2,000 emails a day, plenty for codes. Accounts that existed
 before email verification count as verified.
+
+## Google sign-in ("Continue with Google")
+
+One-time setup in Google Cloud Console (console.cloud.google.com), project **Aroha**:
+
+1. **OAuth consent screen**: External, app name Aroha, your support email. While it's in
+   *Testing*, only the Google accounts listed under *Test users* can sign in.
+2. **Clients → Create client → Web application** (`Aroha backend`). Copy its Client ID.
+3. **Clients → Create client → Android**: package `com.sohrexlabs.aroha`, SHA-1 from
+   `eas credentials -p android` (preview profile → Keystore). When the app is on Google
+   Play, add a second Android client with the **App signing key** SHA-1 from Play Console.
+4. Put the **Web** client ID in two places:
+   - `.env`: `GOOGLE_CLIENT_IDS=<web client id>`, then `docker compose --profile tunnel up -d`
+   - `aroha-mobile/eas.json`: `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` in the build profile, then a new EAS build
+
+The button only shows in builds that have the client ID. Google accounts are linked to
+an existing Aroha account with the same email.

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import AuthShell from '../components/auth/AuthShell';
 import PasswordField from '../components/auth/PasswordField';
 import FormError from '../components/auth/FormError';
+import GoogleButton from '../components/auth/GoogleButton';
 import Field from '../components/ui/Field';
 import PrimaryButton from '../components/ui/PrimaryButton';
 import SegmentBar from '../components/ui/SegmentBar';
@@ -75,6 +76,7 @@ export default function RegisterScreen({ navigation }) {
       footerAction="Log in"
       onFooter={() => navigation.navigate('Login')}
     >
+      <GoogleButton onError={setError} />
       <Field
         label="Name"
         icon="person-outline"

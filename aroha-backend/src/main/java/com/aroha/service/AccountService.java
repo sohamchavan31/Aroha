@@ -38,13 +38,25 @@ public class AccountService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final EmailCodeRepository emailCodeRepository;
 
-    /** Permanently deletes the user and everything they logged. Needs their password. */
+    /**
+     * Permanently deletes the user and everything they logged. Needs their
+     * password; accounts made with Google and no password type DELETE instead.
+     */
     @Transactional
     public void deleteAccount(User principal, String password) {
+        deleteAccount(principal, password, null);
+    }
+
+    @Transactional
+    public void deleteAccount(User principal, String password, String confirm) {
         User user = userRepository.findById(principal.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
-        if (password == null || !passwordEncoder.matches(password, user.getPassword())) {
-            // 400, not 401/403: the app treats those as "session expired" and logs out.
+        // 400, not 401/403: the app treats those as "session expired" and logs out.
+        if (!user.isPasswordSet()) {
+            if (!"DELETE".equals(confirm == null ? null : confirm.trim())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Type DELETE to confirm");
+            }
+        } else if (password == null || !passwordEncoder.matches(password, user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Incorrect password");
         }
         Long id = user.getId();

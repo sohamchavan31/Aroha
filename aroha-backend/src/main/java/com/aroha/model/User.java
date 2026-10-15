@@ -33,6 +33,15 @@ public class User {
     @Column(nullable = false)
     private boolean emailVerified;
 
+    // The Google account linked to this one ("sub" from Google's ID token).
+    @Column(unique = true)
+    private String googleSub;
+
+    // False for accounts created with Google until the user sets a password.
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean passwordSet = true;
+
     @Column(nullable = false)
     private String evolutionStage;
 

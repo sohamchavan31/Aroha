@@ -52,6 +52,12 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- Verifies Google sign-in ID tokens against Google's published keys -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-jose</artifactId>
+        </dependency>
+
         <!-- PostgreSQL (runtime only — not needed to compile) -->
         <dependency>
             <groupId>org.postgresql</groupId>
